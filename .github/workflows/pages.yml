@@ -1,0 +1,59 @@
+# Baut die App, spielt sie einmal automatisch durch und veröffentlicht sie auf GitHub Pages.
+# Läuft bei jedem Push auf main und auf Knopfdruck (Actions, "App veröffentlichen", "Run workflow").
+# Schlägt ein Test fehl, bricht der Lauf ab und die bisherige Fassung bleibt online.
+# Einmalig nötig: Settings, Pages, Source auf "GitHub Actions" stellen.
+name: App veröffentlichen
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm test
+        env:
+          CI: 'true'
+
+      - name: Bildschirmfotos der Tests
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: test-bildschirmfotos
+          path: tools/shots/
+
+      - uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5.0.1

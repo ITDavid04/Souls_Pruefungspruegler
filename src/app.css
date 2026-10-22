@@ -1,0 +1,310 @@
+/* Prüfungsprügler: dunkel, Stein und Glut. Handy zuerst, am Desktop eine schmale Spalte vor dem Bild. */
+
+@font-face { font-family: 'Cinzel'; src: url(fonts/cinzel-latin-wght-normal.woff2) format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+
+:root {
+  color-scheme: dark;
+  --nacht: #0b0908;
+  --stein: #17120f;
+  --stein-2: #221b16;
+  --stein-3: #2d241d;
+  --linie: #43372d;
+  --linie-hell: #6b5a49;
+  --text: #ece4d6;
+  --blass: #b0a492;
+  --gold: #e0b866;
+  --gold-tief: #a8823c;
+  --glut: #e8813a;
+  --blut: #b1271d;
+  --blut-hell: #e4594a;
+  --ok: #8fca7a;
+  --ok-grund: #1c2a17;
+  --falsch: #ef7464;
+  --falsch-grund: #331512;
+  --nebel: #cfd8e3;
+  --f-titel: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --f-text: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-zitat: 'Cormorant Garamond', Georgia, serif;
+  --rand: 16px;
+  --unten: env(safe-area-inset-bottom, 0px);
+  --oben: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--nacht); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh; background: var(--nacht); color: var(--text);
+  font: 17px/1.5 var(--f-text); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+h1, h2, p, ul, blockquote { margin: 0; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+b { font-weight: 700; }
+
+/* ---------- Hintergrund ---------- */
+.bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.bg-bild { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity .9s ease; }
+.bg-bild.an { opacity: 1; }
+.bg-schleier { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 9, 8, .55) 0%, rgba(11, 9, 8, .78) 45%, rgba(11, 9, 8, .96) 100%); transition: background .6s; }
+body[data-bg="titel"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .25) 0%, rgba(11, 9, 8, .7) 50%, rgba(11, 9, 8, .97) 100%); }
+body[data-bg="kreis"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .1) 0%, rgba(11, 9, 8, .55) 35%, rgba(11, 9, 8, .96) 72%); }
+body[data-bg="kampf"] .bg-schleier, body[data-bg="boss"] .bg-schleier { background: radial-gradient(120% 70% at 50% 0%, rgba(11, 9, 8, .72), rgba(11, 9, 8, .94) 70%); }
+body[data-bg="boss"] .bg-schleier { background: radial-gradient(120% 70% at 50% 0%, rgba(40, 8, 6, .7), rgba(11, 9, 8, .94) 70%); }
+body[data-bg="feuer"] .bg-schleier { background: radial-gradient(90% 55% at 50% 12%, rgba(120, 52, 14, .32), rgba(11, 9, 8, 0) 70%), var(--nacht); }
+body[data-bg="tod"] .bg-schleier { background: #000; }
+body[data-bg="tor"] .bg-schleier, body[data-bg="sieg"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .5), rgba(11, 9, 8, .92) 70%); }
+
+.app { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; min-height: 100dvh; padding: calc(var(--oben) + 14px) var(--rand) calc(var(--unten) + 28px); }
+
+/* ---------- Grundbausteine ---------- */
+.knopf {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 52px; padding: 10px 18px; border-radius: 6px; cursor: pointer; text-align: center;
+  font: 600 17px/1.2 var(--f-titel); letter-spacing: .04em;
+  background: var(--stein-2); border: 1px solid var(--linie-hell); color: var(--text);
+  transition: transform .08s, background .2s, border-color .2s;
+}
+.knopf small { font: 400 13.5px/1.3 var(--f-text); letter-spacing: 0; color: var(--blass); }
+.knopf:active:not(:disabled) { transform: scale(.98); }
+.knopf:disabled { opacity: .5; cursor: default; }
+.knopf.haupt { background: linear-gradient(180deg, #3a2a1a, #261a10); border-color: var(--gold-tief); color: #f6e7c4; box-shadow: inset 0 1px 0 rgba(255, 220, 160, .12), 0 6px 18px -10px rgba(224, 184, 102, .5); }
+.knopf.haupt small { color: #d8c49a; }
+.knopf.leise { background: transparent; border-color: var(--linie); font: 600 15px/1.2 var(--f-text); letter-spacing: 0; min-height: 44px; }
+.knopf.gefahr { color: var(--falsch); border-color: #5a2a24; }
+.zeile { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.zeile .knopf { flex: 1 1 140px; }
+.ueber { font: 600 12.5px/1.2 var(--f-titel); letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+.zitat { font: italic 500 20px/1.4 var(--f-zitat); color: #d9cdb8; border-left: 2px solid var(--gold-tief); padding: 2px 0 2px 14px; }
+.hinweis { font-size: 15px; color: var(--blass); }
+.klein { font-size: 14px; color: var(--blass); }
+.gold-text { color: var(--gold); }
+.regeln { list-style: none; padding: 0; display: grid; gap: 10px; font-size: 16px; color: #d6ccbb; }
+.regeln li { padding-left: 22px; position: relative; }
+.regeln li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 7px; height: 7px; transform: rotate(45deg); background: var(--gold-tief); }
+.blut-hinweis { color: #f0b4a8; font-size: 15px; background: rgba(120, 20, 12, .25); border: 1px solid rgba(177, 39, 29, .5); border-radius: 6px; padding: 8px 12px; }
+.blut-hinweis b { color: #ffd1c6; }
+
+/* ---------- Titel ---------- */
+.titel { min-height: calc(100dvh - var(--oben) - var(--unten) - 42px); display: flex; flex-direction: column; justify-content: flex-end; gap: 22px; padding-top: 30vh; }
+.logo { font: 800 clamp(44px, 13.5vw, 72px)/.95 var(--f-titel); letter-spacing: .02em; text-transform: uppercase; color: #f3e6c9; text-shadow: 0 2px 24px rgba(0, 0, 0, .8), 0 0 40px rgba(224, 184, 102, .18); hyphens: manual; }
+.titel .knopf { width: 100%; margin-top: 6px; }
+
+/* ---------- Lagerfeuer ---------- */
+.hub { display: flex; flex-direction: column; gap: 18px; }
+.feuerstelle { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding-top: 8px; }
+.gold-titel { font: 700 30px/1.1 var(--f-titel); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); text-shadow: 0 0 24px rgba(232, 129, 58, .35); }
+.rast { font: italic 500 18.5px/1.4 var(--f-zitat); color: #cdbfa8; max-width: 34ch; }
+.werte { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--linie); border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; }
+.werte div { background: var(--stein); padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.werte span { font-size: 12.5px; color: var(--blass); text-transform: uppercase; letter-spacing: .08em; }
+.werte b { font: 700 22px/1 var(--f-titel); font-variant-numeric: tabular-nums; }
+.werte .seelen-zahl { color: var(--gold); }
+.werte.aufgestiegen div { animation: aufstieg .9s ease; }
+@keyframes aufstieg { 0% { background: #4a3618; } 100% { background: var(--stein); } }
+.aufstieg { width: 100%; }
+.abschnitt { font: 700 15px/1 var(--f-titel); letter-spacing: .24em; text-transform: uppercase; color: var(--blass); margin-top: 8px; display: flex; align-items: center; gap: 12px; }
+.abschnitt::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--linie), transparent); }
+
+.kacheln { list-style: none; padding: 0; display: grid; gap: 12px; }
+.kachel {
+  position: relative; display: grid; gap: 3px; padding: 16px 16px 14px; min-height: 148px; align-content: end;
+  border-radius: 8px; border: 1px solid var(--linie); text-decoration: none; overflow: hidden; isolation: isolate;
+  background: linear-gradient(180deg, rgba(11, 9, 8, .05) 0%, rgba(11, 9, 8, .62) 45%, rgba(11, 9, 8, .94) 100%), var(--bild) center / cover no-repeat, var(--stein);
+  transition: border-color .2s, transform .1s;
+}
+a.kachel:active { transform: scale(.99); }
+a.kachel:hover { border-color: var(--gold-tief); }
+.kachel-nr { font: 600 11.5px/1.2 var(--f-titel); letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+.kachel-name { font: 700 23px/1.1 var(--f-titel); letter-spacing: .03em; color: #f4e9d2; text-shadow: 0 1px 10px #000; }
+.kachel-lf { font-size: 14.5px; color: #cfc3b0; }
+.kachel-fuss { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.kachel-zahlen { font-size: 13.5px; color: var(--blass); }
+.kachel-zahlen b { color: var(--glut); font-weight: 700; }
+.kachel.zu { filter: grayscale(.85) brightness(.6); border-style: dashed; }
+.kachel.zu.wach { filter: none; }
+.marke { font: 700 11.5px/1 var(--f-text); letter-spacing: .06em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; border: 1px solid; }
+.marke.gold { color: var(--gold); border-color: var(--gold-tief); background: rgba(80, 58, 20, .5); }
+.marke.nebel { color: var(--nebel); border-color: #7d8794; background: rgba(120, 130, 145, .2); }
+.marke.blut { color: #ffb4a6; border-color: var(--blut); background: rgba(120, 20, 12, .45); }
+.feuer-punkte { display: inline-flex; gap: 5px; vertical-align: middle; }
+.feuer-punkte i { width: 11px; height: 15px; border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%; background: #3a302a; border: 1px solid #574a3e; }
+.feuer-punkte i.an { background: radial-gradient(circle at 50% 75%, #ffe08a 0 22%, var(--glut) 55%, #8a2f0c 100%); border-color: #c0602a; box-shadow: 0 0 8px rgba(232, 129, 58, .65); }
+
+.spielstand { border-top: 1px solid var(--linie); padding-top: 10px; font-size: 15px; color: var(--blass); }
+.spielstand summary { cursor: pointer; padding: 8px 0; font-weight: 700; }
+.spielstand p { margin-bottom: 10px; }
+.loeschen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+#installieren { margin-right: 8px; }
+
+/* Lagerfeuer als SVG: die Flammen flackern um ihren Fuß, Funken steigen auf */
+.flamme { position: relative; width: 92px; height: 154px; filter: drop-shadow(0 0 18px rgba(232, 129, 58, .55)); }
+.flamme svg { width: 100%; height: 100%; overflow: visible; }
+.flamme .fl { transform-box: fill-box; transform-origin: 50% 100%; animation: flackern 1.7s ease-in-out infinite alternate; }
+.flamme .fl-b { animation-duration: 1.15s; animation-delay: -.4s; }
+.flamme .fl-c { animation-duration: .8s; animation-delay: -.2s; }
+.flamme b { position: absolute; bottom: 46px; left: 50%; width: 3px; height: 3px; border-radius: 50%; background: #ffcf7a; box-shadow: 0 0 6px #ff9a3a; opacity: 0; animation: funke 2.6s linear infinite; }
+.flamme b:nth-of-type(1) { margin-left: -16px; animation-delay: .2s; }
+.flamme b:nth-of-type(2) { margin-left: 10px; animation-delay: 1.1s; }
+.flamme b:nth-of-type(3) { margin-left: -5px; animation-delay: 1.8s; }
+.flamme b:nth-of-type(4) { margin-left: 18px; animation-delay: 2.3s; }
+@keyframes flackern { 0% { transform: scale(1, 1) skewX(0deg); } 35% { transform: scale(.94, 1.07) skewX(2.5deg); } 70% { transform: scale(1.04, .95) skewX(-2.5deg); } 100% { transform: scale(.97, 1.04) skewX(1deg); } }
+@keyframes funke { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(var(--dx, 6px), -110px); opacity: 0; } }
+.flamme b:nth-of-type(2n) { --dx: -8px; }
+
+/* ---------- Kreis ---------- */
+.kreis-seite { display: flex; flex-direction: column; gap: 18px; min-height: calc(100dvh - var(--oben) - var(--unten) - 42px); }
+.zurueck { align-self: flex-start; font-size: 15px; color: var(--blass); text-decoration: none; padding: 8px 2px; }
+.zurueck::before { content: "‹ "; }
+.kreis-kopf { margin-top: 24vh; display: grid; gap: 6px; }
+.kreis-name { font: 800 clamp(32px, 10vw, 54px)/1 var(--f-titel); overflow-wrap: anywhere; letter-spacing: .02em; color: #f4e7cc; text-shadow: 0 2px 20px #000; }
+.kreis-lf { font-size: 16px; color: #d4c7b2; }
+.kreis-stand { display: grid; gap: 8px; font-size: 15.5px; color: #d1c5b2; }
+.kreis-stand p:first-child { display: flex; align-items: center; gap: 10px; }
+.kreis-stand .zahlen b { color: var(--text); }
+.aktionen { display: grid; gap: 12px; margin-top: auto; }
+.aktionen .knopf { width: 100%; }
+.tor-zu, .bezwungen { font-size: 15px; color: var(--blass); text-align: center; padding: 6px 4px; }
+.bezwungen b { color: var(--gold); }
+.knopf.nebeltor { position: relative; overflow: hidden; background: linear-gradient(180deg, rgba(200, 210, 225, .16), rgba(120, 130, 145, .1)); border-color: #9aa5b3; color: #eef2f7; }
+.knopf.nebeltor small { color: #c5ccd6; }
+.knopf.nebeltor::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(closest-side, rgba(230, 236, 245, .25), transparent); animation: nebel 5s ease-in-out infinite alternate; pointer-events: none; }
+@keyframes nebel { from { transform: translateX(-25%); } to { transform: translateX(25%); } }
+
+/* ---------- Kampf ---------- */
+html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
+.kampf { display: flex; flex-direction: column; gap: 12px; }
+.hud { position: sticky; top: 0; z-index: 5; margin: calc(-14px - var(--oben)) calc(-1 * var(--rand)) 0; padding: calc(var(--oben) + 10px) var(--rand) 10px; display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; background: rgba(11, 9, 8, .97); box-shadow: 0 10px 14px -6px rgba(11, 9, 8, .97); }
+.leben { display: grid; gap: 4px; min-width: 0; }
+.balken { position: relative; height: 12px; background: #1a0f0c; border: 1px solid #4a2a22; border-radius: 2px; overflow: hidden; }
+.balken i { position: absolute; left: 0; top: 0; bottom: 0; }
+.leben .spur { background: #e8c27a; transition: width .7s ease .45s; }
+.leben .wert { background: linear-gradient(180deg, #d9463a, var(--blut) 60%, #7e160f); transition: width .25s ease; }
+.leben-zahl { font: 600 12.5px/1 var(--f-text); color: var(--blass); font-variant-numeric: tabular-nums; }
+.hud.geheilt .balken { animation: heilen .8s ease; }
+@keyframes heilen { 0% { box-shadow: 0 0 0 0 rgba(143, 202, 122, .9); } 100% { box-shadow: 0 0 0 8px rgba(143, 202, 122, 0); } }
+.flakon { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 64px; padding: 6px 12px; border-radius: 22px; background: var(--stein-2); border: 1px solid var(--linie-hell); cursor: pointer; font: 700 17px/1 var(--f-text); }
+.flakon:disabled { opacity: .45; cursor: default; }
+.tasse { width: 22px; height: 22px; color: #d9b98a; }
+.seelen-hud { position: relative; font-size: 13.5px; color: var(--blass); text-align: right; white-space: nowrap; }
+.seelen-hud b { display: block; font: 700 19px/1 var(--f-titel); color: var(--gold); font-variant-numeric: tabular-nums; }
+.seelen-flug { position: absolute; right: 0; top: 100%; font: 700 14px/1 var(--f-titel); color: var(--gold); white-space: nowrap; animation: flug 1.3s ease-out forwards; pointer-events: none; text-shadow: 0 0 10px rgba(224, 184, 102, .6); }
+@keyframes flug { 0% { opacity: 0; transform: translateY(10px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-22px); } }
+
+.lauf-kopf { display: flex; align-items: center; gap: 10px; min-height: 36px; }
+.rueckzug { background: none; border: 1px solid var(--linie); border-radius: 4px; color: var(--blass); font-size: 13.5px; padding: 6px 10px; cursor: pointer; min-height: 36px; }
+.rueckzug:disabled { visibility: hidden; }
+.lauf-ort { font: 600 13px/1.2 var(--f-titel); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schritte { display: inline-flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; max-width: 50%; }
+.schritte i { width: 8px; height: 8px; transform: rotate(45deg); background: #3a302a; }
+.schritte i.an { background: var(--gold-tief); }
+.schritte i.jetzt { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+
+.bossbalken { display: grid; gap: 6px; padding: 10px 12px; background: rgba(30, 8, 6, .7); border: 1px solid #5a1d16; border-radius: 6px; }
+.boss-name { font: 700 17px/1.15 var(--f-titel); letter-spacing: .03em; color: #f2dcc9; }
+.boss-name small { display: block; font: italic 500 15px/1.2 var(--f-zitat); color: #c9a99a; letter-spacing: 0; }
+.bossbalken .balken { height: 10px; }
+.bossbalken .balken i { background: linear-gradient(180deg, #c03a2c, #6e130c); transition: width .5s ease; }
+
+.karte { display: flex; flex-direction: column; gap: 14px; padding: 16px; background: rgba(23, 18, 15, .92); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 12px 40px -18px #000; }
+.karte-kopf { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--blass); text-transform: uppercase; letter-spacing: .06em; }
+.karte-kopf .thema { text-transform: none; letter-spacing: 0; text-align: right; color: #8f8474; }
+.frage { font-size: 19px; line-height: 1.5; }
+.frage.begriff-gross { font: 700 clamp(26px, 8vw, 34px)/1.15 var(--f-titel); letter-spacing: .01em; color: #f4e7cc; overflow-wrap: anywhere; }
+.nach-hinweis { font-size: 14px; color: var(--blass); font-style: italic; }
+.optionen { display: grid; gap: 9px; }
+.option { min-height: 54px; padding: 12px 14px; text-align: left; font-size: 17px; line-height: 1.35; background: var(--stein-2); border: 1px solid var(--linie-hell); border-radius: 6px; cursor: pointer; transition: border-color .15s, background .15s, opacity .2s; overflow-wrap: anywhere; }
+.option.lang { font-size: 15.5px; line-height: 1.42; }
+.option:active:not(:disabled) { background: var(--stein-3); }
+.option:disabled { cursor: default; }
+.option.ok { border-color: var(--ok); background: var(--ok-grund); box-shadow: inset 3px 0 0 var(--ok); }
+.option.falsch { border-color: var(--falsch); background: var(--falsch-grund); box-shadow: inset 3px 0 0 var(--falsch); }
+.option.blass { opacity: .45; }
+@media (hover: hover) { .option:hover:not(:disabled) { border-color: var(--gold-tief); } }
+.tippen { display: grid; gap: 10px; }
+.tippen input { width: 100%; min-height: 54px; padding: 12px 14px; font: 600 19px/1.2 var(--f-text); color: var(--text); background: var(--nacht); border: 1px solid var(--linie-hell); border-radius: 6px; }
+.tippen input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(224, 184, 102, .2); }
+.tippen input.ok { border-color: var(--ok); background: var(--ok-grund); }
+.tippen input.falsch { border-color: var(--falsch); background: var(--falsch-grund); }
+.tippen-knoepfe { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+
+.rueckmeldung { scroll-margin-bottom: calc(var(--unten) + 96px); }
+.rueckmeldung:empty { display: none; }
+.urteil { display: grid; gap: 8px; padding: 12px 14px; border-radius: 6px; border-left: 3px solid; }
+.urteil.ok { background: rgba(28, 42, 23, .7); border-color: var(--ok); }
+.urteil.knapp { background: rgba(60, 46, 15, .6); border-color: var(--gold); }
+.urteil.falsch { background: rgba(51, 21, 18, .75); border-color: var(--falsch); }
+.urteil-wort { font: 700 21px/1 var(--f-titel); letter-spacing: .1em; text-transform: uppercase; }
+.urteil.ok .urteil-wort { color: var(--ok); }
+.urteil.knapp .urteil-wort { color: var(--gold); }
+.urteil.falsch .urteil-wort { color: var(--falsch); }
+.loesung { font-weight: 700; font-size: 17.5px; }
+.merke { font-size: 15.5px; color: #ddd2c0; }
+.merke b { color: var(--gold); }
+.seelen-zeile { font: 600 14.5px/1.4 var(--f-text); color: var(--gold); }
+.urteil.falsch .seelen-zeile { color: #f0a597; }
+.spruch { font: italic 500 17px/1.3 var(--f-zitat); color: var(--blass); }
+
+.weiter-leiste { position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; padding: 14px var(--rand) calc(var(--unten) + 14px); background: linear-gradient(0deg, rgba(11, 9, 8, .98) 60%, rgba(11, 9, 8, 0)); display: flex; justify-content: center; animation: hoch .25s ease; }
+.weiter-leiste .knopf { width: 100%; max-width: 528px; }
+@keyframes hoch { from { transform: translateY(20px); opacity: 0; } }
+.rueckzug-frage { position: fixed; z-index: 7; left: 0; right: 0; bottom: 0; padding: 18px var(--rand) calc(var(--unten) + 18px); background: var(--stein); border-top: 1px solid var(--linie-hell); display: grid; gap: 14px; box-shadow: 0 -20px 40px -10px #000; }
+.rueckzug-frage > * { max-width: 528px; width: 100%; margin: 0 auto; }
+
+.wackeln { animation: wackeln .4s ease; }
+@keyframes wackeln { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+.blitz { position: fixed; inset: 0; z-index: 20; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(177, 39, 29, 0) 40%, rgba(177, 39, 29, .55) 100%); }
+.blitz.an { animation: blitz .55s ease-out; }
+@keyframes blitz { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- Große Bildschirme ---------- */
+.gross { min-height: calc(100dvh - var(--oben) - var(--unten) - 42px); display: flex; flex-direction: column; justify-content: center; gap: 20px; text-align: center; }
+.gross-inhalt { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.gross-inhalt .knopf { width: 100%; margin-top: 10px; }
+.band { margin: 0 calc(-1 * var(--rand)); padding: 22px var(--rand); background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .85) 18%, rgba(0, 0, 0, .85) 82%, transparent); }
+.band h1 { font: 600 clamp(32px, 10vw, 56px)/1.05 var(--f-titel); letter-spacing: .08em; text-transform: uppercase; }
+.tod .band h1 { color: #a8231a; text-shadow: 0 0 30px rgba(168, 35, 26, .45); animation: tod 2.4s ease both; }
+.band.gold h1 { color: var(--gold); text-shadow: 0 0 30px rgba(224, 184, 102, .4); animation: tod 1.8s ease both; }
+@keyframes tod { 0% { opacity: 0; transform: scale(1.06); letter-spacing: .02em; } 100% { opacity: 1; transform: scale(1); letter-spacing: .08em; } }
+.spaet { animation: einblenden .8s ease 1.4s both; }
+@keyframes einblenden { from { opacity: 0; transform: translateY(8px); } }
+.tod-von { font: 600 12.5px/1 var(--f-titel); letter-spacing: .24em; text-transform: uppercase; color: var(--blass); }
+.tod-begriff { font: 700 clamp(26px, 8vw, 36px)/1.1 var(--f-titel); color: #f1e3c8; overflow-wrap: anywhere; }
+.tod-def { font-size: 17px; color: #d5c9b5; text-align: left; }
+.tod .merke { text-align: left; }
+.tod-seelen { font-size: 15.5px; color: #e8a597; text-align: left; border-top: 1px solid #3a1d18; padding-top: 12px; }
+.feuer-gross { align-items: center; }
+.gross-flamme { width: 120px; height: 200px; margin: 10px 0 0; }
+.bilanz { font-size: 18px; }
+.bilanz b { color: var(--gold); font-family: var(--f-titel); }
+.nebel { position: relative; text-align: left; justify-content: flex-end; }
+.nebel-schleier { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 40% at 30% 40%, rgba(220, 228, 240, .16), transparent), radial-gradient(50% 35% at 75% 60%, rgba(220, 228, 240, .12), transparent); animation: nebel 7s ease-in-out infinite alternate; }
+.boss-gross { font: 800 clamp(25px, 7.2vw, 46px)/1.08 var(--f-titel); color: #f4e2cf; text-shadow: 0 2px 24px #000; overflow-wrap: anywhere; hyphens: auto; }
+.boss-gross small { display: block; margin-top: 6px; font: italic 500 22px/1.2 var(--f-zitat); color: #cfb5a4; }
+.klein-boss { font-size: clamp(22px, 6.4vw, 32px); }
+.nebel .zeile { margin-top: 6px; }
+.sieg .gross-inhalt p { max-width: 36ch; }
+
+/* ---------- Hinweis bei neuer Fassung ---------- */
+.toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }
+html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
+
+/* ---------- Breite Bildschirme ---------- */
+@media (min-width: 720px) {
+  .app { padding-top: calc(var(--oben) + 28px); }
+  .hud { margin-top: calc(-28px - var(--oben)); padding-top: calc(var(--oben) + 18px); }
+  .kacheln { grid-template-columns: 1fr 1fr; }
+  .kacheln li:last-child { grid-column: 1 / -1; }
+  .titel { padding-top: 22vh; }
+}
+
+/* ---------- Weniger Bewegung ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
+  .flamme b { display: none; }
+}

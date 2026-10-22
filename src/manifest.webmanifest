@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Prüfungsprügler",
+  "short_name": "Prügler",
+  "description": "Lernkarten für die AP1 als Souls-like: richtig bringt Seelen, falsch kostet Leben. Sechs Kreise, sechs Bosse, ein Prüfungsausschuss.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0908",
+  "theme_color": "#0b0908",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

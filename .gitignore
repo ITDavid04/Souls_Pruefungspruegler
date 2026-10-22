@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node und Build
+node_modules/
+docs/
+tools/shots/
