@@ -107,7 +107,7 @@ try {
   await page.goto(BASE, { waitUntil: 'networkidle0' });
 
   await ansicht(page, 'titel');
-  check('Titel beim ersten Start mit Regeln und Spuk', await page.$eval('.logo', e => e.textContent.includes('prügler')) && await page.$('.titel .regeln') !== null && await page.$('.bg .spuk canvas') !== null);
+  check('Titel beim ersten Start mit Regeln und Spuk', await page.$eval('.logo', e => e.textContent.includes('prügler')) && await page.$('.titel .regeln') !== null && await page.$('.bg .spuk canvas') !== null && await page.$('.tor-schrift .kritzel') !== null);
   /* Augen: über einige Sekunden messen, wo sie auftauchen, und ins Titelbild (1600 × 900) zurückrechnen */
   const augenOrte = [];
   for (let i = 0; i < 16; i++) {

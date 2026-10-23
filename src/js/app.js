@@ -4,7 +4,7 @@
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
-import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
+import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -145,7 +145,7 @@ function titel(){
   }
   app.innerHTML =
     '<main class="titel' + (erstes ? ' erstes' : '') + '">' +
-      '<p class="inschrift" aria-hidden="true">' + esc(INSCHRIFT) + '</p>' +
+      '<div class="tor-schrift" aria-hidden="true"><p class="inschrift">' + esc(INSCHRIFT) + '</p><p class="kritzel">' + esc(INSCHRIFT_NACHTRAG) + '</p></div>' +
       '<div class="titel-unten">' +
         '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
         '<h1 class="logo">Prüfungs&shy;prügler</h1>' +
@@ -201,18 +201,18 @@ function spuk(){
 
   /* Roter Schleier: feine Fäden fallen von oben und vergehen, bevor sie die Mitte erreichen */
   const neu = anfang => ({
-    x: Math.random() * (W + 200 * dpr) - 100 * dpr, y: anfang ? Math.random() * H * 0.7 : -Math.random() * H * 0.25,
-    l: (Math.random() * 24 + 10) * dpr, v: (Math.random() * 2 + 1.4) * dpr, a: Math.random() * 0.3 + 0.1, w: (Math.random() < 0.3 ? 1.4 : 0.8) * dpr
+    x: Math.random() * (W + 200 * dpr) - 100 * dpr, y: anfang ? Math.random() * H * 0.8 : -Math.random() * H * 0.25,
+    l: (Math.random() * 28 + 14) * dpr, v: (Math.random() * 2 + 1.4) * dpr, a: Math.random() * 0.34 + 0.18, w: (Math.random() < 0.35 ? 1.6 : 1) * dpr
   });
-  const faeden = Array.from({ length: 110 }, () => neu(true));
+  const faeden = Array.from({ length: 160 }, () => neu(true));
   const zeichnen = () => {
     ctx.clearRect(0, 0, W, H);
     ctx.lineCap = 'round';
     for (const f of faeden) {
       f.y += f.v; f.x += f.v * 0.12;
-      const rest = 1 - f.y / (H * 0.72);
+      const rest = 1 - f.y / (H * 0.85);
       if (rest <= 0) { Object.assign(f, neu(false)); continue; }
-      ctx.strokeStyle = 'rgba(150,16,12,' + (f.a * Math.min(1, rest * 1.6)).toFixed(3) + ')';
+      ctx.strokeStyle = 'rgba(176,20,14,' + (f.a * Math.min(1, rest * 1.6)).toFixed(3) + ')';
       ctx.lineWidth = f.w;
       ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x - f.l * 0.12, f.y - f.l); ctx.stroke();
     }
@@ -241,7 +241,7 @@ function spuk(){
   const fluestern = $('.fluestern', huelle);
   const fluester = () => {
     const w = document.createElement('span');
-    w.textContent = '… ' + K.pick(KARTEN).n.replace(/\s*\(.*?\)\s*/g, '').toLowerCase() + ' …';
+    w.textContent = '… ' + (Math.random() < 0.22 ? K.pick(FLUESTERN_SPASS) : K.pick(KARTEN).n.replace(/\s*\(.*?\)\s*/g, '').toLowerCase()) + ' …';
     w.style.left = (4 + Math.random() * 56) + '%';
     w.style.top = (6 + Math.random() * 84) + '%';
     fluestern.appendChild(w);

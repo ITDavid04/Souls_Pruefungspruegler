@@ -29,8 +29,12 @@ Die Gesimse folgen Dantes Todsünden von unten nach oben:
 
 ## Der Titel
 
-Der Titel kommt bei jedem Start der App. Über dem Tor steht die Inschrift, von oben regnet ein leichter roter Schleier herab,
-in der Toröffnung glimmt es rot, Augen öffnen sich dort und blinzeln, im Nebel flüstert es Prüfungsbegriffe, und am Rand schlägt ein Herz.
+Der Titel kommt bei jedem Start der App. Über dem Tor steht die Inschrift, darunter mit Kreide nachgetragen „Kleingedrucktes: Wer die Karten lernt,
+kommt wieder raus.“ Von oben regnet ein roter Schleier herab, in der Toröffnung glimmt es rot, Augen öffnen sich dort und blinzeln,
+und im Nebel flüstert es Prüfungsbegriffe, ab und zu auch „hat jemand meinen Kaffee gesehen“. Alle Lichter atmen langsam und ohne Pause.
+
+Die Angst ist zum Spielen da, nicht für die Prüfung: lieber Augenzwinkern als Herzklopfen. Deshalb gibt es keinen Herzschlag
+und kein Flackern, und jeder düstere Satz bekommt irgendwo einen Ausweg.
 Augen und Glut liegen in einer Ebene mit den Maßen des Titelbilds (`TITEL_TOR` in `welt.js`), damit sie im Tor bleiben, egal wie groß der Bildschirm ist. Beim ersten Mal stehen die Regeln darunter.
 Danach erinnert sich der Titel: an offene Gänge („Weiterkämpfen“ mit Ort und Karte), an liegengebliebene Seelen und daran, wie oft du gestorben bist.
 Bei „Bewegung reduzieren“ bleibt alles still.

@@ -142,6 +142,10 @@ export const ABSPANN_BILD = 'kreis-01';
 export const TITEL_ZITAT = 'Hier unten wimmern jene, die nie wählten, nie tippten, nie aufdeckten. Ewig jagen sie einem leeren Auswahlfeld nach. Du nicht. Du steigst hinab, durch das Eis, und auf der anderen Seite wieder hinauf.';
 /* Über dem Tor auf dem Titel, frei nach Inferno, Gesang III */
 export const INSCHRIFT = 'Ihr, die ihr eintretet, lasst alle Hoffnung fahren';
+/* Darunter, wie mit Kreide nachgetragen: Angst nur zum Spaß, nicht vor der echten Prüfung */
+export const INSCHRIFT_NACHTRAG = 'Kleingedrucktes: Wer die Karten lernt, kommt wieder raus.';
+/* Zwischen die geflüsterten Begriffe mischt sich ab und zu einer von diesen */
+export const FLUESTERN_SPASS = ['hat jemand meinen kaffee gesehen', 'nur noch eine karte', 'war das jetzt brutto oder netto', 'gibt es davon ein backup', 'ist das prüfungsrelevant', 'ich hab doch gelernt', 'wo ist das nächste lagerfeuer', 'drei lagerfeuer, dann wird es besser'];
 /* Für alle, die schon einmal hier waren; {tode} und {seelen} werden eingesetzt */
 export const WIEDERKEHR = {
   lauf: 'Du hast den Gang nicht beendet. Die Karte wartet noch auf dich. Sie hat Zeit.',
