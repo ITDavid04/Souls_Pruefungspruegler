@@ -27,6 +27,13 @@ Die Gesimse folgen Dantes Todsünden von unten nach oben:
 | Geiz | Wirtschafts- und Sozialkunde | Die Probezeit |
 | Völlerei | Datenbanken und SQL | Der kartesische JOIN |
 
+## Der Titel
+
+Der Titel kommt bei jedem Start der App. Über dem Tor flackert die Inschrift, im Torbogen öffnen sich Augen und blinzeln,
+im Nebel flüstert es Prüfungsbegriffe, Asche steigt auf, und am Rand schlägt ein Herz. Beim ersten Mal stehen die Regeln darunter.
+Danach erinnert sich der Titel: an offene Gänge („Weiterkämpfen“ mit Ort und Karte), an liegengebliebene Seelen und daran, wie oft du gestorben bist.
+Bei „Bewegung reduzieren“ bleibt alles still.
+
 ## So läuft ein Spiel
 
 | **Schritt** | **Was passiert** |

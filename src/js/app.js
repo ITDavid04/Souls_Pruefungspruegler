@@ -4,7 +4,7 @@
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
-import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_ZITAT, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
+import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_ZITAT, INSCHRIFT, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -111,10 +111,13 @@ function vibrieren(muster){
 
 /* ---------- Ansichten ---------- */
 let rastSatz = null;
+/* Der Titel kommt bei jedem Start der App, nicht nur beim ersten; erst danach geht es dorthin, wo man war */
+let titelGezeigt = false, aufraeumen = null;
 function render(){
   stoppeUhr();
-  document.documentElement.classList.toggle('im-kampf', !!S.lauf && !S.zeige);
-  if (!S.gestartet) return titel();
+  if (aufraeumen) { aufraeumen(); aufraeumen = null; }
+  document.documentElement.classList.toggle('im-kampf', titelGezeigt && !!S.lauf && !S.zeige);
+  if (!titelGezeigt) return titel();
   if (S.zeige) return zeige();
   if (S.lauf) return kampf();
   let m = location.hash.match(/^#\/kreis\/(\d+)$/);
@@ -125,24 +128,134 @@ function render(){
 }
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
 
-/* Titel: nur beim ersten Start */
+/* Titel: bei jedem Start. Wer zum ersten Mal hier ist, bekommt die Regeln, alle anderen einen Satz, der sich erinnert. */
 function titel(){
-  hintergrund(TITEL_BILD, 'titel');
+  hintergrund(TITEL_BILD, 'titel', 'nebel');
+  const erstes = !S.gestartet, L = S.lauf;
+  const bosse = KREISE.filter(k => kz(k.lf).boss).length + Object.keys(ARENEN).filter(id => besiegt(id)).length;
+  let satz = TITEL_ZITAT, knopf = 'Hinabsteigen', klein = '';
+  if (!erstes) {
+    satz = L ? WIEDERKEHR.lauf : S.blut ? WIEDERKEHR.blut.replace('{seelen}', zahl(S.blut.seelen))
+      : S.tode > 1 ? WIEDERKEHR.tode.replace('{tode}', zahl(S.tode)) : S.tode === 1 ? WIEDERKEHR.tod1 : K.pick(WIEDERKEHR.sonst);
+    knopf = L && L.leben > 0 && !S.zeige ? 'Weiterkämpfen' : 'Am Lagerfeuer erwachen';
+    if (L && L.leben > 0 && !S.zeige) {
+      const O = ortDaten(L.ort);
+      klein = esc(O.ort) + ' · ' + (L.art === 'boss' ? esc(O.phasen[L.phase].name) : 'Karte ' + (L.pos + 1) + ' von ' + L.plan.length);
+    }
+  }
   app.innerHTML =
-    '<main class="titel">' +
-      '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
-      '<h1 class="logo">Prüfungs&shy;prügler</h1>' +
-      '<blockquote class="zitat">' + esc(TITEL_ZITAT) + '</blockquote>' +
-      '<ul class="regeln">' +
-        '<li><b>Richtig</b> bringt Seelen, <b>falsch</b> kostet Leben.</li>' +
-        '<li><b>Stirbst du</b>, bleiben deine Seelen bei der Karte, die dich erledigt hat. Beantworte sie im nächsten Gang richtig, und sie gehören wieder dir.</li>' +
-        '<li><b>Drei Lagerfeuer</b> in einem Kreis öffnen das Nebeltor zum Boss.</li>' +
-        '<li>Unten im Eis wartet der <b>Zwischenprüfer</b>. Dahinter geht es den Berg der AP2 hinauf, bis zum <b>Prüfungsausschuss</b>.</li>' +
-      '</ul>' +
-      '<button type="button" class="knopf haupt" id="los">Hinabsteigen</button>' +
+    '<main class="titel' + (erstes ? ' erstes' : '') + '">' +
+      '<p class="inschrift" aria-hidden="true">' + esc(INSCHRIFT) + '</p>' +
+      '<div class="titel-unten">' +
+        '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
+        '<h1 class="logo">Prüfungs&shy;prügler</h1>' +
+        '<blockquote class="zitat">' + esc(satz) + '</blockquote>' +
+        (erstes ? '' : '<p class="titel-stand">Stufe <b>' + S.stufe + '</b> · <b>' + zahl(S.seelen) + '</b> Seelen · <b>' + bosse + '</b> von 14 Bossen · <b>' + zahl(S.tode) + '</b> ' + (S.tode === 1 ? 'Tod' : 'Tode') + '</p>') +
+        '<button type="button" class="knopf haupt" id="los">' + knopf + (klein ? '<small>' + klein + '</small>' : '') + '</button>' +
+        (erstes ? '<ul class="regeln">' +
+          '<li><b>Richtig</b> bringt Seelen, <b>falsch</b> kostet Leben.</li>' +
+          '<li><b>Stirbst du</b>, bleiben deine Seelen bei der Karte, die dich erledigt hat. Beantworte sie im nächsten Gang richtig, und sie gehören wieder dir.</li>' +
+          '<li><b>Drei Lagerfeuer</b> in einem Kreis öffnen das Nebeltor zum Boss.</li>' +
+          '<li>Unten im Eis wartet der <b>Zwischenprüfer</b>. Dahinter geht es den Berg der AP2 hinauf, bis zum <b>Prüfungsausschuss</b>.</li>' +
+        '</ul>' : '') +
+      '</div>' +
     '</main>';
-  $('#los').addEventListener('click', () => { S.gestartet = true; sichern(); location.hash = ''; render(); });
+  let los = false;
+  $('#los').addEventListener('click', () => {
+    if (los) return;
+    los = true;
+    S.gestartet = true; sichern();
+    const weiter = () => { titelGezeigt = true; render(); window.scrollTo(0, 0); };
+    if (ruhig()) return weiter();
+    document.body.classList.add('abstieg');
+    setTimeout(() => { weiter(); requestAnimationFrame(() => document.body.classList.remove('abstieg')); }, 700);
+  });
+  aufraeumen = spuk();
   fokus('#los');
+}
+
+/* Der Spuk auf dem Titel: Asche, Augen im Torbogen, geflüsterte Begriffe, flackerndes Licht. Läuft nur dort und nie bei weniger Bewegung. */
+function spuk(){
+  if (ruhig()) return null;
+  const huelle = document.createElement('div');
+  huelle.className = 'spuk';
+  huelle.setAttribute('aria-hidden', 'true');
+  huelle.innerHTML = '<div class="tor-glut"></div><canvas class="asche"></canvas><div class="augen"></div><div class="fluestern"></div>';
+  $('.bg').appendChild(huelle);
+  const uhren = [];
+  const spaeter = (fn, ms) => uhren.push(setTimeout(fn, ms));
+
+  /* Asche steigt auf, ein paar Funken dazwischen */
+  const cv = $('.asche', huelle), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  let W = 0, H = 0, raf = 0;
+  const groesse = () => { W = cv.width = Math.floor(window.innerWidth * dpr); H = cv.height = Math.floor(window.innerHeight * dpr); };
+  groesse();
+  window.addEventListener('resize', groesse);
+  const neu = anfang => ({
+    x: Math.random() * W, y: anfang ? Math.random() * H : H + 10 * dpr, r: (Math.random() * 1.5 + 0.4) * dpr,
+    vy: -(Math.random() * 0.35 + 0.08) * dpr, vx: (Math.random() - 0.5) * 0.25 * dpr, a: Math.random() * 0.45 + 0.12,
+    glut: Math.random() < 0.16, t: Math.random() * 6.28
+  });
+  const teile = Array.from({ length: 70 }, () => neu(true));
+  const zeichnen = () => {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of teile) {
+      p.t += 0.02; p.x += p.vx + Math.sin(p.t) * 0.3 * dpr; p.y += p.vy;
+      if (p.y < -10 * dpr) Object.assign(p, neu(false));
+      ctx.fillStyle = p.glut ? 'rgba(255,130,50,' + p.a + ')' : 'rgba(205,198,190,' + (p.a * 0.7) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+    }
+    raf = requestAnimationFrame(zeichnen);
+  };
+  zeichnen();
+
+  /* Augen öffnen sich im dunklen Torbogen, blinzeln, schließen sich wieder; höchstens zwei Paare gleichzeitig */
+  const augen = $('.augen', huelle);
+  const auge = () => {
+    if (augen.childElementCount < 2) {
+      const e = document.createElement('i');
+      e.className = 'auge';
+      const breit = window.innerWidth > window.innerHeight;
+      e.style.left = (breit ? 42 + Math.random() * 14 : 34 + Math.random() * 28) + '%';
+      e.style.top = (breit ? 14 + Math.random() * 24 : 9 + Math.random() * 18) + 'vh';
+      e.style.setProperty('--s', (0.6 + Math.random() * 0.8).toFixed(2));
+      e.style.setProperty('--dauer', (4 + Math.random() * 3).toFixed(1) + 's');
+      augen.appendChild(e);
+      spaeter(() => e.remove(), 7500);
+    }
+    spaeter(auge, 2600 + Math.random() * 3200);
+  };
+  spaeter(auge, 1600);
+
+  /* Geflüsterte Begriffe aus den Karten, kaum zu lesen */
+  const fluestern = $('.fluestern', huelle);
+  const fluester = () => {
+    const w = document.createElement('span');
+    w.textContent = '… ' + K.pick(KARTEN).n.replace(/\s*\(.*?\)\s*/g, '').toLowerCase() + ' …';
+    w.style.left = (4 + Math.random() * 56) + '%';
+    w.style.top = (6 + Math.random() * 84) + '%';
+    fluestern.appendChild(w);
+    spaeter(() => w.remove(), 7000);
+    spaeter(fluester, 1700 + Math.random() * 1800);
+  };
+  spaeter(fluester, 900);
+
+  /* Das Licht flackert, als wäre irgendwo eine Röhre kaputt */
+  const flackern = () => {
+    document.body.classList.add('flackert');
+    spaeter(() => document.body.classList.remove('flackert'), 90 + Math.random() * 220);
+    if (Math.random() < 0.4) spaeter(() => { document.body.classList.add('flackert'); spaeter(() => document.body.classList.remove('flackert'), 70); }, 260);
+    spaeter(flackern, 3000 + Math.random() * 6000);
+  };
+  spaeter(flackern, 2400);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener('resize', groesse);
+    uhren.forEach(clearTimeout);
+    document.body.classList.remove('flackert');
+    huelle.remove();
+  };
 }
 
 function kachel(k){

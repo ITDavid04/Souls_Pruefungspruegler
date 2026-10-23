@@ -137,6 +137,16 @@ export const TITEL_BILD = 'kreis-00';
 export const BERG_BILD = 'berg';
 export const ABSPANN_BILD = 'kreis-01';
 export const TITEL_ZITAT = 'Hier unten wimmern jene, die nie wählten, nie tippten, nie aufdeckten. Ewig jagen sie einem leeren Auswahlfeld nach. Du nicht. Du steigst hinab, durch das Eis, und auf der anderen Seite wieder hinauf.';
+/* Über dem Tor auf dem Titel, frei nach Inferno, Gesang III */
+export const INSCHRIFT = 'Ihr, die ihr eintretet, lasst alle Hoffnung fahren';
+/* Für alle, die schon einmal hier waren; {tode} und {seelen} werden eingesetzt */
+export const WIEDERKEHR = {
+  lauf: 'Du hast den Gang nicht beendet. Die Karte wartet noch auf dich. Sie hat Zeit.',
+  blut: 'Irgendwo da unten liegen noch {seelen} deiner Seelen. Manchmal flüstern sie deinen Namen.',
+  tode: '{tode} Mal bist du gestorben. Das Tor hat mitgezählt.',
+  tod1: 'Einmal bist du schon gestorben. Das Tor hat es nicht vergessen.',
+  sonst: ['Du warst schon einmal hier. Die Karten erinnern sich an dich.', 'Das Tor steht offen. Es war nie geschlossen.', 'Unten brennt noch dein Lagerfeuer. Hinter dir fällt das Tor ins Schloss.']
+};
 export const DURCHGANG = 'Du kletterst am Pelz des Zwischenprüfers hinab, tiefer als jede Hölle, durch die Mitte der Erde. Irgendwo dreht sich alles um, und plötzlich ist unten oben. Du trittst ins Freie. Über dir stehen vier Sterne, die noch niemand gesehen hat. Vor dir, mitten im Meer, ein Berg.';
 
 /* Sätze am Lagerfeuer, zufällig; am Berg kommen eigene dazu */

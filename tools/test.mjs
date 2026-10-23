@@ -66,6 +66,16 @@ async function weiter(page){
   await klick(page, '#weiter');
   await warte(page, v => localStorage.getItem('spp.spiel') !== v, JSON.stringify(vor));
 }
+/* Der Titel kommt bei jedem Start; durchklicken und warten, bis er weg ist */
+async function durchTitel(page){
+  await ansicht(page, 'titel');
+  await klick(page, '#los');
+  await warte(page, () => { const m = document.querySelector('#app > main'); return m && !m.classList.contains('titel') && !document.body.classList.contains('abstieg'); });
+}
+async function neuLaden(page, warten = 'networkidle0'){
+  await page.reload({ waitUntil: warten });
+  await durchTitel(page);
+}
 /* Einen Bosskampf komplett richtig spielen, bis ein großer Bildschirm erscheint */
 async function bossRichtig(page){
   for (let i = 0; i < 40; i++) {
@@ -97,11 +107,13 @@ try {
   await page.goto(BASE, { waitUntil: 'networkidle0' });
 
   await ansicht(page, 'titel');
-  check('Titel beim ersten Start', await page.$eval('.logo', e => e.textContent.includes('prügler')));
+  check('Titel beim ersten Start mit Regeln und Spuk', await page.$eval('.logo', e => e.textContent.includes('prügler')) && await page.$('.titel .regeln') !== null && await page.$('.bg .spuk canvas') !== null);
+  await sleep(2600);
   await foto(page, '01-titel');
 
-  await klick(page, '#los');
+  await durchTitel(page);
   await ansicht(page, 'hub');
+  check('Nach dem Titel ist der Spuk weg', await page.$('.bg .spuk') === null && !(await page.evaluate(() => document.body.classList.contains('flackert'))));
   const kacheln = await page.$$eval('.kacheln .kachel', k => k.length);
   const zu = await page.$$eval('.kacheln .kachel.zu', k => k.map(e => e.querySelector('.kachel-name').textContent.replace(/\u00AD/g, '')));
   check('Lagerfeuer: sechs Kreise, Zwischenprüfer, Berg und Ausschuss noch zu', kacheln === 9 && zu.join() === 'Der Zwischenprüfer,Der Läuterungsberg,Der Prüfungsausschuss', `${kacheln} Kacheln, zu: ${zu.join(', ')}`);
@@ -129,6 +141,11 @@ try {
   await weiter(page);
   const vorNeu = (await spiel(page)).lauf.frage;
   await page.reload({ waitUntil: 'networkidle0' });
+  await ansicht(page, 'titel');
+  check('Titel kommt bei jedem Start, mitten im Gang mit „Weiterkämpfen“', await page.$eval('#los', e => e.textContent.startsWith('Weiterkämpfen')) && await page.$('.titel .regeln') === null);
+  await sleep(2600);
+  await foto(page, '01b-titel-wiederkehr');
+  await durchTitel(page);
   await ansicht(page, 'kampf');
   const nachNeu = (await spiel(page)).lauf.frage;
   check('Nach dem Neuladen geht es mit derselben Frage weiter', vorNeu.id === nachNeu.id && vorNeu.typ === nachNeu.typ);
@@ -183,7 +200,7 @@ try {
   await weiter(page);
   const lang = await page.evaluate(() => JSON.parse(document.getElementById('karten').textContent).find(c => c.l === 1 && c.n.replace(/\s*\(.*?\)\s*/g, '').length >= 8 && c.n.length <= 20).i);
   await setze(page, 'S.lauf.frage = { id: a, typ: "tippen", optionen: null, beantwortet: false, nachgeholt: false, blut: false };', lang);
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await ansicht(page, 'kampf');
   await antworte(page, true, true);
   check('Tippfehler zählt als Treffer', await page.$eval('.urteil', e => e.classList.contains('knapp')));
@@ -198,7 +215,7 @@ try {
 
   /* Nebeltor und Boss */
   await setze(page, 'S.kreise[1].feuer = 3;');
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await ansicht(page, 'kreis-seite');
   await klick(page, '#tor');
   await ansicht(page, 'nebel');
@@ -227,7 +244,7 @@ try {
   const vor = await page.$$eval('.voraus li', l => l.map(e => e.className));
   check('Kokytos zeigt, welche Bosse noch fehlen', vor.length === 6 && vor.filter(c => c === 'erfuellt').length === 1 && await page.$('#tor') === null, vor.join());
   await setze(page, 'for (const n of [2, 3, 4, 5, 6]) S.kreise[n] = { feuer: 3, boss: true };');
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await ansicht(page, 'arena-kokytos');
   await sleep(900);
   await foto(page, '13-kokytos');
@@ -278,7 +295,7 @@ try {
   /* Der Prüfungsausschuss: Uhr, kein Kaffee, durchfallen, dann bestehen und Neues Spiel+ */
   await setze(page, 'for (const n of [7, 8, 9, 10, 11, 12]) S.kreise[n] = { feuer: 3, boss: true };');
   await page.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await ansicht(page, 'arena-gipfel');
   await sleep(900);
   await foto(page, '19-gipfel');
@@ -293,7 +310,7 @@ try {
   await weiter(page);
   const lebenVorUhr = (await spiel(page)).lauf.leben;
   await setze(page, 'S.lauf.frage.bis = Date.now() - 1000;');
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).lauf.frage.beantwortet);
   const u = await spiel(page);
   check('Abgelaufene Uhr zählt als Fehler, auch nach dem Neuladen', u.lauf.frage.zeit && u.lauf.leben === lebenVorUhr - 40, `Leben ${u.lauf.leben}`);
@@ -329,7 +346,7 @@ try {
   /* Stufe aufsteigen */
   await setze(page, 'S.seelen = 1000;');
   await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
-  await page.reload({ waitUntil: 'networkidle0' });
+  await neuLaden(page);
   await ansicht(page, 'hub');
   await klick(page, '#aufstieg');
   await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).stufe === 2);
@@ -345,10 +362,11 @@ try {
   const inst = await cdp.send('Page.getInstallabilityErrors');
   check('Chrome hält die App für installierbar', inst.installabilityErrors.length === 0, inst.installabilityErrors.map(e => e.errorId).join(', '));
   await page.reload({ waitUntil: 'networkidle0' });
+  await durchTitel(page);
   check('Service Worker übernimmt nach dem Neuladen', await page.evaluate(() => !!navigator.serviceWorker.controller));
   await page.setOfflineMode(true);
   for (const t of ctx.targets()) if (t.type() === 'service_worker') { const s = await t.createCDPSession(); await s.send('Network.enable'); await s.send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }); }
-  await page.reload({ waitUntil: 'load' });
+  await neuLaden(page, 'load');
   await ansicht(page, 'hub');
   const bilderOffline = await page.evaluate(async () => (await Promise.all([...document.querySelectorAll('.kachel')].map(k => fetch(getComputedStyle(k).backgroundImage.match(/url\("([^"]+)"\)/)[1]).then(r => r.ok, () => false)))).every(Boolean));
   check('Startet ohne Netz, Bilder inklusive', bilderOffline);
@@ -362,7 +380,9 @@ try {
   await d.setViewport({ width: 1440, height: 900 });
   const derrs = watch(d, 'Desktop');
   await d.goto(BASE, { waitUntil: 'networkidle0' });
-  await klick(d, '#los');
+  await sleep(2600);
+  await foto(d, '29-desktop-titel');
+  await durchTitel(d);
   await ansicht(d, 'hub');
   await sleep(1000);
   await foto(d, '30-desktop-lagerfeuer');
