@@ -108,12 +108,22 @@ try {
 
   await ansicht(page, 'titel');
   check('Titel beim ersten Start mit Regeln und Spuk', await page.$eval('.logo', e => e.textContent.includes('prügler')) && await page.$('.titel .regeln') !== null && await page.$('.bg .spuk canvas') !== null);
-  await sleep(2600);
+  /* Augen: über einige Sekunden messen, wo sie auftauchen, und ins Titelbild (1600 × 900) zurückrechnen */
+  const augenOrte = [];
+  for (let i = 0; i < 16; i++) {
+    augenOrte.push(...await page.evaluate(() => {
+      const eb = document.querySelector('.tor-ebene').getBoundingClientRect();
+      return [...document.querySelectorAll('.auge')].map(a => { const r = a.getBoundingClientRect(); return [((r.left + r.width / 2) - eb.left) / eb.width * 1600, ((r.top + r.height / 2) - eb.top) / eb.height * 900]; });
+    }));
+    await sleep(400);
+  }
+  const ausserhalb = augenOrte.filter(([x, y]) => !(x >= 765 && x <= 841 && y >= 183 && y <= 313));
+  check('Augen erscheinen nur in der Toröffnung', augenOrte.length > 0 && !ausserhalb.length, augenOrte.length + ' Messungen' + (ausserhalb.length ? ', außerhalb: ' + ausserhalb.map(p => p.map(Math.round).join('/')).join(' ') : ''));
   await foto(page, '01-titel');
 
   await durchTitel(page);
   await ansicht(page, 'hub');
-  check('Nach dem Titel ist der Spuk weg', await page.$('.bg .spuk') === null && !(await page.evaluate(() => document.body.classList.contains('flackert'))));
+  check('Nach dem Titel ist der Spuk weg', await page.$('.bg .spuk') === null);
   const kacheln = await page.$$eval('.kacheln .kachel', k => k.length);
   const zu = await page.$$eval('.kacheln .kachel.zu', k => k.map(e => e.querySelector('.kachel-name').textContent.replace(/\u00AD/g, '')));
   check('Lagerfeuer: sechs Kreise, Zwischenprüfer, Berg und Ausschuss noch zu', kacheln === 9 && zu.join() === 'Der Zwischenprüfer,Der Läuterungsberg,Der Prüfungsausschuss', `${kacheln} Kacheln, zu: ${zu.join(', ')}`);

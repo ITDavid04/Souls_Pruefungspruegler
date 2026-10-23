@@ -4,7 +4,7 @@
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
-import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_ZITAT, INSCHRIFT, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
+import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -174,51 +174,61 @@ function titel(){
   fokus('#los');
 }
 
-/* Der Spuk auf dem Titel: Asche, Augen im Torbogen, geflüsterte Begriffe, flackerndes Licht. Läuft nur dort und nie bei weniger Bewegung. */
+/* Der Spuk auf dem Titel: roter Schleier, der von oben herabregnet, Augen in der Toröffnung, geflüsterte Begriffe.
+   Läuft nur dort und nie bei weniger Bewegung. Augen und Glut hängen an einer Ebene in Bild-Koordinaten,
+   die genauso liegt wie das Titelbild (cover, mittig) und mit ihm atmet, damit sie im Tor bleiben. */
 function spuk(){
   if (ruhig()) return null;
   const huelle = document.createElement('div');
   huelle.className = 'spuk';
   huelle.setAttribute('aria-hidden', 'true');
-  huelle.innerHTML = '<div class="tor-glut"></div><canvas class="asche"></canvas><div class="augen"></div><div class="fluestern"></div>';
+  huelle.innerHTML = '<canvas class="regen"></canvas><div class="tor-ebene"><div class="tor-glut"></div><div class="augen"></div></div><div class="fluestern"></div>';
   $('.bg').appendChild(huelle);
   const uhren = [];
   const spaeter = (fn, ms) => uhren.push(setTimeout(fn, ms));
-
-  /* Asche steigt auf, ein paar Funken dazwischen */
-  const cv = $('.asche', huelle), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const T = TITEL_TOR, ebene = $('.tor-ebene', huelle), cv = $('.regen', huelle), ctx = cv.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
   let W = 0, H = 0, raf = 0;
-  const groesse = () => { W = cv.width = Math.floor(window.innerWidth * dpr); H = cv.height = Math.floor(window.innerHeight * dpr); };
-  groesse();
-  window.addEventListener('resize', groesse);
+  const lage = () => {
+    W = cv.width = Math.floor(window.innerWidth * dpr); H = cv.height = Math.floor(window.innerHeight * dpr);
+    const s = Math.max(window.innerWidth / T.breite, window.innerHeight / T.hoehe);
+    Object.assign(ebene.style, { width: T.breite * s + 'px', height: T.hoehe * s + 'px', left: (window.innerWidth - T.breite * s) / 2 + 'px', top: (window.innerHeight - T.hoehe * s) / 2 + 'px' });
+    ebene.style.setProperty('--b', s);
+  };
+  lage();
+  window.addEventListener('resize', lage);
+  const glut = $('.tor-glut', ebene);
+  Object.assign(glut.style, { left: T.glut[0] / T.breite * 100 + '%', top: T.glut[1] / T.hoehe * 100 + '%', width: T.glut[2] * 2 / T.breite * 100 + '%' });
+
+  /* Roter Schleier: feine Fäden fallen von oben und vergehen, bevor sie die Mitte erreichen */
   const neu = anfang => ({
-    x: Math.random() * W, y: anfang ? Math.random() * H : H + 10 * dpr, r: (Math.random() * 1.5 + 0.4) * dpr,
-    vy: -(Math.random() * 0.35 + 0.08) * dpr, vx: (Math.random() - 0.5) * 0.25 * dpr, a: Math.random() * 0.45 + 0.12,
-    glut: Math.random() < 0.16, t: Math.random() * 6.28
+    x: Math.random() * (W + 200 * dpr) - 100 * dpr, y: anfang ? Math.random() * H * 0.7 : -Math.random() * H * 0.25,
+    l: (Math.random() * 24 + 10) * dpr, v: (Math.random() * 2 + 1.4) * dpr, a: Math.random() * 0.3 + 0.1, w: (Math.random() < 0.3 ? 1.4 : 0.8) * dpr
   });
-  const teile = Array.from({ length: 70 }, () => neu(true));
+  const faeden = Array.from({ length: 110 }, () => neu(true));
   const zeichnen = () => {
     ctx.clearRect(0, 0, W, H);
-    for (const p of teile) {
-      p.t += 0.02; p.x += p.vx + Math.sin(p.t) * 0.3 * dpr; p.y += p.vy;
-      if (p.y < -10 * dpr) Object.assign(p, neu(false));
-      ctx.fillStyle = p.glut ? 'rgba(255,130,50,' + p.a + ')' : 'rgba(205,198,190,' + (p.a * 0.7) + ')';
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+    ctx.lineCap = 'round';
+    for (const f of faeden) {
+      f.y += f.v; f.x += f.v * 0.12;
+      const rest = 1 - f.y / (H * 0.72);
+      if (rest <= 0) { Object.assign(f, neu(false)); continue; }
+      ctx.strokeStyle = 'rgba(150,16,12,' + (f.a * Math.min(1, rest * 1.6)).toFixed(3) + ')';
+      ctx.lineWidth = f.w;
+      ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x - f.l * 0.12, f.y - f.l); ctx.stroke();
     }
     raf = requestAnimationFrame(zeichnen);
   };
   zeichnen();
 
-  /* Augen öffnen sich im dunklen Torbogen, blinzeln, schließen sich wieder; höchstens zwei Paare gleichzeitig */
-  const augen = $('.augen', huelle);
+  /* Augen öffnen sich in der Toröffnung, blinzeln, schließen sich wieder; höchstens zwei Paare gleichzeitig */
+  const augen = $('.augen', ebene);
   const auge = () => {
     if (augen.childElementCount < 2) {
-      const e = document.createElement('i');
+      const band = K.pick(T.augen), e = document.createElement('i');
       e.className = 'auge';
-      const breit = window.innerWidth > window.innerHeight;
-      e.style.left = (breit ? 42 + Math.random() * 14 : 34 + Math.random() * 28) + '%';
-      e.style.top = (breit ? 14 + Math.random() * 24 : 9 + Math.random() * 18) + 'vh';
-      e.style.setProperty('--s', (0.6 + Math.random() * 0.8).toFixed(2));
+      e.style.left = (band[0] + Math.random() * (band[1] - band[0])) / T.breite * 100 + '%';
+      e.style.top = (band[2] + Math.random() * (band[3] - band[2])) / T.hoehe * 100 + '%';
+      e.style.setProperty('--s', (0.6 + Math.random() * 0.6).toFixed(2));
       e.style.setProperty('--dauer', (4 + Math.random() * 3).toFixed(1) + 's');
       augen.appendChild(e);
       spaeter(() => e.remove(), 7500);
@@ -240,20 +250,10 @@ function spuk(){
   };
   spaeter(fluester, 900);
 
-  /* Das Licht flackert, als wäre irgendwo eine Röhre kaputt */
-  const flackern = () => {
-    document.body.classList.add('flackert');
-    spaeter(() => document.body.classList.remove('flackert'), 90 + Math.random() * 220);
-    if (Math.random() < 0.4) spaeter(() => { document.body.classList.add('flackert'); spaeter(() => document.body.classList.remove('flackert'), 70); }, 260);
-    spaeter(flackern, 3000 + Math.random() * 6000);
-  };
-  spaeter(flackern, 2400);
-
   return () => {
     cancelAnimationFrame(raf);
-    window.removeEventListener('resize', groesse);
+    window.removeEventListener('resize', lage);
     uhren.forEach(clearTimeout);
-    document.body.classList.remove('flackert');
     huelle.remove();
   };
 }
