@@ -59,10 +59,10 @@ export function gangPlanen(karten, prog, lf, blutId, t = heute()){
   return q;
 }
 
-/* Bosskarte: aus dem ganzen Lernfeld, schwache Karten öfter, nicht die letzten sechs */
-export function bossKarte(karten, prog, lf, zuletzt){
-  let pool = karten.filter(c => c.l === lf && !zuletzt.includes(c.i));
-  if (!pool.length) pool = karten.filter(c => c.l === lf);
+/* Bosskarte: aus den Lernfeldern der Phase, schwache Karten öfter, nicht die letzten sechs */
+export function bossKarte(karten, prog, lfs, zuletzt){
+  let pool = karten.filter(c => lfs.includes(c.l) && !zuletzt.includes(c.i));
+  if (!pool.length) pool = karten.filter(c => lfs.includes(c.l));
   return wpick(pool, c => { const s = stand(prog, c); return 1 + (s.w > 0 ? 3 : 0) + (s.b <= 1 ? 2 : 0); });
 }
 
@@ -111,7 +111,16 @@ export function pruefeEingabe(c, eingabe){
 /* ---------- Leben, Seelen, Stufen ---------- */
 export const maxLeben = stufe => Math.min(200, 100 + 5 * (stufe - 1));
 export const stufenPreis = stufe => Math.round(60 * Math.pow(1.15, stufe - 1));
-export const FLAKON = 45, FLAKON_MAX = 5, BOSS_TREFFER = 5, BOSS_SEELEN = 150, FEUER_ZUM_TOR = 3;
-/* Fach vor der Antwort: wer eine Karte schon konnte, bekommt mehr Seelen, und ein Fehler tut mehr weh */
-export const seelenFuer = (fachVorher, boss) => 10 + 5 * Math.max(0, fachVorher - 1) + (boss ? 15 : 0);
-export const schadenFuer = (fachVorher, boss) => boss ? 35 : fachVorher >= 3 ? 30 : 20;
+export const FLAKON = 45, FLAKON_MAX = 5, ROESTUNG = 10, ROESTUNG_MAX = 6, BOSS_TREFFER = 5, FEUER_ZUM_TOR = 3;
+/* Ist der Flakon-Vorrat voll, macht jeder weitere Boss den Kaffee stärker: +10 Leben je Röstung */
+export const heilung = roestung => FLAKON + ROESTUNG * (roestung || 0);
+export const bossSeelen = akt => akt === 2 ? 250 : 150;
+/* Neues Spiel+: Seelen und Schaden wachsen mit jedem Durchgang */
+export const ngSeelen = ng => 1 + 0.5 * (ng || 0);
+export const ngSchaden = ng => 1 + 0.25 * (ng || 0);
+/* Fach vor der Antwort: wer eine Karte schon konnte, bekommt mehr Seelen, und ein Fehler tut mehr weh.
+   Am Berg (AP2) ist alles eine Stufe härter und bringt anderthalbmal so viele Seelen. */
+export const seelenFuer = (fachVorher, boss, akt = 1, ng = 0) =>
+  Math.round((10 + 5 * Math.max(0, fachVorher - 1) + (boss ? 15 : 0)) * (akt === 2 ? 1.5 : 1) * ngSeelen(ng));
+export const schadenFuer = (fachVorher, boss, akt = 1, ng = 0) =>
+  Math.round(((boss ? 35 : fachVorher >= 3 ? 30 : 20) + (akt === 2 ? 5 : 0)) * ngSchaden(ng));

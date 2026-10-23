@@ -162,7 +162,7 @@ a.kachel:hover { border-color: var(--gold-tief); }
 .zurueck { align-self: flex-start; font-size: 15px; color: var(--blass); text-decoration: none; padding: 8px 2px; }
 .zurueck::before { content: "‹ "; }
 .kreis-kopf { margin-top: 24vh; display: grid; gap: 6px; }
-.kreis-name { font: 800 clamp(32px, 10vw, 54px)/1 var(--f-titel); overflow-wrap: anywhere; letter-spacing: .02em; color: #f4e7cc; text-shadow: 0 2px 20px #000; }
+.kreis-name { font: 800 clamp(32px, 10vw, 54px)/1 var(--f-titel); overflow-wrap: anywhere; hyphens: manual; letter-spacing: .02em; color: #f4e7cc; text-shadow: 0 2px 20px #000; }
 .kreis-lf { font-size: 16px; color: #d4c7b2; }
 .kreis-stand { display: grid; gap: 8px; font-size: 15.5px; color: #d1c5b2; }
 .kreis-stand p:first-child { display: flex; align-items: center; gap: 10px; }
@@ -290,6 +290,92 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 .nebel .zeile { margin-top: 6px; }
 .sieg .gross-inhalt p { max-width: 36ch; }
 
+/* ---------- Abstieg und Aufstieg im Lagerfeuer ---------- */
+.abschnitt { flex-wrap: wrap; row-gap: 6px; }
+.abschnitt span { white-space: nowrap; }
+.abschnitt small { order: 3; flex-basis: 100%; font: 400 12.5px/1.3 var(--f-text); letter-spacing: .02em; text-transform: none; color: #8f8474; }
+.berg-abschnitt { color: #cdbbdc; }
+.werte small { font-size: 11.5px; color: var(--blass); }
+.ng-marke { font: 700 12px/1 var(--f-titel); letter-spacing: .18em; text-transform: uppercase; color: var(--glut); border: 1px solid #6a3416; border-radius: 3px; padding: 5px 8px; }
+.kachel.berg-kachel { border-color: #5d5270; }
+.kachel.berg-kachel .kachel-nr { color: #ecc99a; }
+.kachel.berg-zu { filter: grayscale(.3) brightness(.72); }
+.kachel.arena-kokytos { border-color: #4f6a80; }
+.kachel.arena-kokytos .kachel-nr { color: #a9d2f0; }
+.kachel.arena-kokytos .kachel-name { color: #e8f4fc; }
+.kachel.arena-gipfel { border-color: #7a3b1c; }
+.kachel.arena-gipfel .kachel-nr { color: #ffb070; }
+.titel-liste { font-size: 14px; }
+.titel-liste b { color: var(--gold); }
+.probe { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; margin: 4px 0 12px; cursor: pointer; color: var(--text); }
+.probe input { width: 20px; height: 20px; accent-color: var(--gold); }
+.probe small { grid-column: 2; font-size: 13px; color: var(--blass); }
+
+/* ---------- Arenen: Kokytos und Gipfel ---------- */
+.voraus { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 14px; }
+.voraus li { display: flex; gap: 8px; align-items: baseline; color: var(--blass); min-width: 0; }
+.voraus .haken { width: 16px; height: 16px; flex: none; border: 1px solid var(--linie-hell); border-radius: 3px; display: inline-grid; place-items: center; font-size: 12px; line-height: 1; transform: translateY(3px); }
+.voraus .erfuellt { color: var(--text); }
+.voraus .erfuellt .haken { color: #1b1206; background: var(--gold); border-color: var(--gold); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.arena-kokytos .kreis-name { color: #e2f1fb; text-shadow: 0 0 24px rgba(120, 190, 255, .35); }
+.arena-kokytos .zitat { border-left-color: #6f9ab8; }
+.arena-gipfel .kreis-name { color: #ffe4c4; text-shadow: 0 0 30px rgba(232, 129, 58, .5); }
+.arena-gipfel .zitat { border-left-color: var(--glut); }
+.am-berg .zitat { border-left-color: #9c86b8; }
+.knopf.eistor { background: linear-gradient(180deg, rgba(170, 210, 240, .2), rgba(80, 120, 160, .16)); border-color: #8fb8d8; color: #eef7ff; }
+.knopf.eistor small { color: #c4dcee; }
+.knopf.feuertor { background: linear-gradient(180deg, #5a1e0a, #2a0e06); border-color: #e0782f; color: #ffe2c0; box-shadow: 0 0 26px -6px rgba(232, 129, 58, .75); }
+.knopf.feuertor small { color: #f3bf92; }
+body[data-bg="arena-kokytos"] .bg-schleier { background: linear-gradient(180deg, rgba(4, 10, 20, .12) 0%, rgba(4, 10, 20, .55) 38%, rgba(4, 10, 20, .95) 74%); }
+body[data-bg="arena-gipfel"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 6, 4, .25) 0%, rgba(11, 6, 4, .62) 40%, rgba(11, 6, 4, .96) 76%); }
+body[data-bg="lager-berg"] .bg-schleier { background: radial-gradient(90% 55% at 50% 12%, rgba(120, 52, 14, .3), rgba(11, 9, 8, 0) 70%), linear-gradient(180deg, rgba(11, 9, 8, .78), rgba(11, 9, 8, .97) 60%); }
+body[data-bg="durchgang"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .05) 0%, rgba(11, 9, 8, .45) 45%, rgba(11, 9, 8, .95) 80%); }
+body[data-bg="abspann"] .bg-schleier { background: rgba(11, 9, 8, .86); }
+body[data-bg="tod-pruefung"] .bg-schleier { background: #050404; }
+
+/* Schnee im Kokytos, Glut am Gipfel */
+.bg::after { content: ""; position: absolute; inset: -240px 0; pointer-events: none; opacity: 0; transition: opacity .8s; }
+body[data-wetter="schnee"] .bg::after { opacity: .85; background-image: radial-gradient(2px 2px at 20px 30px, #eef6ff, transparent 60%), radial-gradient(1.5px 1.5px at 80px 120px, #dfeefa, transparent 60%), radial-gradient(2.5px 2.5px at 150px 60px, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 200px 170px, #e8f3fc, transparent 60%), radial-gradient(1px 1px at 110px 210px, #fff, transparent 60%); background-size: 240px 240px; animation: schnee 16s linear infinite; }
+body[data-wetter="glut"] .bg::after { opacity: .9; background-image: radial-gradient(2px 2px at 30px 200px, #ffb060, transparent 60%), radial-gradient(1.5px 1.5px at 120px 80px, #ff8a3a, transparent 60%), radial-gradient(2px 2px at 190px 150px, #ffd08a, transparent 60%); background-size: 220px 220px; animation: glut 10s linear infinite; }
+@keyframes schnee { from { transform: translateY(0); } to { transform: translateY(240px); } }
+@keyframes glut { from { transform: translateY(0); } to { transform: translateY(-220px); } }
+
+/* Kampf in den Arenen */
+.auftritt { font: italic 500 18.5px/1.35 var(--f-zitat); color: #ecdcc2; border-left: 2px solid var(--glut); padding-left: 12px; animation: einblenden .6s ease; }
+.phase { font-size: 12px; color: var(--blass); text-transform: uppercase; letter-spacing: .08em; }
+body[data-bg="arena-kokytos"] .bossbalken { background: rgba(8, 20, 34, .78); border-color: #36536b; }
+body[data-bg="arena-kokytos"] .bossbalken .balken { background: #08121c; border-color: #2c4a62; }
+body[data-bg="arena-kokytos"] .bossbalken .balken i { background: linear-gradient(180deg, #8cc4ec, #2f6e9c); }
+body[data-bg="arena-kokytos"] .boss-name { color: #e2f1fb; }
+body[data-bg="arena-kokytos"] .auftritt { border-left-color: #8cc4ec; }
+body[data-bg="arena-gipfel"] .bossbalken { background: rgba(26, 18, 10, .82); border-color: #6a5430; }
+body[data-bg="arena-gipfel"] .bossbalken .balken i { background: linear-gradient(180deg, #e8c27a, #8a6420); }
+.uhr { position: relative; height: 22px; border: 1px solid #5a2a1a; border-radius: 3px; background: #1a0d08; overflow: hidden; }
+.uhr i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: linear-gradient(90deg, #a8411a, #e0782f); transition: width .2s linear; }
+.uhr span { position: relative; display: block; text-align: center; font: 700 13px/22px var(--f-text); color: #ffe7cf; font-variant-numeric: tabular-nums; }
+.uhr.knapp i { background: linear-gradient(90deg, #8e1a12, #d9463a); animation: puls .5s ease-in-out infinite alternate; }
+@keyframes puls { to { opacity: .6; } }
+.flakon.gefroren { color: #9fd0f5; border-color: #4f7590; background: #101c26; }
+.flakon.gefroren .tasse { color: #9fd0f5; }
+.flakon.verboten { position: relative; }
+.flakon.verboten::after { content: ""; position: absolute; left: 12px; right: 12px; top: 50%; height: 2px; background: var(--falsch); transform: rotate(-28deg); }
+
+/* Tod im Eis, Durchfallen, Durchgang, Abspann */
+.erfroren .band h1 { color: #9fd0f5; text-shadow: 0 0 30px rgba(120, 190, 255, .45); }
+.durchgefallen .band h1 { display: inline-block; font-size: clamp(24px, 7.6vw, 46px); color: #c8231a; border: 4px solid #c8231a; border-radius: 4px; padding: 4px 14px; letter-spacing: .06em; transform: rotate(-4deg); text-shadow: none; animation: stempel .5s cubic-bezier(.2, 1.6, .4, 1) .3s both; }
+@keyframes stempel { from { opacity: 0; transform: rotate(-4deg) scale(2.2); } to { opacity: 1; transform: rotate(-4deg) scale(1); } }
+.durchgang { justify-content: flex-end; text-align: left; }
+.durchgang .knopf { width: 100%; }
+.abspann { justify-content: flex-start; gap: 16px; }
+.rolle { position: relative; height: min(54dvh, 520px); overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.rolle-innen { display: grid; gap: 26px; text-align: center; animation: rolle 48s linear 1.6s both; }
+.rolle h2 { font: 600 12.5px/1.2 var(--f-titel); letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin: 0 0 6px; }
+.rolle p { color: #d8ccb8; }
+.rolle-gross { font: 700 26px/1.2 var(--f-titel); color: #f3e6c9; }
+@keyframes rolle { from { transform: translateY(54dvh); } to { transform: translateY(calc(-100% + 54dvh)); } }
+.abspann .zeile .knopf { flex: 1 1 200px; }
+
 /* ---------- Hinweis bei neuer Fassung ---------- */
 .toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }
 html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
@@ -306,5 +392,7 @@ html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
 /* ---------- Weniger Bewegung ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
-  .flamme b { display: none; }
+  .flamme b, .bg::after { display: none; }
+  .rolle { overflow: auto; }
+  .rolle-innen { animation: none !important; }
 }

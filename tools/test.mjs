@@ -66,6 +66,15 @@ async function weiter(page){
   await klick(page, '#weiter');
   await warte(page, v => localStorage.getItem('spp.spiel') !== v, JSON.stringify(vor));
 }
+/* Einen Bosskampf komplett richtig spielen, bis ein großer Bildschirm erscheint */
+async function bossRichtig(page){
+  for (let i = 0; i < 40; i++) {
+    const S = await spiel(page);
+    if (!S.lauf) return S;
+    if (S.lauf.frage.beantwortet) await weiter(page); else await antworte(page, true);
+  }
+  throw new Error('Bosskampf endet nicht');
+}
 /* Einen Gang komplett richtig spielen, bis das Lagerfeuer erscheint */
 async function gangRichtig(page){
   for (let i = 0; i < 30; i++) {
@@ -94,7 +103,8 @@ try {
   await klick(page, '#los');
   await ansicht(page, 'hub');
   const kacheln = await page.$$eval('.kacheln .kachel', k => k.length);
-  check('Lagerfeuer mit sechs Kreisen und dem Ausschuss', kacheln === 7, `${kacheln} Kacheln`);
+  const zu = await page.$$eval('.kacheln .kachel.zu', k => k.map(e => e.querySelector('.kachel-name').textContent.replace(/\u00AD/g, '')));
+  check('Lagerfeuer: sechs Kreise, Zwischenprüfer, Berg und Ausschuss noch zu', kacheln === 9 && zu.join() === 'Der Zwischenprüfer,Der Läuterungsberg,Der Prüfungsausschuss', `${kacheln} Kacheln, zu: ${zu.join(', ')}`);
   await sleep(1000);
   await foto(page, '02-lagerfeuer', true);
 
@@ -211,6 +221,111 @@ try {
   await klick(page, '#weiter');
   await ansicht(page, 'kreis-seite');
 
+  /* Zwischenprüfer: erst zu, dann gefrorener Kaffee, drei Gesichter, danach der Durchgang */
+  await page.goto(BASE + '#/kokytos', { waitUntil: 'networkidle0' });
+  await ansicht(page, 'arena-kokytos');
+  const vor = await page.$$eval('.voraus li', l => l.map(e => e.className));
+  check('Kokytos zeigt, welche Bosse noch fehlen', vor.length === 6 && vor.filter(c => c === 'erfuellt').length === 1 && await page.$('#tor') === null, vor.join());
+  await setze(page, 'for (const n of [2, 3, 4, 5, 6]) S.kreise[n] = { feuer: 3, boss: true };');
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ansicht(page, 'arena-kokytos');
+  await sleep(900);
+  await foto(page, '13-kokytos');
+  await klick(page, '#tor');
+  await ansicht(page, 'tor-kokytos');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  const k0 = await spiel(page);
+  check('Im Eis ist der Kaffee gefroren', k0.lauf.flakons === 0 && await page.$eval('#flakon', b => b.disabled && b.classList.contains('gefroren')) && await page.$('.auftritt') !== null);
+  await foto(page, '14-zwischenpruefer');
+  for (let i = 0; i < 3; i++) { await antworte(page, true); if (i < 2) await weiter(page); }
+  const k1 = await spiel(page);
+  check('Nach drei Treffern fällt das erste Gesicht und ein Flakon taut auf', k1.lauf.phase === 1 && k1.lauf.flakons === 1, `Phase ${k1.lauf.phase}, Flakons ${k1.lauf.flakons}`);
+  await weiter(page);
+  check('Das nächste Gesicht tritt auf', await page.$eval('.boss-name', e => e.textContent.startsWith('Das bleiche Gesicht')) && await page.$('.auftritt') !== null);
+  await bossRichtig(page);
+  await ansicht(page, 'sieg');
+  const k2 = await spiel(page);
+  check('Zwischenprüfer besiegt: Aufstieg offen, 300 Seelen, Splitter', k2.arenen.kokytos.boss && k2.aufstieg && k2.flakons === 5 && k2.zeige.durchgang, `Flakons ${k2.flakons}`);
+  await klick(page, '#weiter');
+  await ansicht(page, 'durchgang');
+  await sleep(1200);
+  await foto(page, '15-durchgang');
+  await klick(page, '#weiter');
+  await ansicht(page, 'hub');
+  const bergK = await page.$$eval('.kachel.berg-kachel', k => k.length);
+  check('Am Lagerfeuer stehen jetzt die sechs Gesimse', bergK === 6, bergK + ' Gesimse');
+  await sleep(1200);
+  await foto(page, '16-lagerfeuer-berg', true);
+
+  /* Ein Gang am Berg: AP2-Karten, mehr Schaden */
+  await klick(page, 'a.kachel[href="#/kreis/7"]');
+  await ansicht(page, 'am-berg');
+  await sleep(1000);
+  await foto(page, '17-gesims');
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const g0 = await spiel(page);
+  check('Gang am Berg: Karten aus AP2', g0.lauf.plan.every(i => i.startsWith('ap2-1-')), g0.lauf.plan.slice(0, 2).join());
+  await antworte(page, false);
+  check('Am Berg kostet ein Fehler 25 Leben', (await spiel(page)).lauf.leben === 75, 'Leben ' + (await spiel(page)).lauf.leben);
+  await sleep(400);
+  await foto(page, '18-gesims-kampf');
+  await klick(page, '#rueckzug');
+  await klick(page, '#rz-ja');
+  await ansicht(page, 'am-berg');
+
+  /* Der Prüfungsausschuss: Uhr, kein Kaffee, durchfallen, dann bestehen und Neues Spiel+ */
+  await setze(page, 'for (const n of [7, 8, 9, 10, 11, 12]) S.kreise[n] = { feuer: 3, boss: true };');
+  await page.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ansicht(page, 'arena-gipfel');
+  await sleep(900);
+  await foto(page, '19-gipfel');
+  await klick(page, '#tor');
+  await ansicht(page, 'tor-gipfel');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  check('Prüfungsraum: Uhr läuft, kein Kaffee', await page.$('#uhr') !== null && await page.$eval('#flakon', b => b.disabled && b.classList.contains('verboten')));
+  await sleep(1500);
+  await foto(page, '20-ausschuss');
+  await antworte(page, true);
+  await weiter(page);
+  const lebenVorUhr = (await spiel(page)).lauf.leben;
+  await setze(page, 'S.lauf.frage.bis = Date.now() - 1000;');
+  await page.reload({ waitUntil: 'networkidle0' });
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).lauf.frage.beantwortet);
+  const u = await spiel(page);
+  check('Abgelaufene Uhr zählt als Fehler, auch nach dem Neuladen', u.lauf.frage.zeit && u.lauf.leben === lebenVorUhr - 40, `Leben ${u.lauf.leben}`);
+  for (let i = 0; i < 20; i++) {
+    const S = await spiel(page);
+    if (!S.lauf || S.lauf.leben <= 0) break;
+    if (S.lauf.frage.beantwortet) await weiter(page); else await antworte(page, false);
+  }
+  await ansicht(page, 'durchgefallen');
+  const df = await spiel(page);
+  check('Durchgefallen: Blutfleck liegt im Prüfungsraum', df.blut && df.blut.ort === 'gipfel' && df.arenen.gipfel.versuche === 1);
+  await sleep(2600);
+  await foto(page, '21-durchgefallen');
+  await klick(page, '#weiter');
+  await page.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
+  await ansicht(page, 'arena-gipfel');
+  await klick(page, '#tor');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  const zweiter = await spiel(page);
+  check('Zweiter Versuch beginnt mit der Blutfleck-Karte', zweiter.lauf.frage.id === df.blut.id);
+  await bossRichtig(page);
+  await ansicht(page, 'abspann');
+  const best = await spiel(page);
+  check('Bestanden: Ausschuss besiegt, Abspann läuft', best.arenen.gipfel.boss && best.bestanden === 1 && best.arenen.gipfel.versuche === 2);
+  await sleep(4000);
+  await foto(page, '22-bestanden');
+  await klick(page, '#ngplus');
+  await ansicht(page, 'hub');
+  const ng = await spiel(page);
+  check('Neues Spiel+: Bosse stehen wieder, Lagerfeuer und Aufstieg bleiben', ng.ng === 1 && !ng.kreise[1].boss && ng.kreise[1].feuer === 3 && !ng.arenen.gipfel.boss && ng.aufstieg);
+
   /* Stufe aufsteigen */
   await setze(page, 'S.seelen = 1000;');
   await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
@@ -220,7 +335,7 @@ try {
   await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).stufe === 2);
   check('Stufe kostet 60 Seelen und gibt 5 Leben', (await spiel(page)).seelen === 940 && await page.$eval('.werte div:nth-child(3) b', e => e.textContent === '105'));
   await sleep(1000);
-  await foto(page, '13-lagerfeuer-spaeter', true);
+  await foto(page, '23-lagerfeuer-ngplus', true);
 
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
@@ -250,16 +365,28 @@ try {
   await klick(d, '#los');
   await ansicht(d, 'hub');
   await sleep(1000);
-  await foto(d, '20-desktop-lagerfeuer');
+  await foto(d, '30-desktop-lagerfeuer');
   await klick(d, 'a.kachel[href="#/kreis/3"]');
   await ansicht(d, 'kreis-seite');
   await sleep(1000);
-  await foto(d, '21-desktop-kreis');
+  await foto(d, '31-desktop-kreis');
   await klick(d, '#gang');
   await ansicht(d, 'kampf');
   await antworte(d, false);
   await sleep(500);
-  await foto(d, '22-desktop-kampf');
+  await foto(d, '32-desktop-kampf');
+  await klick(d, '#rueckzug');
+  await klick(d, '#rz-ja');
+  await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'hub');
+  await d.$eval('.spielstand', e => { e.open = true; });
+  await klick(d, '#probe');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).probe === true);
+  check('Desktop: Prototyp-Schalter öffnet den Berg', await d.$$eval('.kachel.berg-kachel', k => k.length) === 6);
+  await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'arena-gipfel');
+  await sleep(1000);
+  await foto(d, '33-desktop-gipfel');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
 } catch (e) {

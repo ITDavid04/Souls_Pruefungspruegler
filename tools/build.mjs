@@ -1,6 +1,6 @@
 /* Baut die App nach docs/ (nicht im Repository; der Workflow .github/workflows/pages.yml lädt docs/ zu GitHub Pages hoch).
    Aufruf: npm run build
-   - setzt die Karten (data/karten-ap1.json) in index.html ein
+   - setzt die Karten (data/karten-ap1.json und data/karten-ap2.json) in index.html ein
    - kopiert Skripte, Stil, Symbole, die benutzten Bilder und die Schriften
    - erzeugt den Service Worker mit Prüfsumme und Liste aller Dateien
    - bricht ab, wenn in den eigenen Texten Gedankenstriche stehen (in den Karten wird nur gezählt) */
@@ -42,8 +42,10 @@ function noDashes(name, text){
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 
-/* Karten */
-const karten = JSON.parse(await read(path.join(ROOT, 'data', 'karten-ap1.json')));
+/* Karten: AP1 (Lernfelder 1 bis 6) und AP2 (Gesimse 7 bis 12) */
+const karten = [];
+for (const f of ['karten-ap1.json', 'karten-ap2.json']) karten.push(...JSON.parse(await read(path.join(ROOT, 'data', f))));
+if (new Set(karten.map(c => c.i)).size !== karten.length) throw new Error('Doppelte Kartenkennung in data/');
 const kartenJs = JSON.stringify(karten).replace(/</g, '\\u003c');
 const mitStrich = karten.filter(c => /[–—]/.test(JSON.stringify(c))).length;
 
@@ -66,7 +68,7 @@ await put('.nojekyll', '');
 
 /* Bilder: nur die, die in welt.js vorkommen (groß und klein) */
 const welt = await read(path.join(SRC, 'js', 'welt.js'));
-const bilder = [...new Set([...welt.matchAll(/bild: '([a-z0-9-]+)'|_BILD = '([a-z0-9-]+)'/g)].map(m => m[1] || m[2]))];
+const bilder = [...new Set([...welt.matchAll(/[bB]ild: '([a-z0-9-]+)'|_BILD = '([a-z0-9-]+)'/g)].map(m => m[1] || m[2]))];
 for (const b of bilder) for (const s of ['', '-klein']) await copy(path.join(SRC, 'img', b + s + '.webp'), 'img/' + b + s + '.webp');
 
 /* Schriften mit Lizenz */
