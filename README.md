@@ -4,7 +4,8 @@ Lernkarten für die Abschlussprüfung Fachinformatik (AP1 und AP2) als Souls-lik
 Wer stirbt, lässt seine Seelen bei der Karte liegen, die ihn erledigt hat, und holt sie sich im nächsten Gang zurück.
 Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 
-> **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss.
+> **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss,
+> dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss.
 > **Live:** https://itdavid04.github.io/Souls_Pruefungspruegler/
 
 ## Die Reise, frei nach Dante
@@ -15,6 +16,7 @@ Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 | Kokytos, Grund der Hölle | AP1 komplett | **Der Zwischenprüfer**, öffnet sich, wenn die sechs Bosse des Abstiegs liegen |
 | Der Aufstieg | AP2 | Sechs Gesimse am Läuterungsberg, eines je Prüfungsbereich, je ein Boss |
 | Der Gipfel, hinter der Feuerwand | AP1 und AP2 | **Der Prüfungsausschuss**, öffnet sich erst, wenn alle dreizehn Bosse liegen |
+| Abseits des Weges | AP1 und AP2 | **Die Katakomben der Kürzel**, jederzeit offen, am Ende **der Akronymant** |
 
 Die Gesimse folgen Dantes Todsünden von unten nach oben:
 
@@ -68,6 +70,29 @@ und die Lehrkraft der Berufsschule. **20 Sekunden** je Frage, auch nach dem Neul
 ein Tippfehler kostet 10. Wer den Raum verlässt, ist durchgefallen. Wer besteht, bekommt den Abspann und kann ein **Neues Spiel+** beginnen:
 Alle Bosse stehen wieder auf, Seelen ×1,5 und Schaden ×1,25 je Durchgang, Lernstand, Stufe und Lagerfeuer bleiben.
 
+### Die Katakomben der Kürzel
+
+Ein Nebengebiet, das vom ersten Tag an offen ist, also auch für alle, die nur AP2 lernen. Unten liegen 304 Abkürzungen aus der
+Abkürzungsjagd: Netzwerk, Hardware, Entwicklung, Datenbanken, Sicherheit, Projekt, Betrieb, Recht und Organisationen.
+Gänge, Lagerfeuer, Blutfleck und Nebeltor funktionieren wie in einem Kreis, nur die Fragen sind andere (siehe unten).
+
+| **Seltenheit** | **Anzahl** | **Was sie ausmacht** |
+|---|---|---|
+| Gewöhnlich | 123 | Standardwissen, kommt ständig vor |
+| Selten | 122 | sollte man kennen, bringt 1,2-mal so viele Seelen |
+| Legendär | 59 | kennt kaum jemand. Dringt als **rotes Phantom** ein und bringt 1,6-mal so viele Seelen |
+
+Die falschen Langformen sind gemein: Meist ist nur ein Wort gegen ein echtes Fachwort mit demselben Anfangsbuchstaben getauscht,
+die Buchstaben passen also immer noch zum Kürzel. Ab und zu taucht eine Spaß-Langform auf („Power over Espresso“).
+Wer sie wählt, bekommt „Schön wär’s.“ Nach jeder Antwort steht die echte Langform da, mit den Buchstaben des Kürzels in Glut.
+
+**Das Gebeinhaus** ist das Sammelalbum darunter: Jedes Kürzel, das einmal richtig war, bekommt seine Nische mit Langform und Erklärung,
+wer es dreimal hintereinander weiß, dem brennt davor eine Kerze. Nach Kategorie sortiert und durchsuchbar.
+
+**Der Akronymant** wartet hinter dem Nebeltor. Er spricht nur in Abkürzungen und kämpft in drei Beschwörungen, zusammen zehn Treffer:
+erst Kürzel aller Art, dann nur legendäre, am Ende nennt er die Langform und du tippst das Kürzel. 30 Leben je Fehler, Kaffee erlaubt.
+Für die Feuerwand zum Ausschuss zählt er nicht, Belohnung und Titel gibt es trotzdem.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
@@ -81,6 +106,14 @@ Damit lässt sich alles ansehen, ohne erst die AP1 durchzuspielen. Vor einer bre
 | Welche Erklärung passt? | gemischt |
 | Begriff eintippen | je besser eine Karte sitzt, desto öfter. Tippfehler zählen, lange Begriffe werden nie getippt |
 
+In den Katakomben sind es Kürzel-Fragen, ebenfalls nach Lernstand gemischt:
+
+| **Art** | **Was dasteht** | **Was du tust** |
+|---|---|---|
+| Wofür steht das Kürzel? | das Kürzel, groß | aus vier Langformen die echte wählen |
+| Welches Kürzel ist gemeint? | die Erklärung (das Kürzel selbst darin verdeckt) | aus vier Kürzeln wählen |
+| Kürzel eintippen | die Langform | das Kürzel tippen, Groß- und Kleinschreibung egal |
+
 Dahinter steckt ein Lernkasten mit fünf Fächern wie im Reinprügler (Wiederholung nach 0, 1, 3, 7 und 14 Tagen).
 Ein Gang nimmt zuerst den Blutfleck, dann fällige Karten, dann neue in Themenreihenfolge, dann wacklige.
 
@@ -90,6 +123,8 @@ Die Hölle besteht aus den gemalten Bildern des Reinprüglers. Der Berg ist bewu
 Gesims ein bisschen heller. Jedes Gesims versteckt ein Motiv aus seinem Prüfungsbereich, etwa eine gemeißelte Spirale (Rekursion),
 ein Klassendiagramm aus Sternen, Wolken wie ein Gantt-Diagramm oder einen Baum, dessen Früchte in Zeilen und Spalten hängen.
 Gemalt werden sie von `tools/berg_bilder.py` (nur Pillow, immer gleiches Ergebnis). Der Kokytos ist ein eisblau eingefärbtes Bild aus dem Reinprügler.
+Die Katakomben malt `tools/katakomben_bild.py`: ein Gewölbegang mit Schädelnischen und Kerzen, auf den Schlusssteinen eingemeißelte Kürzel,
+und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor wartet ein Bild aus dem Reinprügler mit einer großen schwarzen Tafel.
 
 ## Technik
 
@@ -114,10 +149,20 @@ python3 -I tools/extract_ap2.py "~/Desktop/Reinprügler_APP/ap2-reinpruegler-ae.
 ```
 
 ```bash
+python3 -I tools/extract_kuerzel.py "~/Desktop/Reinprügler_APP/Abkürzungsjagd.html"
+```
+
+```bash
 python3 -I tools/berg_bilder.py
 ```
 
+```bash
+python3 -I tools/katakomben_bild.py
+```
+
 Die AP2-Karten bekommen dabei `ap2-` vor die Kennung und die Gesimse 7 bis 12 als Lernfeld, damit sie sich nicht mit der AP1 überschneiden.
+Die Kürzel landen in `data/kuerzel.json` mit `k-` vor der Kennung und der 13 als Ort; neue kommen in die Gänge, über alle Kategorien gemischt,
+die legendären ab dem dritten Gang.
 Die App-Symbole zeichnet `python3 -I tools/icons.py`.
 
 Veröffentlicht wird über GitHub Actions (`.github/workflows/pages.yml`) bei jedem Push auf `main`.

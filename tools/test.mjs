@@ -3,8 +3,8 @@
    CHROME=/pfad npm test   -> falls Chrome woanders liegt
    CI=1 npm test           -> wie auf GitHub (ohne Sandbox)
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
-   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Installierbarkeit, Start ohne Netz,
-   keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
+   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Katakomben der Kürzel mit Gebeinhaus
+   und Akronymant, Installierbarkeit, Start ohne Netz, keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
 import puppeteer from 'puppeteer-core';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -56,7 +56,9 @@ async function antworte(page, richtig, tippfehler = false){
       await page.$eval('#tippen button[type=submit]', b => b.click());
     } else await klick(page, '#passen');
   } else {
-    const n = richtig ? f.optionen.indexOf(f.id) : f.optionen.findIndex(id => id !== f.id);
+    /* Kürzel-Fragen merken sich die richtige Antwort in ok, die übrigen sind Kartenkennungen */
+    const ri = f.ok != null ? f.ok : f.optionen.indexOf(f.id);
+    const n = richtig ? ri : f.optionen.findIndex((x, i) => i !== ri);
     await klick(page, `.option[data-n="${n}"]`);
   }
   await warte(page, () => { const S = JSON.parse(localStorage.getItem('spp.spiel')); return !S.lauf || S.lauf.frage.beantwortet; });
@@ -76,6 +78,21 @@ async function neuLaden(page, warten = 'networkidle0'){
   await page.reload({ waitUntil: warten });
   await durchTitel(page);
 }
+/* Eine Kürzel-Frage gezielt stellen; die Antworten würfelt kern.js wie in der App. spass: so lange würfeln, bis die Spaß-Langform dabei ist */
+const kuerzelFrage = (page, n, typ, spass = false) => page.evaluate(async (n, typ, spass) => {
+  const K = await import('./js/kern.js');
+  const ku = JSON.parse(document.getElementById('karten').textContent).filter(K.istKuerzel), c = ku.find(x => x.n === n);
+  let w = null;
+  for (let i = 0; i < 80; i++) {
+    w = typ === 'langform' ? K.langformOptionen(ku, c) : typ === 'erklaerung' ? K.kuerzelOptionen(ku, c) : null;
+    if (!spass || w.optionen.includes(c.j)) break;
+  }
+  const S = JSON.parse(localStorage.getItem('spp.spiel'));
+  S.lauf.frage = { id: c.i, typ, nachgeholt: false, auftritt: false, blut: false, optionen: w && w.optionen, ok: w ? w.ok : null, beantwortet: false };
+  localStorage.setItem('spp.spiel', JSON.stringify(S));
+  return c;
+}, n, typ, spass);
+const karteVon = (page, id) => page.evaluate(i => JSON.parse(document.getElementById('karten').textContent).find(c => c.i === i), id);
 /* Einen Bosskampf komplett richtig spielen, bis ein großer Bildschirm erscheint */
 async function bossRichtig(page){
   for (let i = 0; i < 40; i++) {
@@ -126,7 +143,7 @@ try {
   check('Nach dem Titel ist der Spuk weg', await page.$('.bg .spuk') === null);
   const kacheln = await page.$$eval('.kacheln .kachel', k => k.length);
   const zu = await page.$$eval('.kacheln .kachel.zu', k => k.map(e => e.querySelector('.kachel-name').textContent.replace(/\u00AD/g, '')));
-  check('Lagerfeuer: sechs Kreise, Zwischenprüfer, Berg und Ausschuss noch zu', kacheln === 9 && zu.join() === 'Der Zwischenprüfer,Der Läuterungsberg,Der Prüfungsausschuss', `${kacheln} Kacheln, zu: ${zu.join(', ')}`);
+  check('Lagerfeuer: sechs Kreise, Katakomben offen, Zwischenprüfer, Berg und Ausschuss noch zu', kacheln === 10 && zu.join() === 'Der Zwischenprüfer,Der Läuterungsberg,Der Prüfungsausschuss' && await page.$('a.kachel.katakomben-kachel[href="#/kreis/13"]') !== null, `${kacheln} Kacheln, zu: ${zu.join(', ')}`);
   await sleep(1000);
   await foto(page, '02-lagerfeuer', true);
 
@@ -364,6 +381,100 @@ try {
   await sleep(1000);
   await foto(page, '23-lagerfeuer-ngplus', true);
 
+  /* Katakomben der Kürzel: Gang mit Kürzeln, Spaß-Langform, rotes Phantom, Gebeinhaus, der Akronymant */
+  await klick(page, 'a.kachel[href="#/kreis/13"]');
+  await ansicht(page, 'in-katakomben');
+  check('Katakomben: Seite mit Gang und Gebeinhaus', await page.$('#gang') !== null && await page.$eval('#gebeinhaus', e => e.textContent.includes('304 Kürzeln')));
+  await sleep(1000);
+  await foto(page, '24-katakomben');
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const kk = await spiel(page);
+  check('Gang in den Katakomben: zehn Kürzel, eigene Antworten', kk.lauf.plan.length === 10 && kk.lauf.plan.every(i => i.startsWith('k-')) && (kk.lauf.frage.typ === 'tippen' || kk.lauf.frage.optionen.length === 4), kk.lauf.plan.slice(0, 3).join() + ' ' + kk.lauf.frage.typ);
+  await kuerzelFrage(page, 'DNS', 'langform');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  check('Wofür steht DNS: vier Langformen, die echte dabei', await page.$eval('.frage.kuerzel-gross', e => e.textContent === 'DNS') && (await page.$$eval('.option', o => o.map(e => e.textContent))).filter(t => t === 'Domain Name System').length === 1);
+  await foto(page, '25-kuerzel-frage');
+  await antworte(page, true);
+  check('Treffer zeigt die Langform mit den Buchstaben des Kürzels', await page.$$eval('.loesung mark', m => m.map(e => e.textContent).join('')) === 'DNS');
+  await sleep(400);
+  await foto(page, '26-kuerzel-treffer');
+  await weiter(page);
+  const vorSpass = (await spiel(page)).lauf.leben;
+  const poe = await kuerzelFrage(page, 'PoE', 'langform', true);
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  const sp = (await spiel(page)).lauf.frage;
+  await klick(page, `.option[data-n="${sp.optionen.indexOf(poe.j)}"]`);
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).lauf.frage.beantwortet);
+  check('Spaß-Langform gewählt: Schaden und „Schön wär’s.“', (await spiel(page)).lauf.leben < vorSpass && await page.$eval('.spruch', e => e.textContent === 'Schön wär’s.'), poe.j);
+  await sleep(400);
+  await foto(page, '27-power-over-espresso');
+  await weiter(page);
+  const vorPhantom = (await spiel(page)).seelen;
+  await kuerzelFrage(page, 'CoAP', 'tippen');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  check('Legendäres Kürzel dringt als rotes Phantom ein', await page.$('.karte.phantom-karte .phantom') !== null && await page.$eval('.rang', e => e.textContent === 'Legendär'));
+  await sleep(700);
+  await foto(page, '28-rotes-phantom');
+  await antworte(page, true);
+  const ph = await spiel(page);
+  check('Phantom vertrieben: mehr Seelen als sonst', ph.seelen - vorPhantom === Math.round(10 * 1.5 * 1.6) && await page.$eval('.seelen-zeile', e => e.textContent.includes('Rotes Phantom vertrieben')), `+${ph.seelen - vorPhantom}`);
+  await klick(page, '#rueckzug');
+  await klick(page, '#rz-ja');
+  await ansicht(page, 'in-katakomben');
+
+  /* Gebeinhaus: gefundene Kürzel, Kategorien, Suche, Nische öffnen */
+  await klick(page, '#gebeinhaus');
+  await ansicht(page, 'gebeinhaus');
+  const nischen = await page.$$eval('.nische', n => n.length), gefunden = await page.$$eval('.nische:not(.leer)', n => n.map(e => e.dataset.i));
+  check('Gebeinhaus: 304 Nischen, DNS und CoAP gefunden, PoE nicht', nischen === 304 && gefunden.includes('k-dns') && gefunden.includes('k-coap') && !gefunden.includes('k-poe'), `${nischen} Nischen, gefunden: ${gefunden.join(', ')}`);
+  await sleep(1000);
+  await foto(page, '29-gebeinhaus');
+  await klick(page, '.chip[data-t="Netzwerk"]');
+  check('Kategorie Netzwerk zeigt 58 Nischen', await page.$$eval('.nische', n => n.length) === 58);
+  await page.$eval('#gb-suche', e => { e.value = 'coap'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  await klick(page, '.nische[data-i="k-coap"]');
+  await page.waitForSelector('#nische-blatt:not([hidden])');
+  check('Nische zeigt Langform und Erklärung', await page.$eval('#nische-blatt', e => e.textContent.includes('Constrained Application Protocol') && e.textContent.includes('1× richtig')));
+  await sleep(500);
+  await foto(page, '30-nische');
+  await klick(page, '#nb-zu');
+
+  /* Der Akronymant: drei Beschwörungen, die zweite nur legendär, die dritte nur tippen */
+  await setze(page, 'S.kreise[13].feuer = 3;');
+  await page.goto(BASE + '#/kreis/13', { waitUntil: 'networkidle0' });
+  await neuLaden(page);
+  await ansicht(page, 'in-katakomben');
+  await klick(page, '#tor');
+  await ansicht(page, 'nebel');
+  check('Nebeltor nennt die Regeln des Akronymanten', await page.$eval('.regeln', e => e.textContent.includes('zehn Treffer')));
+  await sleep(600);
+  await foto(page, '31-akronymant-tor');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  await foto(page, '32-akronymant');
+  for (let i = 0; i < 4; i++) { await antworte(page, true); await weiter(page); }
+  const b1 = await spiel(page);
+  check('Zweite Beschwörung: nur legendäre Kürzel', b1.lauf.phase === 1 && (await karteVon(page, b1.lauf.frage.id)).r === 3, `Phase ${b1.lauf.phase}`);
+  for (let i = 0; i < 3; i++) { await antworte(page, true); await weiter(page); }
+  const b2 = await spiel(page);
+  check('Dritte Beschwörung: Kürzel eintippen', b2.lauf.phase === 2 && b2.lauf.frage.typ === 'tippen' && await page.$eval('.frage.langform-gross', e => e.textContent.length > 3), `Phase ${b2.lauf.phase}, ${b2.lauf.frage.typ}`);
+  await foto(page, '33-akronymant-rueckwaerts');
+  await bossRichtig(page);
+  await ansicht(page, 'sieg');
+  const ak = await spiel(page);
+  check('Akronymant besiegt: Titel und stärkerer Kaffee', ak.kreise[13].boss && ak.zeige.belohnung === 'roestung' && await page.$eval('.gold-text', e => e.textContent === 'Entzifferer der Kürzel'));
+  await sleep(2400);
+  await foto(page, '34-akronymant-sieg');
+  await klick(page, '#weiter');
+  await ansicht(page, 'in-katakomben');
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(page, 'hub');
+  check('Lagerfeuer führt den Titel des Akronymanten', await page.$eval('.titel-liste', e => e.textContent.includes('Entzifferer der Kürzel')));
+
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
   const man = await cdp.send('Page.getAppManifest');
@@ -391,20 +502,20 @@ try {
   const derrs = watch(d, 'Desktop');
   await d.goto(BASE, { waitUntil: 'networkidle0' });
   await sleep(2600);
-  await foto(d, '29-desktop-titel');
+  await foto(d, '39-desktop-titel');
   await durchTitel(d);
   await ansicht(d, 'hub');
   await sleep(1000);
-  await foto(d, '30-desktop-lagerfeuer');
+  await foto(d, '40-desktop-lagerfeuer');
   await klick(d, 'a.kachel[href="#/kreis/3"]');
   await ansicht(d, 'kreis-seite');
   await sleep(1000);
-  await foto(d, '31-desktop-kreis');
+  await foto(d, '41-desktop-kreis');
   await klick(d, '#gang');
   await ansicht(d, 'kampf');
   await antworte(d, false);
   await sleep(500);
-  await foto(d, '32-desktop-kampf');
+  await foto(d, '42-desktop-kampf');
   await klick(d, '#rueckzug');
   await klick(d, '#rz-ja');
   await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
@@ -416,7 +527,15 @@ try {
   await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
   await ansicht(d, 'arena-gipfel');
   await sleep(1000);
-  await foto(d, '33-desktop-gipfel');
+  await foto(d, '43-desktop-gipfel');
+  await d.goto(BASE + '#/kreis/13', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'in-katakomben');
+  await sleep(1000);
+  await foto(d, '44-desktop-katakomben');
+  await d.goto(BASE + '#/gebeinhaus', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'gebeinhaus');
+  await sleep(1000);
+  await foto(d, '45-desktop-gebeinhaus');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
 } catch (e) {

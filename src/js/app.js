@@ -4,7 +4,7 @@
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
-import { AKTE, KREISE, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -14,6 +14,7 @@ const ruhig = () => window.matchMedia('(prefers-reduced-motion: reduce)').matche
 
 const KARTEN = JSON.parse($('#karten').textContent);
 const KARTE = new Map(KARTEN.map(c => [c.i, c]));
+const KUERZEL = KARTEN.filter(K.istKuerzel);
 
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -38,21 +39,24 @@ const kz = lf => S.kreise[lf] || (S.kreise[lf] = { feuer: 0, boss: false });
 const az = id => S.arenen[id] || (S.arenen[id] = { boss: false, versuche: 0 });
 const besiegt = ort => typeof ort === 'number' ? kz(ort).boss : az(ort).boss;
 const aufstiegOffen = () => S.aufstieg || S.probe;
-const kreisOffen = lf => kreis(lf).akt === 1 || aufstiegOffen();
+const kreisOffen = lf => kreis(lf).akt !== 2 || aufstiegOffen();
 const arenaOffen = id => S.probe || ARENEN[id].voraus.every(besiegt);
 const fehlend = id => ARENEN[id].voraus.filter(o => !besiegt(o)).length;
 const maxLeben = () => K.maxLeben(S.stufe);
 const heilung = () => K.heilung(S.roestung);
 
-/* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln. */
+/* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln;
+   die Katakomben bringen eigene Phasen, Seelen und Regeln mit. */
 function ortDaten(ort){
   if (typeof ort === 'string') return ARENEN[ort];
   const k = kreis(ort);
-  return Object.assign({}, k, {
-    id: ort, ort: k.name, kaffee: 'ja', zeit: 0, tippfehler: 0, seelen: K.bossSeelen(k.akt), phasenWort: '',
+  return Object.assign({
+    kaffee: 'ja', zeit: 0, tippfehler: 0, seelen: K.bossSeelen(k.akt), phasenWort: '',
     phasen: [{ name: k.boss, zusatz: k.bossZusatz, lfs: [ort], treffer: K.BOSS_TREFFER }]
-  });
+  }, k, { id: ort, ort: k.name });
 }
+/* Wie man durch einen Ort geht, für die Sätze nach Tod und Rast */
+const gangOrt = O => O.akt === 0 ? 'durch die Katakomben' : O.akt === 2 ? 'über dieses Gesims' : 'durch diesen Kreis';
 const ortSeite = ort => typeof ort === 'number' ? '#/kreis/' + ort : '#/' + ort;
 const bossName = ort => ortDaten(ort).boss;
 
@@ -74,7 +78,7 @@ function hintergrund(name, art = '', wetter = ''){
   el.style.backgroundImage = 'url("' + im.src + '")';
   el.style.backgroundPosition = BILD_LAGE[name] || '';
 }
-const wetterVon = ort => ort === 'kokytos' ? 'schnee' : ort === 'gipfel' ? 'glut' : '';
+const wetterVon = ort => ort === 'kokytos' ? 'schnee' : ort === 'gipfel' ? 'glut' : ort === K.KATAKOMBEN ? 'staub' : '';
 
 /* ---------- Kleine Bausteine ---------- */
 /* Lagerfeuer: Holz, ein Schwert im Feuer, drei Flammen, Funken */
@@ -93,11 +97,12 @@ const FLAMME = '<div class="flamme" aria-hidden="true"><svg viewBox="0 -34 100 1
 const TASSE = '<svg class="tasse" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2.5c-1 1.2 1 2 0 3.5M12 2.5c-1 1.2 1 2 0 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".7"/><path d="M4 8h13v6.5A5.5 5.5 0 0 1 11.5 20h-2A5.5 5.5 0 0 1 4 14.5Z" fill="currentColor"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 22h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 const feuerPunkte = n => '<span class="feuer-punkte" aria-label="' + n + ' von ' + K.FEUER_ZUM_TOR + ' Lagerfeuern">' +
   Array.from({ length: K.FEUER_ZUM_TOR }, (_, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('') + '</span>';
-const kreisMarke = k => k.nr + ' · ' + (k.akt === 1 ? 'LF' + k.lf : 'AP2');
+const kreisMarke = k => k.nr + ' · ' + k.kurz;
 function kreisZahlen(lf){
   const t = K.heute(), pool = KARTEN.filter(c => c.l === lf);
   return {
     gesamt: pool.length,
+    gefunden: pool.filter(c => K.stand(prog, c).r > 0).length,
     sitzen: pool.filter(c => K.sitzt(prog, c)).length,
     faellig: pool.filter(c => K.faellig(prog, c, t)).length,
     neu: pool.filter(c => K.stand(prog, c).b === 0).length
@@ -124,6 +129,7 @@ function render(){
   if (m && kreis(Number(m[1])) && kreisOffen(Number(m[1]))) return kreisSeite(Number(m[1]));
   m = location.hash.match(/^#\/(kokytos|gipfel)$/);
   if (m) return arenaSeite(m[1]);
+  if (location.hash === '#/gebeinhaus') return gebeinhaus();
   return lagerfeuer();
 }
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
@@ -261,12 +267,12 @@ function spuk(){
 function kachel(k){
   const z = kreisZahlen(k.lf), st = kz(k.lf);
   const zustand = st.boss ? '<span class="marke gold">Bezwungen</span>' : st.feuer >= K.FEUER_ZUM_TOR ? '<span class="marke nebel">Nebeltor offen</span>' : '';
-  return '<li><a class="kachel' + (k.akt === 2 ? ' berg-kachel' : '') + '" href="#/kreis/' + k.lf + '" style="--bild:url(img/' + k.bild + '-klein.webp)">' +
+  return '<li><a class="kachel' + (k.akt === 2 ? ' berg-kachel' : k.akt === 0 ? ' katakomben-kachel' : '') + '" href="#/kreis/' + k.lf + '" style="--bild:url(img/' + k.bild + '-klein.webp)">' +
     '<span class="kachel-nr">' + kreisMarke(k) + '</span>' +
     '<strong class="kachel-name">' + esc(k.name) + '</strong>' +
     '<span class="kachel-lf">' + esc(k.lfName) + '</span>' +
     '<span class="kachel-fuss">' + feuerPunkte(st.feuer) + zustand + (S.blut && S.blut.ort === k.lf ? '<span class="marke blut">Blutfleck</span>' : '') + '</span>' +
-    '<span class="kachel-zahlen">' + z.sitzen + ' von ' + z.gesamt + ' sitzen' + (z.faellig ? ' · <b>' + z.faellig + ' fällig</b>' : '') + '</span>' +
+    '<span class="kachel-zahlen">' + (k.akt === 0 ? z.gefunden + ' von ' + z.gesamt + ' gefunden' : z.sitzen + ' von ' + z.gesamt + ' sitzen') + (z.faellig ? ' · <b>' + z.faellig + ' fällig</b>' : '') + '</span>' +
   '</a></li>';
 }
 function arenaKachel(id){
@@ -291,7 +297,7 @@ function lagerfeuer(){
   const preis = K.stufenPreis(S.stufe), kann = S.seelen >= preis && maxLeben() < 200;
   const blutOrt = S.blut ? ortDaten(S.blut.ort) : null;
   const bosseIn = akt => kreiseVon(akt).filter(k => kz(k.lf).boss).length;
-  const titelListe = KREISE.filter(k => kz(k.lf).boss).map(k => k.titel).concat(Object.keys(ARENEN).filter(id => besiegt(id)).map(id => ARENEN[id].titel));
+  const titelListe = KREISE.concat([KATAKOMBEN]).filter(k => kz(k.lf).boss).map(k => k.titel).concat(Object.keys(ARENEN).filter(id => besiegt(id)).map(id => ARENEN[id].titel));
   app.innerHTML =
     '<main class="hub">' +
       '<section class="feuerstelle">' +
@@ -309,7 +315,7 @@ function lagerfeuer(){
       '<button type="button" class="knopf aufstieg" id="aufstieg"' + (kann ? '' : ' disabled') + '>' +
         (maxLeben() >= 200 ? 'Höchste Stufe erreicht' : kann ? 'Stufe aufsteigen · ' + zahl(preis) + ' Seelen' : 'Stufe ' + (S.stufe + 1) + ' für ' + zahl(preis) + ' Seelen') +
         '<small>' + (maxLeben() >= 200 ? 'Mehr Leben gibt es nicht' : '+5 Leben je Stufe') + '</small></button>' +
-      (blutOrt ? '<p class="hinweis blut-hinweis"><b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen ' + (typeof S.blut.ort === 'number' ? 'im ' + esc(blutOrt.nr) + ', ' + esc(blutOrt.name) : 'bei ' + esc(blutOrt.boss)) + '. Hol sie dir, bevor du woanders stirbst.</p>' : '') +
+      (blutOrt ? '<p class="hinweis blut-hinweis"><b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen ' + (blutOrt.wo ? esc(blutOrt.wo) : typeof S.blut.ort === 'number' ? 'im ' + esc(blutOrt.nr) + ', ' + esc(blutOrt.name) : 'bei ' + esc(blutOrt.boss)) + '. Hol sie dir, bevor du woanders stirbst.</p>' : '') +
       '<h2 class="abschnitt"><span>' + AKTE[0].name + '</span><small>' + AKTE[0].zusatz + ' · ' + bosseIn(1) + ' von 6 Bossen</small></h2>' +
       '<ul class="kacheln">' + kreiseVon(1).map(kachel).join('') + arenaKachel('kokytos') + '</ul>' +
       '<h2 class="abschnitt berg-abschnitt"><span>' + AKTE[1].name + '</span><small>' + AKTE[1].zusatz + (berg ? ' · ' + bosseIn(2) + ' von 6 Bossen' : '') + '</small></h2>' +
@@ -320,6 +326,8 @@ function lagerfeuer(){
               '<span class="kachel-lf">Hinter dem Zwischenprüfer. Wer durch das Eis geht, sieht den Berg.</span></div></li>') +
         arenaKachel('gipfel') +
       '</ul>' +
+      '<h2 class="abschnitt katakomben-abschnitt"><span>' + esc(KATAKOMBEN.nr) + '</span><small>Jederzeit offen · ' + zahl(KUERZEL.length) + ' Kürzel aus AP1 und AP2</small></h2>' +
+      '<ul class="kacheln">' + kachel(KATAKOMBEN) + '</ul>' +
       '<details class="spielstand"><summary>Spielstand</summary>' +
         '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen</p>' +
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
@@ -351,7 +359,7 @@ function kreisSeite(lf){
   hintergrund(k.bild, 'kreis');
   const torOffen = st.feuer >= K.FEUER_ZUM_TOR && !st.boss;
   app.innerHTML =
-    '<main class="kreis-seite' + (k.akt === 2 ? ' am-berg' : '') + '">' +
+    '<main class="kreis-seite' + (k.akt === 2 ? ' am-berg' : k.akt === 0 ? ' in-katakomben' : '') + '">' +
       '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' +
       '<header class="kreis-kopf">' +
         '<p class="ueber">' + kreisMarke(k) + '</p>' +
@@ -369,6 +377,7 @@ function kreisSeite(lf){
         (torOffen || (S.probe && !st.boss) ? '<button type="button" class="knopf nebeltor" id="tor">Nebeltor durchschreiten<small>' + esc(k.boss) + ' wartet</small></button>'
           : st.boss ? '<p class="bezwungen"><b>' + esc(k.boss) + '</b> liegt im Staub. Titel: <b>' + esc(k.titel) + '</b></p>'
           : '<p class="tor-zu">Das Nebeltor öffnet sich nach ' + K.FEUER_ZUM_TOR + ' Lagerfeuern. Dahinter: ' + esc(k.boss) + '.</p>') +
+        (lf === K.KATAKOMBEN ? '<a class="knopf" href="#/gebeinhaus" id="gebeinhaus">Das Gebeinhaus<small>' + z.gefunden + ' von ' + z.gesamt + ' Kürzeln gefunden</small></a>' : '') +
       '</div>' +
     '</main>';
   $('#gang').addEventListener('click', () => gangStart(lf));
@@ -412,6 +421,69 @@ function arenaSeite(id){
   if (tor) { tor.addEventListener('click', () => { S.zeige = { art: 'tor', ort: id }; sichern(); render(); }); fokus('#tor'); }
 }
 
+/* Gebeinhaus unter den Katakomben: jedes Kürzel, das einmal richtig war, bekommt seine Nische.
+   Wer es dreimal hintereinander weiß (Fach 4 im Lernkasten), dem brennt davor eine Kerze. */
+let gbKategorie = '', gbSuche = '';
+function gebeinhaus(){
+  hintergrund(KATAKOMBEN.bild, 'gebeinhaus', 'staub');
+  const gefunden = c => K.stand(prog, c).r > 0;
+  const anteil = t => { const l = KUERZEL.filter(c => !t || c.t === t); return l.filter(gefunden).length + '/' + l.length; };
+  app.innerHTML =
+    '<main class="gebeinhaus">' +
+      '<a class="zurueck" href="#/kreis/' + K.KATAKOMBEN + '">Zu den Katakomben</a>' +
+      '<header class="gb-kopf">' +
+        '<p class="ueber">Unter den Katakomben</p>' +
+        '<h1 class="kreis-name">Das Gebeinhaus</h1>' +
+        '<p class="kreis-lf"><b>' + KUERZEL.filter(gefunden).length + '</b> von ' + zahl(KUERZEL.length) + ' Kürzeln gefunden · <b>' + KUERZEL.filter(c => K.sitzt(prog, c)).length + '</b> mit Kerze</p>' +
+      '</header>' +
+      '<blockquote class="zitat">Jedes Kürzel, das du einmal richtig hattest, bekommt hier seine Nische. Wer es dreimal hintereinander weiß, dem brennt davor eine Kerze.</blockquote>' +
+      '<div class="gb-filter" role="group" aria-label="Kategorie">' + [''].concat(KATEGORIEN).map(t =>
+        '<button type="button" class="chip" data-t="' + esc(t) + '" aria-pressed="' + (gbKategorie === t) + '">' + esc(t || 'Alle') + ' <small>' + anteil(t) + '</small></button>').join('') + '</div>' +
+      '<input type="search" class="gb-suche" id="gb-suche" placeholder="Kürzel suchen" aria-label="Kürzel suchen" autocomplete="off" spellcheck="false" value="' + esc(gbSuche) + '">' +
+      '<ul class="nischen" id="nischen"></ul>' +
+      '<div class="nische-blatt" id="nische-blatt" role="dialog" aria-labelledby="nb-titel" hidden></div>' +
+    '</main>';
+  const zeichnen = () => {
+    const q = gbSuche.trim().toLowerCase();
+    const liste = KUERZEL.filter(c => (!gbKategorie || c.t === gbKategorie) && (!q || c.n.toLowerCase().includes(q) || (gefunden(c) && c.lang.toLowerCase().includes(q))))
+      .sort((a, b) => a.n.localeCompare(b.n, 'de', { sensitivity: 'base' }));
+    $('#nischen').innerHTML = liste.length ? liste.map(c => {
+      const da = gefunden(c);
+      return '<li><button type="button" class="nische r' + c.r + (da ? '' : ' leer') + (K.sitzt(prog, c) ? ' kerze' : '') + '" data-i="' + c.i + '">' +
+        '<span class="ni-k">' + esc(c.n) + '</span><span class="ni-l">' + (da ? esc(c.lang) : '? ? ?') + '</span></button></li>';
+    }).join('') : '<li class="nichts">Hier liegt nichts. Noch nicht.</li>';
+  };
+  zeichnen();
+  const blatt = $('#nische-blatt');
+  let von = null;
+  const zu = () => { blatt.hidden = true; blatt.innerHTML = ''; if (von && document.contains(von)) von.focus({ preventScroll: true }); };
+  const zeigen = c => {
+    const s = K.stand(prog, c), da = s.r > 0;
+    blatt.innerHTML = '<div class="nb-innen">' +
+      '<p class="karte-kopf"><span>' + esc(c.t) + '</span><b class="rang r' + c.r + '">' + SELTENHEIT[c.r] + '</b></p>' +
+      '<p class="kuerzel-gross" id="nb-titel">' + esc(c.n) + '</p>' +
+      (da ? '<p class="loesung">' + markiert(c) + '</p><p class="merke">' + esc(c.d) + '</p>' + (c.j ? '<p class="spruch">Inoffiziell: „' + esc(c.j) + '“</p>' : '')
+        : '<p class="hinweis">Noch nicht gefunden. Es liegt irgendwo da unten in einem Gang und wartet.</p>') +
+      '<p class="klein">' + s.r + '× richtig, ' + s.w + '× falsch' + (K.sitzt(prog, c) ? ' · die Kerze brennt' : '') + '</p>' +
+      '<button type="button" class="knopf leise" id="nb-zu">Schließen</button></div>';
+    blatt.hidden = false;
+    $('#nb-zu').addEventListener('click', zu);
+    fokus('#nb-zu');
+  };
+  $('.gb-filter').addEventListener('click', e => {
+    const b = e.target.closest('.chip');
+    if (!b) return;
+    gbKategorie = b.dataset.t;
+    $$('.gb-filter .chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    zeichnen();
+  });
+  $('#gb-suche').addEventListener('input', e => { gbSuche = e.target.value; zeichnen(); });
+  $('#nischen').addEventListener('click', e => { const b = e.target.closest('.nische'); if (b) { von = b; zeigen(KARTE.get(b.dataset.i)); } });
+  const taste = e => { if (e.key === 'Escape' && !blatt.hidden) zu(); };
+  document.addEventListener('keydown', taste);
+  aufraeumen = () => document.removeEventListener('keydown', taste);
+}
+
 /* ---------- Kampf ---------- */
 function laufStart(art, ort, extra){
   const O = ortDaten(ort);
@@ -433,14 +505,21 @@ function neueFrage(){
   let id, nachgeholt = false, auftritt = false;
   if (boss) {
     const ph = ortDaten(L.ort).phasen[L.phase];
-    id = L.blutOffen && S.blut ? S.blut.id : K.bossKarte(KARTEN, prog, ph.lfs, L.zuletzt).i;
+    id = L.blutOffen && S.blut ? S.blut.id : K.bossKarte(KARTEN, prog, ph.lfs, L.zuletzt, ph.seltenheit).i;
     L.zuletzt = L.zuletzt.concat(id).slice(-6);
     auftritt = !!L.phaseNeu; L.phaseNeu = false;
   } else {
     id = L.plan[L.pos];
     if (id.startsWith('!')) { id = id.slice(1); nachgeholt = true; }
   }
-  const c = KARTE.get(id), typ = K.fragetyp(prog, c, boss);
+  const c = KARTE.get(id), blut = !!(L.blutOffen && S.blut && S.blut.id === id);
+  /* Kürzel: die Antworten sind Texte, ok zeigt auf die richtige */
+  if (K.istKuerzel(c)) {
+    const typ = K.kuerzelTyp(prog, c, boss, boss ? ortDaten(L.ort).phasen[L.phase].typ : null);
+    const wahl = typ === 'langform' ? K.langformOptionen(KUERZEL, c) : typ === 'erklaerung' ? K.kuerzelOptionen(KUERZEL, c) : null;
+    return { id, typ, nachgeholt, auftritt, blut, optionen: wahl ? wahl.optionen : null, ok: wahl ? wahl.ok : null, beantwortet: false };
+  }
+  const typ = K.fragetyp(prog, c, boss);
   return {
     id, typ, nachgeholt, auftritt,
     blut: !!(L.blutOffen && S.blut && S.blut.id === id),
@@ -449,7 +528,16 @@ function neueFrage(){
   };
 }
 
-const TYP_TEXT = { begriff: 'Welcher Begriff ist gemeint?', definition: 'Welche Erklärung passt?', tippen: 'Begriff eintippen' };
+const TYP_TEXT = {
+  begriff: 'Welcher Begriff ist gemeint?', definition: 'Welche Erklärung passt?', tippen: 'Begriff eintippen',
+  'k-langform': 'Wofür steht das Kürzel?', 'k-erklaerung': 'Welches Kürzel ist gemeint?', 'k-tippen': 'Kürzel eintippen'
+};
+/* Die Langform mit den Buchstaben, aus denen das Kürzel besteht */
+function markiert(c){
+  const st = K.kuerzelStellen(c.n, c.lang);
+  return c.lang.split('').map((z, i) => st.has(i) ? '<mark>' + esc(z) + '</mark>' : esc(z)).join('');
+}
+const streu = s => s.split('').reduce((h, z) => (h * 31 + z.charCodeAt(0)) >>> 0, 7);
 let letzteLeben = null;
 function kampf(){
   const L = S.lauf, f = L.frage, c = KARTE.get(f.id), O = ortDaten(L.ort), boss = L.art === 'boss', mx = maxLeben();
@@ -459,21 +547,26 @@ function kampf(){
   const vorher = letzteLeben === null ? L.leben : letzteLeben;
   const fertig = boss ? '' : '<span class="schritte" aria-label="Karte ' + (L.pos + 1) + ' von ' + L.plan.length + '">' +
     L.plan.map((_, i) => '<i class="' + (i < L.pos || (i === L.pos && f.beantwortet) ? 'an' : i === L.pos ? 'jetzt' : '') + '"></i>').join('') + '</span>';
-  const frage = f.typ === 'definition' ? '<p class="frage begriff-gross">' + esc(c.n) + '</p>' : '<p class="frage">' + esc(c.d) + '</p>';
+  const kurz = K.istKuerzel(c), phantom = kurz && c.r === 3 && !boss;
+  const frage = kurz
+    ? (f.typ === 'langform' ? '<p class="frage kuerzel-gross">' + esc(c.n) + '</p>'
+      : f.typ === 'erklaerung' ? '<p class="frage">' + esc(K.verdeckt(c)) + '</p>'
+      : '<p class="frage langform-gross">' + esc(c.lang) + '</p><p class="klein">' + esc(K.verdeckt(c)) + '</p>')
+    : f.typ === 'definition' ? '<p class="frage begriff-gross">' + esc(c.n) + '</p>' : '<p class="frage">' + esc(c.d) + '</p>';
   let antwort = '';
   if (f.typ === 'tippen') {
     antwort = '<form class="tippen" id="tippen" autocomplete="off">' +
-      '<input type="text" id="eingabe" enterkeyhint="send" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Begriff eintippen"' +
+      '<input type="text" id="eingabe" enterkeyhint="send" autocomplete="off" autocapitalize="' + (kurz ? 'characters' : 'off') + '" autocorrect="off" spellcheck="false" aria-label="' + (kurz ? 'Kürzel' : 'Begriff') + ' eintippen"' +
         (f.beantwortet ? ' readonly value="' + esc(f.eingabe || '') + '" class="' + (f.gut ? 'ok' : 'falsch') + '"' : '') + '>' +
       '<div class="tippen-knoepfe">' +
         '<button type="submit" class="knopf haupt"' + (f.beantwortet ? ' disabled' : '') + '>Zuschlagen</button>' +
         '<button type="button" class="knopf leise" id="passen"' + (f.beantwortet ? ' disabled' : '') + '>Keine Ahnung</button>' +
       '</div></form>';
   } else {
-    antwort = '<div class="optionen" role="group" aria-label="Antworten">' + f.optionen.map((id, n) => {
-      const o = KARTE.get(id), txt = f.typ === 'begriff' ? o.n : o.d;
+    antwort = '<div class="optionen' + (kurz && f.typ === 'erklaerung' ? ' kuerzel-wahl' : '') + '" role="group" aria-label="Antworten">' + f.optionen.map((x, n) => {
+      const txt = kurz ? x : f.typ === 'begriff' ? KARTE.get(x).n : KARTE.get(x).d, richtig = kurz ? n === f.ok : x === f.id;
       let cls = '';
-      if (f.beantwortet) cls = id === f.id ? ' ok' : n === f.gewaehlt ? ' falsch' : ' blass';
+      if (f.beantwortet) cls = richtig ? ' ok' : n === f.gewaehlt ? ' falsch' : ' blass';
       return '<button type="button" class="option' + (f.typ === 'definition' ? ' lang' : '') + cls + '" data-n="' + n + '"' + (f.beantwortet ? ' disabled' : '') + '>' + esc(txt) + '</button>';
     }).join('') + '</div>';
   }
@@ -499,9 +592,10 @@ function kampf(){
       '</div>' +
       (boss ? '<div class="bossbalken"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
         '<div class="balken"><i style="width:' + ((ph.treffer - L.phaseTreffer) / ph.treffer * 100) + '%"></i></div></div>' : '') +
-      '<section class="karte" id="karte">' +
+      '<section class="karte' + (phantom ? ' phantom-karte' : '') + '" id="karte">' +
         (f.auftritt && !f.beantwortet ? '<p class="auftritt">' + esc(ph.auftritt) + '</p>' : '') +
-        '<p class="karte-kopf"><span>' + TYP_TEXT[f.typ] + '</span><span class="thema">' + esc(c.t) + '</span></p>' +
+        (phantom && !f.beantwortet ? '<p class="phantom">' + esc(PHANTOM[streu(c.i) % PHANTOM.length]) + '</p>' : '') +
+        '<p class="karte-kopf"><span>' + TYP_TEXT[(kurz ? 'k-' : '') + f.typ] + '</span><span class="thema">' + esc(c.t) + (kurz ? ' <b class="rang r' + c.r + '">' + SELTENHEIT[c.r] + '</b>' : '') + '</span></p>' +
         (O.zeit && boss && !f.beantwortet ? '<div class="uhr" id="uhr" aria-hidden="true"><i></i><span></span></div>' : '') +
         (f.blut && !f.beantwortet ? '<p class="blut-hinweis">Dein Blutfleck. <b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen bei dieser Karte.</p>' : '') +
         (f.nachgeholt && !f.beantwortet ? '<p class="nach-hinweis">Die kennst du von eben.</p>' : '') +
@@ -523,7 +617,7 @@ function kampf(){
     $('#passen').addEventListener('click', () => antworten(false, { eingabe: '' }));
     fokus('#eingabe');
   } else {
-    $$('.option').forEach(b => b.addEventListener('click', () => { const n = Number(b.dataset.n); antworten(f.optionen[n] === f.id, { gewaehlt: n }); }));
+    $$('.option').forEach(b => b.addEventListener('click', () => { const n = Number(b.dataset.n); antworten(kurz ? n === f.ok : f.optionen[n] === f.id, { gewaehlt: n }); }));
   }
   starteUhr();
 }
@@ -561,8 +655,10 @@ function rueckmeldung(c, f){
   return '<div class="urteil ' + (f.gut ? (f.tippfehler ? 'knapp' : 'ok') : 'falsch') + '">' +
     '<p class="urteil-wort">' + urteil + '</p>' +
     (f.typ === 'tippen' && !f.gut && f.eingabe ? '<p class="klein">Deine Antwort: „' + esc(f.eingabe) + '“</p>' : '') +
-    '<p class="loesung">' + esc(c.n) + (c.a && c.a.length ? ' <span class="klein">(' + esc(c.a.slice(0, 3).join(', ')) + ')</span>' : '') + '</p>' +
-    (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '') +
+    (K.istKuerzel(c)
+      ? '<p class="loesung"><span class="kuerzel-name">' + esc(c.n) + '</span> = ' + markiert(c) + '</p><p class="merke">' + esc(c.d) + '</p>'
+      : '<p class="loesung">' + esc(c.n) + (c.a && c.a.length ? ' <span class="klein">(' + esc(c.a.slice(0, 3).join(', ')) + ')</span>' : '') + '</p>' +
+        (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '')) +
     (f.zeilen && f.zeilen.length ? '<p class="seelen-zeile">' + f.zeilen.map(esc).join(' · ') + '</p>' : '') +
     (f.spruch ? '<p class="spruch">' + esc(f.spruch) + '</p>' : '') +
   '</div>';
@@ -579,7 +675,7 @@ function antworten(gut, info){
   if (!L || L.frage.beantwortet) return;
   stoppeUhr();
   const f = L.frage, O = ortDaten(L.ort), akt = O.akt;
-  const c = KARTE.get(f.id), boss = L.art === 'boss', fachVorher = K.stand(prog, c).b;
+  const c = KARTE.get(f.id), boss = L.art === 'boss', fachVorher = K.stand(prog, c).b, kurz = K.istKuerzel(c);
   const ph = boss ? O.phasen[L.phase] : null, mehrphasig = boss && O.phasen.length > 1;
   Object.assign(f, info, { beantwortet: true, gut });
   if (f.nachgeholt) { if (!gut) K.fehlerNachtragen(prog, c); }
@@ -588,9 +684,10 @@ function antworten(gut, info){
   const zeilen = [];
   if (gut) {
     L.richtig++;
-    const g = f.nachgeholt ? 5 : K.seelenFuer(fachVorher, boss, akt, S.ng);
+    const g = f.nachgeholt ? 5 : Math.round(K.seelenFuer(fachVorher, boss, akt, S.ng) * (kurz ? K.SELTEN_SEELEN[c.r] : 1));
     S.seelen += g; S.verdient += g; L.plus += g;
     zeilen.push('+' + g + ' Seelen');
+    if (kurz && c.r === 3 && !boss && !f.nachgeholt) zeilen.push('Rotes Phantom vertrieben');
     if (f.blut && S.blut) { S.seelen += S.blut.seelen; L.plus += S.blut.seelen; zeilen.push('Seelen zurückgeholt: +' + zahl(S.blut.seelen)); S.blut = null; L.blutOffen = false; }
     if (boss) {
       L.phaseTreffer++;
@@ -621,6 +718,7 @@ function antworten(gut, info){
     }
     if (mehrphasig && ph.fehler) f.spruch = K.pick(ph.fehler);
     else if (L.leben > 0 && Math.random() < 0.35) f.spruch = K.pick(DANEBEN);
+    if (kurz && f.typ === 'langform' && f.optionen[f.gewaehlt] === c.j) f.spruch = KUERZEL_SPASS;
   }
   if (boss && f.blut) L.blutOffen = false;
   f.zeilen = zeilen;
@@ -704,7 +802,7 @@ function bossSieg(){
 /* Neues Spiel+: alle Bosse stehen wieder auf, Lernstand, Stufe, Lagerfeuer und Kaffee bleiben */
 function neuesSpielPlus(){
   S.ng = (S.ng || 0) + 1;
-  for (const k of KREISE) kz(k.lf).boss = false;
+  for (const k of KREISE.concat([KATAKOMBEN])) kz(k.lf).boss = false;
   for (const id of Object.keys(ARENEN)) az(id).boss = false;
   S.zeige = null; sichern(); location.hash = ''; render(); window.scrollTo(0, 0);
 }
@@ -715,7 +813,7 @@ function zeige(){
   const schliessen = ziel => () => { S.zeige = null; sichern(); if (ziel !== undefined) location.hash = ziel; render(); window.scrollTo(0, 0); };
   const O = z.ort !== undefined ? ortDaten(z.ort) : null;
   if (z.art === 'tod') {
-    const c = KARTE.get(z.id), arena = typeof z.ort === 'string';
+    const c = KARTE.get(z.id), arena = typeof z.ort === 'string', kurz = K.istKuerzel(c);
     const titel = z.ort === 'gipfel' ? 'Durchgefallen' : z.ort === 'kokytos' ? 'Du bist erfroren' : 'Du bist gestorben';
     hintergrund(null, z.ort === 'gipfel' ? 'tod-pruefung' : 'tod');
     app.innerHTML =
@@ -724,9 +822,10 @@ function zeige(){
         '<div class="gross-inhalt spaet">' +
           '<p class="tod-von">' + (z.ort === 'gipfel' ? 'Der Ausschuss hat entschieden, wegen' : 'Erledigt von') + '</p>' +
           '<p class="tod-begriff">' + esc(c.n) + '</p>' +
+          (kurz ? '<p class="tod-lang">' + markiert(c) + '</p>' : '') +
           '<p class="tod-def">' + esc(c.d) + '</p>' +
           (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '') +
-          '<p class="tod-seelen">' + (z.fallen ? '<b>' + zahl(z.fallen) + ' Seelen</b> liegen jetzt bei dieser Karte. ' + (arena ? 'Beim nächsten Versuch' : 'Im nächsten Gang durch diesen Kreis') + ' kommt sie zuerst. Richtig beantwortet, holst du sie zurück. Falsch, und sie sind weg.' : 'Du hattest keine Seelen dabei. Wenigstens das.') +
+          '<p class="tod-seelen">' + (z.fallen ? '<b>' + zahl(z.fallen) + ' Seelen</b> liegen jetzt bei dieser Karte. ' + (arena ? 'Beim nächsten Versuch' : 'Im nächsten Gang ' + gangOrt(O)) + ' kommt sie zuerst. Richtig beantwortet, holst du sie zurück. Falsch, und sie sind weg.' : 'Du hattest keine Seelen dabei. Wenigstens das.') +
             (z.verloren ? ' Die ' + zahl(z.verloren) + ' Seelen vom letzten Mal sind versickert.' : '') + '</p>' +
           '<button type="button" class="knopf haupt" id="weiter">Am Lagerfeuer erwachen</button>' +
         '</div>' +
@@ -744,7 +843,7 @@ function zeige(){
         '<div class="gross-inhalt spaet">' +
           '<p class="bilanz"><b>' + z.richtig + '</b> von ' + z.gesamt + ' richtig · <b>+' + zahl(z.plus) + '</b> Seelen</p>' +
           '<p>' + feuerPunkte(z.feuer) + '</p>' +
-          '<p>' + (z.tor ? 'Alle Lagerfeuer brennen. <b>Das Nebeltor ist offen.</b> Dahinter wartet ' + esc(O.boss) + '.' : z.neu ? 'Lagerfeuer ' + z.feuer + ' von ' + K.FEUER_ZUM_TOR + ' im ' + (O.akt === 2 ? '' : 'Kreis ') + esc(O.name) + '.' : 'Leben und Kaffee sind wieder voll.') + '</p>' +
+          '<p>' + (z.tor ? 'Alle Lagerfeuer brennen. <b>Das Nebeltor ist offen.</b> Dahinter wartet ' + esc(O.boss) + '.' : z.neu ? 'Lagerfeuer ' + z.feuer + ' von ' + K.FEUER_ZUM_TOR + ' ' + (O.akt === 0 ? 'in den Katakomben' : 'im ' + (O.akt === 2 ? '' : 'Kreis ') + esc(O.name)) + '.' : 'Leben und Kaffee sind wieder voll.') + '</p>' +
           '<button type="button" class="knopf haupt" id="weiter">Weiter</button>' +
         '</div>' +
       '</main>';
@@ -754,12 +853,12 @@ function zeige(){
   }
   if (z.art === 'tor') {
     const arena = typeof z.ort === 'string';
-    const regeln = arena ? O.regeln : [
+    const regeln = O.regeln || [
       '<b>' + K.BOSS_TREFFER + ' richtige Antworten</b> bringen den Boss zu Fall.',
       'Jeder Fehler kostet <b>' + K.schadenFuer(0, true, O.akt, S.ng) + ' Leben</b>. Fragen aus dem ganzen ' + (O.akt === 2 ? 'Prüfungsbereich' : 'Lernfeld') + ', die wackligen öfter.',
       'Karten, die schon sitzen sollten, musst du eintippen.'
     ];
-    hintergrund(arena && O.kampfBild ? O.kampfBild : O.bild, arena ? 'arena-' + z.ort : 'tor', wetterVon(z.ort));
+    hintergrund(O.kampfBild || O.bild, arena ? 'arena-' + z.ort : 'tor', wetterVon(z.ort));
     app.innerHTML =
       '<main class="gross nebel' + (arena ? ' tor-' + z.ort : '') + '" role="dialog" aria-modal="true" aria-labelledby="tor-titel">' +
         (arena ? '' : '<div class="nebel-schleier" aria-hidden="true"></div>') +
@@ -811,7 +910,7 @@ function zeige(){
 /* Abspann nach dem Ausschuss */
 function abspann(z){
   hintergrund(ABSPANN_BILD, 'abspann');
-  const alleTitel = KREISE.map(k => k.titel).concat(Object.values(ARENEN).map(a => a.titel));
+  const alleTitel = KREISE.map(k => k.titel).concat(Object.values(ARENEN).map(a => a.titel), kz(K.KATAKOMBEN).boss ? [KATAKOMBEN.titel] : []);
   const zeile = (h, t) => '<div><h2>' + h + '</h2><p>' + t + '</p></div>';
   app.innerHTML =
     '<main class="gross abspann" role="dialog" aria-modal="true" aria-labelledby="ab-titel">' +
@@ -824,9 +923,10 @@ function abspann(z){
         zeile('Die Bosse', KREISE.map(k => esc(k.boss)).join('<br>')) +
         zeile('Der Zwischenprüfer', 'hat den neuen Namen bis heute nicht akzeptiert') +
         zeile('Der Prüfungsausschuss', ARENEN.gipfel.phasen.map(p => esc(p.name)).join('<br>')) +
+        zeile('Abseits des Weges', esc(KATAKOMBEN.boss) + (kz(K.KATAKOMBEN).boss ? ', zu drei Buchstaben zerfallen' : ' wartet noch in den Katakomben. Er hat Zeit.')) +
         zeile('Die Kreise und Gesimse', 'Dante Alighieri, der von alledem nichts wusste') +
         zeile('Kaffee', 'ja, sehr viel') +
-        zeile('Karten', zahl(KARTEN.length) + ' Begriffe aus AP1 und AP2') +
+        zeile('Karten', zahl(KARTEN.length - KUERZEL.length) + ' Begriffe aus AP1 und AP2<br>' + zahl(KUERZEL.length) + ' Kürzel in den Katakomben') +
         '<p>Keine Seele wurde ernsthaft verletzt.</p>' +
         '<p class="rolle-gross">Die echte Prüfung ist leichter.<br>Versprochen.</p>' +
       '</div></div>' +

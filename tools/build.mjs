@@ -1,6 +1,6 @@
 /* Baut die App nach docs/ (nicht im Repository; der Workflow .github/workflows/pages.yml lädt docs/ zu GitHub Pages hoch).
    Aufruf: npm run build
-   - setzt die Karten (data/karten-ap1.json und data/karten-ap2.json) in index.html ein
+   - setzt die Karten (data/karten-ap1.json, data/karten-ap2.json und die Kürzel aus data/kuerzel.json) in index.html ein
    - kopiert Skripte, Stil, Symbole, die benutzten Bilder und die Schriften
    - erzeugt den Service Worker mit Prüfsumme und Liste aller Dateien
    - bricht ab, wenn in den eigenen Texten Gedankenstriche stehen (in den Karten wird nur gezählt) */
@@ -42,9 +42,9 @@ function noDashes(name, text){
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 
-/* Karten: AP1 (Lernfelder 1 bis 6) und AP2 (Gesimse 7 bis 12) */
+/* Karten: AP1 (Lernfelder 1 bis 6), AP2 (Gesimse 7 bis 12) und die Kürzel der Katakomben (13) */
 const karten = [];
-for (const f of ['karten-ap1.json', 'karten-ap2.json']) karten.push(...JSON.parse(await read(path.join(ROOT, 'data', f))));
+for (const f of ['karten-ap1.json', 'karten-ap2.json', 'kuerzel.json']) karten.push(...JSON.parse(await read(path.join(ROOT, 'data', f))));
 if (new Set(karten.map(c => c.i)).size !== karten.length) throw new Error('Doppelte Kartenkennung in data/');
 const kartenJs = JSON.stringify(karten).replace(/</g, '\\u003c');
 const mitStrich = karten.filter(c => /[–—]/.test(JSON.stringify(c))).length;
@@ -94,5 +94,5 @@ await put('sw.js', sw.replace("'/*VERSION*/'", `'${version}'`).replace('/*PRECAC
 
 let total = 0;
 for (const f of await walk(OUT)) total += (await readFile(path.join(OUT, f))).length;
-console.log(`docs/ gebaut: ${files.length + 1} Dateien vorgeladen, ${(total / 1024).toFixed(0)} KB gesamt, Version ${version}, ${karten.length} Karten, ${bilder.length} Bilder`);
+console.log(`docs/ gebaut: ${files.length + 1} Dateien vorgeladen, ${(total / 1024).toFixed(0)} KB gesamt, Version ${version}, ${karten.length} Karten (davon ${karten.filter(c => c.l === 13).length} Kürzel), ${bilder.length} Bilder`);
 if (mitStrich) console.log(`Hinweis: ${mitStrich} Karten enthalten Gedankenstriche (Inhalt aus dem Reinprügler, nicht verändert)`);

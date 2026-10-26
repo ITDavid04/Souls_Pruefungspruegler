@@ -264,6 +264,7 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 .karte { display: flex; flex-direction: column; gap: 14px; padding: 16px; background: rgba(23, 18, 15, .92); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 12px 40px -18px #000; }
 .karte-kopf { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--blass); text-transform: uppercase; letter-spacing: .06em; }
 .karte-kopf .thema { text-transform: none; letter-spacing: 0; text-align: right; color: #8f8474; }
+.karte-kopf .thema .rang { display: inline-block; margin-top: 3px; }
 .frage { font-size: 19px; line-height: 1.5; }
 .frage.begriff-gross { font: 700 clamp(26px, 8vw, 34px)/1.15 var(--f-titel); letter-spacing: .01em; color: #f4e7cc; overflow-wrap: anywhere; }
 .nach-hinweis { font-size: 14px; color: var(--blass); font-style: italic; }
@@ -426,6 +427,69 @@ body[data-bg="arena-gipfel"] .bossbalken .balken i { background: linear-gradient
 @keyframes rolle { from { transform: translateY(54dvh); } to { transform: translateY(calc(-100% + 54dvh)); } }
 .abspann .zeile .knopf { flex: 1 1 200px; }
 
+/* ---------- Katakomben der Kürzel ---------- */
+a.knopf { text-decoration: none; }
+.katakomben-abschnitt { color: #c9b48f; }
+.kachel.katakomben-kachel { border-color: #5c4a2c; }
+.kachel.katakomben-kachel .kachel-nr { color: #e6c27a; }
+.in-katakomben .zitat, .gebeinhaus .zitat { border-left-color: #8a6a36; }
+body[data-bg="gebeinhaus"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .12) 0%, rgba(11, 9, 8, .6) 22%, rgba(11, 9, 8, .95) 42%); }
+/* Staub, der langsam durchs Kerzenlicht sinkt */
+body[data-wetter="staub"] .bg::after { opacity: .7; background-image: radial-gradient(1.5px 1.5px at 30px 40px, #d9c39a, transparent 60%), radial-gradient(1px 1px at 140px 90px, #c8b088, transparent 60%), radial-gradient(1.2px 1.2px at 90px 190px, #e2cfa6, transparent 60%), radial-gradient(1px 1px at 200px 150px, #b79f78, transparent 60%); background-size: 230px 230px; animation: staub 34s linear infinite; }
+@keyframes staub { from { transform: translateY(0); } to { transform: translateY(230px); } }
+
+/* Kürzel im Kampf: groß und in normaler Schrift, denn Groß- und Kleinschreibung gehört dazu (PoE, IoT, K8s) */
+.kuerzel-gross { font: 700 clamp(44px, 14vw, 68px)/1 var(--f-text); letter-spacing: .02em; color: #f6ead0; overflow-wrap: anywhere; text-shadow: 0 0 22px rgba(232, 129, 58, .25); }
+.frage.kuerzel-gross { text-align: center; padding: 8px 0 4px; }
+.frage.langform-gross { font: 700 clamp(21px, 6vw, 27px)/1.25 var(--f-text); color: #f4e7cc; overflow-wrap: anywhere; }
+.optionen.kuerzel-wahl { grid-template-columns: 1fr 1fr; }
+.kuerzel-wahl .option { text-align: center; font: 700 22px/1.2 var(--f-text); min-height: 64px; }
+.rang { font: 700 11px/1 var(--f-text); letter-spacing: .08em; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.rang.r1 { color: #a99a86; }
+.rang.r2 { color: #a9bcd8; }
+.rang.r3 { color: #ff9a88; background: rgba(120, 20, 12, .4); }
+/* Legendäre Kürzel dringen als rotes Phantom ein: ein ruhiger roter Schein, kein Blinken */
+.phantom { font: italic 500 18.5px/1.35 var(--f-zitat); color: #f6c4b8; border-left: 2px solid var(--blut-hell); padding-left: 12px; animation: einblenden .6s ease; }
+.karte.phantom-karte { border-color: #6e241b; box-shadow: 0 12px 40px -18px #000, 0 0 34px -10px rgba(200, 40, 28, .55); }
+.loesung mark, .tod-lang mark, .nb-innen mark { background: none; color: var(--glut); }
+.kuerzel-name { color: var(--gold); }
+.tod-lang { font-size: 19px; font-weight: 700; color: #e9dcc4; }
+
+/* Gebeinhaus: Nischen statt Karten, eine Kerze für jedes Kürzel, das sitzt */
+.gebeinhaus { display: flex; flex-direction: column; gap: 16px; }
+.gb-kopf { margin-top: 14vh; display: grid; gap: 6px; }
+.gb-kopf .kreis-lf b { color: var(--gold); }
+/* Kategorien als eine Zeile zum Wischen, damit die Nischen nicht unter fünf Zeilen Knöpfen verschwinden */
+.gb-filter { display: flex; gap: 6px; overflow-x: auto; margin: 0 calc(-1 * var(--rand)); padding: 2px var(--rand); scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.gb-filter::-webkit-scrollbar { display: none; }
+.chip { flex: none; white-space: nowrap; font: 600 13.5px/1.2 var(--f-text); color: var(--text); background: var(--stein); border: 1px solid var(--linie); border-radius: 4px; padding: 8px 10px; min-height: 38px; cursor: pointer; }
+.chip small { font-size: 12px; color: var(--blass); font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: #3a2a1a; border-color: var(--gold-tief); color: #f6e7c4; }
+.chip[aria-pressed="true"] small { color: #d8c49a; }
+.gb-suche { width: 100%; min-height: 46px; padding: 10px 12px; font: 400 16px/1.2 var(--f-text); color: var(--text); background: var(--nacht); border: 1px solid var(--linie-hell); border-radius: 6px; }
+.gb-suche:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(224, 184, 102, .2); }
+.nischen { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
+.nische {
+  position: relative; width: 100%; min-height: 92px; display: grid; align-content: center; gap: 4px; padding: 14px 6px 8px; text-align: center; cursor: pointer;
+  background: radial-gradient(80% 60% at 50% 100%, rgba(60, 44, 28, .5), transparent), var(--stein);
+  border: 1px solid var(--linie); border-radius: 40px 40px 4px 4px / 26px 26px 4px 4px; box-shadow: inset 0 6px 14px -6px #000;
+}
+.nische .ni-k { font: 700 18px/1.1 var(--f-text); color: #f1e3c8; overflow-wrap: anywhere; }
+.nische .ni-l { font-size: 11.5px; line-height: 1.25; color: var(--blass); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.nische.leer .ni-k { color: #8a7d6b; }
+.nische.leer .ni-l { letter-spacing: .2em; color: #6b5f50; }
+.nische.r2 { border-color: #4c5668; }
+.nische.r3 { border-color: #6e2a20; }
+.nische.r3:not(.leer) { box-shadow: inset 0 6px 14px -6px #000, 0 0 16px -6px rgba(200, 40, 28, .6); }
+.nische.kerze { border-color: var(--gold-tief); }
+.nische.kerze::after { content: ""; position: absolute; top: 7px; right: 10px; width: 6px; height: 9px; border-radius: 50% 50% 45% 45% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 75%, #ffe08a 0 25%, var(--glut) 60%, #8a2f0c); box-shadow: 0 0 8px rgba(232, 129, 58, .8); }
+@media (hover: hover) { .nische:hover, .chip:hover { border-color: var(--gold-tief); } }
+.nichts { grid-column: 1 / -1; color: var(--blass); font-style: italic; }
+.nische-blatt { position: fixed; z-index: 7; left: 0; right: 0; bottom: 0; max-height: 78dvh; overflow: auto; padding: 18px var(--rand) calc(var(--unten) + 18px); background: var(--stein); border-top: 1px solid var(--linie-hell); box-shadow: 0 -20px 40px -10px #000; animation: hoch .25s ease; }
+.nb-innen { max-width: 528px; margin: 0 auto; display: grid; gap: 10px; }
+.nb-innen .karte-kopf { align-items: center; }
+.nb-innen .knopf { width: 100%; margin-top: 4px; }
+
 /* ---------- Hinweis bei neuer Fassung ---------- */
 .toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }
 html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
@@ -437,6 +501,8 @@ html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
   .kacheln { grid-template-columns: 1fr 1fr; }
   .kacheln li:last-child { grid-column: 1 / -1; }
   .titel { padding-top: 22vh; }
+  /* Am Desktop wischt niemand: die Kategorien dürfen umbrechen */
+  .gb-filter { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; -webkit-mask-image: none; mask-image: none; }
 }
 
 /* ---------- Weniger Bewegung ---------- */

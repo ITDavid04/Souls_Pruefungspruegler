@@ -70,8 +70,48 @@ export const KREISE = [
     boss: 'Der kartesische JOIN', bossZusatz: 'Vervielfacher der Zeilen', titel: 'Fürst der Fremdschlüssel'
   }
 ];
-export const kreis = lf => KREISE.find(k => k.lf === lf);
+/* Abseits des Weges: jederzeit offen, Gänge und Lagerfeuer wie in einem Kreis, aber mit den Kürzeln aus AP1 und AP2
+   (data/kuerzel.json, aus der Abkürzungsjagd). Am Ende ein Boss mit drei Beschwörungen. Für die Ausschuss-Feuerwand zählt er nicht. */
+export const KATAKOMBEN = {
+  lf: 13, akt: 0, nr: 'Abseits des Weges', name: 'Die Katakomben der Kürzel', bild: 'katakomben', kampfBild: 'kreis-02',
+  lfName: 'Abkürzungen aus AP1 und AP2', kurz: 'Kürzel', wo: 'in den Katakomben der Kürzel',
+  zitat: 'Neben dem Lagerfeuer führt eine Treppe hinab. Unten liegen sie in Nischen, Schädel an Schädel, jeder mit ein paar Buchstaben auf der Stirn. Keiner weiß mehr, wofür sie standen. In der Prüfung fragt man trotzdem danach.',
+  boss: 'Der Akronymant', bossZusatz: 'Er ruft die Kürzel aus ihren Gräbern', titel: 'Entzifferer der Kürzel',
+  seelen: 200, schaden: 30, phasenWort: 'Beschwörung',
+  schluss: 'Der Akronymant zerfällt zu drei Buchstaben. Keiner weiß, wofür sie standen. Du schon.',
+  regeln: [
+    'Drei Beschwörungen, zusammen <b>zehn Treffer</b>.',
+    'Erst ruft er Kürzel aller Art, dann nur <b>legendäre</b>, am Ende nennt er die Langform, und du <b>tippst</b> das Kürzel.',
+    'Jeder Fehler kostet <b>30 Leben</b>. Kaffee ist erlaubt, Fliehen auch.'
+  ],
+  phasen: [
+    { name: 'Der Akronymant', zusatz: 'Er spricht nur in Abkürzungen', lfs: [13], treffer: 4, ende: 'Der Akronymant taumelt und greift nach den tiefsten Nischen.',
+      auftritt: 'Der Akronymant hebt die Knochenhand: „IMHO ist hier für dich EOL. ASAP.“',
+      treffer_: ['„Das war … korrekt. FYI.“', 'Ein Schädel in der Wand nickt dir zu.', 'Der Akronymant verliert einen Buchstaben.'],
+      fehler: ['„LOL.“ Er sagt es, wie man es schreibt.', 'Aus einer Nische kichert es in Großbuchstaben.', '„RTFM, Sterblicher.“'] },
+    { name: 'Die legendären Toten', zusatz: 'Kürzel, die kaum jemand kennt', lfs: [13], seltenheit: 3, treffer: 3, ende: 'Die Ältesten sinken in ihre Gräber zurück.',
+      auftritt: 'Er ruft die Ältesten aus den tiefsten Nischen. Ihre Namen kennt kaum jemand. Du gleich schon.',
+      treffer_: ['Ein Ältester zerfällt zu Staub und Buchstaben.', '„Woher weißt du das?“', 'Selbst die Wand ist beeindruckt.'],
+      fehler: ['Der Älteste lächelt. Er hat Zeit, er ist legendär.', '„Kennt kaum jemand. Du auch nicht.“', 'Staub rieselt von der Decke.'] },
+    { name: 'Der Akronymant, rückwärts', zusatz: 'Langform rein, Kürzel raus', lfs: [13], typ: 'tippen', treffer: 3, ende: 'Ihm gehen die Buchstaben aus.',
+      auftritt: '„Genug gewählt. Jetzt schreib es selbst.“ Er nennt die Langform und wartet.',
+      treffer_: ['Er murmelt die Buchstaben nach. Sie gehören jetzt dir.', '„Groß- und Kleinschreibung zählt nicht. Ich zähle trotzdem mit.“', 'Ein Buchstabe fällt ihm aus dem Mund.'],
+      fehler: ['„Fast. Also nicht.“', 'Er schreibt deine Antwort in den Staub und wischt sie wieder weg.', '„TL;DR: falsch.“'] }
+  ]
+};
+const GEBIETE = KREISE.concat([KATAKOMBEN]);
+export const kreis = lf => GEBIETE.find(k => k.lf === lf);
 export const kreiseVon = akt => KREISE.filter(k => k.akt === akt);
+/* Seltenheit der Kürzel wie in der Abkürzungsjagd; legendäre dringen als rote Phantome ein */
+export const SELTENHEIT = { 1: 'Gewöhnlich', 2: 'Selten', 3: 'Legendär' };
+export const PHANTOM = [
+  'Ein rotes Phantom ist eingedrungen.',
+  'Ein legendäres Kürzel kriecht aus seiner Nische. Kennt kaum jemand. Gleich du.',
+  'Rotes Phantom erscheint. Es hofft, dass du es nicht kennst.',
+  'Etwas Altes regt sich in der Wand. Es bringt mehr Seelen.'
+];
+export const KUERZEL_SPASS = 'Schön wär’s.';
+export const KATEGORIEN = ['Netzwerk', 'Hardware', 'Entwicklung', 'Datenbanken', 'Sicherheit', 'Projekt und Service', 'Betrieb und Cloud', 'Recht und Wirtschaft', 'Organisationen'];
 
 /* Arenen ohne Gänge: nur ein Bosskampf mit mehreren Phasen und eigenen Regeln.
    kaffee: 'ja' wie immer, 'gefroren' = erst leer, je gefallener Phase taut ein Flakon auf, 'nein' = gar keiner.
@@ -165,7 +205,8 @@ export const RAST = [
   'Ein alter Zettel am Boden: „Sachziel = WAS, Formalziel = WIE erfolgreich.“ Die Handschrift kommt dir bekannt vor.',
   'Irgendwo weiter unten fällt ein Broadcast in eine Schleife. Hier oben ist es still.',
   'Das Feuer brennt ein bisschen heller, wenn du dich hinsetzt.',
-  'Wer rastet, rostet nicht. Wer nie rastet, vergisst.'
+  'Wer rastet, rostet nicht. Wer nie rastet, vergisst.',
+  'Neben dem Feuer führt eine Treppe hinab. Von unten murmelt es in Großbuchstaben.'
 ];
 export const RAST_BERG = [
   'Von hier oben sieht die Hölle klein aus. Sie war es nicht.',

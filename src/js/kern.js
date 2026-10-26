@@ -59,10 +59,12 @@ export function gangPlanen(karten, prog, lf, blutId, t = heute()){
   return q;
 }
 
-/* Bosskarte: aus den Lernfeldern der Phase, schwache Karten öfter, nicht die letzten sechs */
-export function bossKarte(karten, prog, lfs, zuletzt){
-  let pool = karten.filter(c => lfs.includes(c.l) && !zuletzt.includes(c.i));
-  if (!pool.length) pool = karten.filter(c => lfs.includes(c.l));
+/* Bosskarte: aus den Lernfeldern der Phase, schwache Karten öfter, nicht die letzten sechs.
+   seltenheit: nur Kürzel dieser Seltenheit (die zweite Beschwörung des Akronymanten) */
+export function bossKarte(karten, prog, lfs, zuletzt, seltenheit){
+  const passt = c => lfs.includes(c.l) && (!seltenheit || c.r === seltenheit);
+  let pool = karten.filter(c => passt(c) && !zuletzt.includes(c.i));
+  if (!pool.length) pool = karten.filter(passt);
   return wpick(pool, c => { const s = stand(prog, c); return 1 + (s.w > 0 ? 3 : 0) + (s.b <= 1 ? 2 : 0); });
 }
 
@@ -82,6 +84,96 @@ export function fragetyp(prog, c, boss){
   const t = pick(wahl);
   return t === 'tippen' && !tippbar ? 'begriff' : t;
 }
+
+/* ---------- Kürzel aus den Katakomben ----------
+   Eine Kürzel-Karte hat n (das Kürzel), lang (die Langform), d (was dahintersteckt), r (Seltenheit) und manchmal j (Spaß-Langform).
+   Drei Fragen: langform (Kürzel steht da, Langform wählen), erklaerung (Erklärung steht da, Kürzel wählen),
+   tippen (Langform steht da, Kürzel eintippen). Die Antworten sind hier Texte, keine Kartenkennungen. */
+export const KATAKOMBEN = 13;
+export const istKuerzel = c => c.lang !== undefined;
+/* Seltene Kürzel bringen mehr Seelen */
+export const SELTEN_SEELEN = { 1: 1, 2: 1.2, 3: 1.6 };
+export function kuerzelTyp(prog, c, boss, zwang){
+  if (zwang) return zwang;
+  const b = stand(prog, c).b;
+  if (boss) return b >= 2 ? 'tippen' : pick(['langform', 'erklaerung']);
+  return pick(b <= 1 ? ['langform', 'langform', 'erklaerung'] : b <= 3 ? ['langform', 'erklaerung', 'tippen'] : ['tippen', 'tippen', 'langform']);
+}
+const mischen = (liste, richtig) => { const optionen = shuffle(liste); return { optionen, ok: optionen.indexOf(richtig) }; };
+
+/* Falsche Langformen wie in der Abkürzungsjagd: ein Wort gegen ein echtes Fachwort mit demselben Anfangsbuchstaben tauschen.
+   Die Buchstaben passen dann immer noch zum Kürzel, genau das ist die Falle. */
+const FUELL = new Set('of the and for to a on as in by der die das den und für mit von per gegen'.split(' '));
+const wortkern = w => w.replace(/[,()]/g, '');
+const WORTSCHATZ = new WeakMap();
+function wortschatz(kuerzel){
+  if (!WORTSCHATZ.has(kuerzel)) {
+    const woerter = new Map(), echt = new Set(kuerzel.map(x => x.lang.toLowerCase()));
+    for (const x of kuerzel) for (const w of x.lang.split(/\s+/)) {
+      const k = wortkern(w);
+      if (k.length < 3 || FUELL.has(k.toLowerCase()) || /[-äöüß]/.test(k)) continue;
+      if (!woerter.has(k[0])) woerter.set(k[0], new Set());
+      woerter.get(k[0]).add(k);
+    }
+    WORTSCHATZ.set(kuerzel, { woerter, echt });
+  }
+  return WORTSCHATZ.get(kuerzel);
+}
+function vertauscht(kuerzel, c, n){
+  const { woerter, echt } = wortschatz(kuerzel), ws = c.lang.split(/(\s+)/);
+  if (ws.filter(w => w.trim() && !FUELL.has(wortkern(w).toLowerCase())).length < 2) return [];
+  const stellen = ws.map((w, i) => i).filter(i => { const k = wortkern(ws[i]); return k.length >= 3 && !FUELL.has(k.toLowerCase()) && woerter.has(k[0]) && woerter.get(k[0]).size > 1; });
+  const out = new Set();
+  for (let t = 0; t < 40 && out.size < n && stellen.length; t++) {
+    const i = pick(stellen), k = wortkern(ws[i]), andere = [...woerter.get(k[0])].filter(o => o !== k && o.length >= k.length / 2 && o.length <= k.length * 2);
+    if (!andere.length) continue;
+    const kopie = ws.slice(); kopie[i] = ws[i].replace(k, pick(andere));
+    const s = kopie.join('');
+    if (!echt.has(s.toLowerCase())) out.add(s);
+  }
+  return [...out];
+}
+/* Vier Langformen: die echte, vertauschte, aufgefüllt mit ähnlichen echten; die Spaß-Langform nur manchmal */
+export function langformOptionen(kuerzel, c){
+  const opts = [c.lang], spass = c.j && Math.random() < 0.5, ziel = spass ? 3 : 4;
+  for (const v of shuffle(vertauscht(kuerzel, c, 4))) if (opts.length < ziel && !opts.includes(v)) opts.push(v);
+  const worte = s => s.split(/\s+/).length;
+  const aehnlich = o => (o.t === c.t ? 2 : 0) + (worte(o.lang) === worte(c.lang) ? 1 : 0) + (o.n[0].toUpperCase() === c.n[0].toUpperCase() ? 1 : 0) + Math.random();
+  for (const o of kuerzel.filter(o => o !== c).map(o => [aehnlich(o), o]).sort((a, b) => b[0] - a[0]).map(p => p[1])) {
+    if (opts.length >= ziel) break;
+    if (!opts.includes(o.lang)) opts.push(o.lang);
+  }
+  if (spass) opts.push(c.j);
+  return mischen(opts, c.lang);
+}
+/* Vier Kürzel zu einer Erklärung: lieber aus derselben Kategorie und mit demselben Anfangsbuchstaben */
+export function kuerzelOptionen(kuerzel, c){
+  const aehnlich = o => (o.t === c.t ? 2 : 0) + (o.n[0].toUpperCase() === c.n[0].toUpperCase() ? 1 : 0) + (Math.abs(o.n.length - c.n.length) <= 1 ? 1 : 0) + Math.random() * 1.5;
+  const andere = kuerzel.filter(o => o !== c && o.n.toLowerCase() !== c.n.toLowerCase()).map(o => [aehnlich(o), o]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(p => p[1].n);
+  return mischen([c.n].concat(andere), c.n);
+}
+/* Welche Buchstaben der Langform das Kürzel bilden: möglichst viele treffen, Wortanfänge bevorzugen. Liefert die Stellen. */
+export function kuerzelStellen(kuerzel, lang){
+  const L = lang.split(''), n = L.length;
+  const buchstaben = kuerzel.split('').filter(z => /[A-Za-zÄÖÜäöü0-9]/.test(z)).map(z => z.toLowerCase());
+  const anfang = i => i === 0 || /[\s\-\/(,]/.test(L[i - 1]) || (L[i] !== L[i].toLowerCase() && /[a-zäöü]/.test(L[i - 1]));
+  const memo = new Map();
+  const best = (k, p) => {
+    if (k === buchstaben.length) return { s: 0, weg: [] };
+    const key = k * 1000 + p;
+    if (memo.has(key)) return memo.get(key);
+    let res = best(k + 1, p);
+    for (let i = p; i < n; i++) if (L[i].toLowerCase() === buchstaben[k]) {
+      const r = best(k + 1, i + 1), s = r.s + 10 + (anfang(i) ? 3 : 0);
+      if (s > res.s) res = { s, weg: [i].concat(r.weg) };
+    }
+    memo.set(key, res);
+    return res;
+  };
+  return new Set(best(0, 0).weg);
+}
+/* In der Erklärung das Kürzel selbst verdecken, sonst verrät die Frage die Antwort ("Projekt hinter der OWASP Top 10", "aktuell WPA3") */
+export const verdeckt = c => c.d.replace(new RegExp('(^|[^A-Za-zÄÖÜäöü])' + c.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[0-9]*(?![A-Za-zÄÖÜäöü0-9])', 'gi'), '$1…');
 
 /* ---------- Eingetippte Antworten ---------- */
 export const norm = s => String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/ß/g, 'ss').replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/[\s\-_.\/,:;'"„“]/g, '');
