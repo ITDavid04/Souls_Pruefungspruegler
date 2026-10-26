@@ -4,7 +4,8 @@
    CI=1 npm test           -> wie auf GitHub (ohne Sandbox)
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
    Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Katakomben der Kürzel mit Gebeinhaus
-   und Akronymant, Installierbarkeit, Start ohne Netz, keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
+   und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
+   Installierbarkeit, Start ohne Netz, keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
 import puppeteer from 'puppeteer-core';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -47,7 +48,8 @@ const begriffVon = (page, id) => page.evaluate(i => JSON.parse(document.getEleme
 /* Eine Frage beantworten, richtig oder falsch, und warten, bis die Antwort gespeichert ist */
 async function antworte(page, richtig, tippfehler = false){
   const S = await spiel(page), f = S.lauf.frage;
-  if (f.typ === 'tippen') {
+  if (f.typ === 'raetsel') await loese(page, f.raetsel, richtig);
+  else if (f.typ === 'tippen') {
     if (richtig) {
       let wort = await begriffVon(page, f.id);
       if (tippfehler) wort = wort.slice(0, -2) + wort.slice(-1);
@@ -63,6 +65,39 @@ async function antworte(page, richtig, tippfehler = false){
   }
   await warte(page, () => { const S = JSON.parse(localStorage.getItem('spp.spiel')); return !S.lauf || S.lauf.frage.beantwortet; });
 }
+/* Ein Rätsel so lösen, wie man es von Hand täte, oder bewusst danebenliegen */
+async function loese(page, r, richtig){
+  if (r.art === 'rechnen' && r.felder) {
+    if (!richtig) return klick(page, '#passen');
+    for (let k = 0; k < r.felder.length; k++) await page.$eval('#feld-' + k, (e, v) => { e.value = v; }, r.felder[k].soll);
+    return klick(page, '#felder button[type=submit]');
+  }
+  if (r.art === 'rechnen') {
+    const w = r.wahl;
+    if (!w.mehrere) return klick(page, `.option[data-n="${richtig ? w.richtig[0] : w.optionen.findIndex((_, i) => !w.richtig.includes(i))}"]`);
+    if (!richtig) return klick(page, '#passen');
+    for (const n of w.richtig) await klick(page, `.option[data-n="${n}"]`);
+    return klick(page, '#zuschlagen');
+  }
+  if (r.art === 'botschaft') return klick(page, `.zeile-knopf[data-k="${richtig ? r.falsch : (r.falsch + 1) % r.zeilen.length}"]`);
+  if (r.art === 'mimic') return klick(page, `.gatter-knopf[data-g="${richtig ? r.gatter : r.gatter === 'AND' ? 'OR' : 'AND'}"]`);
+  if (r.art === 'restore') {
+    if (!richtig) return klick(page, '#passen');
+    for (const t of r.soll) await klick(page, `#restore .medium[data-t="${t}"]`);
+    return klick(page, '#zurueckspielen');
+  }
+}
+/* Ein bestimmtes Rätsel als aktuelle Frage stellen (gewürfelt von raetsel.js wie in der App) */
+const raetselStellen = (page, name) => page.evaluate(async name => {
+  const R = await import('./js/raetsel.js');
+  const r = R.erzeugen(name), S = JSON.parse(localStorage.getItem('spp.spiel'));
+  const f = { id: null, typ: 'raetsel', raetsel: r, nachgeholt: false, auftritt: false, blut: false, beantwortet: false };
+  if (r.art === 'mimic') Object.assign(f, { a: 0, b: 0, proben: { '00': R.gatter(r.gatter).f(0, 0) } });
+  if (r.art === 'restore') f.folge = [];
+  S.lauf.frage = f;
+  localStorage.setItem('spp.spiel', JSON.stringify(S));
+  return r;
+}, name);
 async function weiter(page){
   const vor = await spiel(page);
   await klick(page, '#weiter');
@@ -310,7 +345,7 @@ try {
   await klick(page, '#gang');
   await ansicht(page, 'kampf');
   const g0 = await spiel(page);
-  check('Gang am Berg: Karten aus AP2', g0.lauf.plan.every(i => i.startsWith('ap2-1-')), g0.lauf.plan.slice(0, 2).join());
+  check('Gang am Berg: Karten aus AP2 und eine Mimic-Truhe', g0.lauf.plan.filter(i => i !== '?').every(i => i.startsWith('ap2-1-')) && g0.lauf.plan.filter(i => i === '?').length === 1, g0.lauf.plan.slice(0, 2).join());
   await antworte(page, false);
   check('Am Berg kostet ein Fehler 25 Leben', (await spiel(page)).lauf.leben === 75, 'Leben ' + (await spiel(page)).lauf.leben);
   await sleep(400);
@@ -475,6 +510,111 @@ try {
   await ansicht(page, 'hub');
   check('Lagerfeuer führt den Titel des Akronymanten', await page.$eval('.titel-liste', e => e.textContent.includes('Entzifferer der Kürzel')));
 
+  /* Rätsel im Dritten Kreis (Neues Spiel+ läuft: Seelen ×1,5, Schaden ×1,25) */
+  await klick(page, 'a.kachel[href="#/kreis/3"]');
+  await ansicht(page, 'kreis-seite');
+  check('Dritter Kreis nennt seine Rätsel', await page.$eval('.raetsel-hinweis', e => e.textContent.includes('Rechengegner') && e.textContent.includes('Restore')) && await page.$eval('#gang small', e => e.textContent.includes('2 Rätsel')));
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const rp = (await spiel(page)).lauf.plan;
+  check('Gang im Dritten Kreis: zehn Karten und zwei Rätsel dazwischen', rp.length === 12 && rp.filter(x => x === '?').length === 2 && rp[0] !== '?', rp.join(' '));
+  await raetselStellen(page, 'ipv4Netz');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await page.$eval('#feld-0', e => { e.value = 'zehn punkt null'; });
+  await page.$eval('#felder button[type=submit]', b => b.click());
+  check('Rechengegner: ungültige Adresse zählt nicht, sondern wird erklärt', await page.$eval('#feld-meldung', e => e.textContent.includes('IPv4')) && !(await spiel(page)).lauf.frage.beantwortet);
+  await foto(page, '35-rechengegner');
+  const vorRechnen = (await spiel(page)).seelen;
+  await antworte(page, true);
+  check('Rechengegner gelöst: 30 Seelen', (await spiel(page)).seelen - vorRechnen === 30 && await page.$eval('.urteil-wort', e => e.textContent === 'Gelöst'), `+${(await spiel(page)).seelen - vorRechnen}`);
+  await sleep(400);
+  await foto(page, '36-rechengegner-geloest');
+  await weiter(page);
+  await raetselStellen(page, 'botschaftIpv4');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await sleep(700);
+  await foto(page, '37-botschaft');
+  const vorBotschaft = (await spiel(page)).lauf.leben;
+  await antworte(page, false);
+  check('Botschaft: falsche Zeile kostet 25 Leben, die lügende wird gezeigt', (await spiel(page)).lauf.leben === vorBotschaft - 25 && await page.$('.zeile-knopf.luegt') !== null && await page.$('.zeile-knopf.daneben') !== null);
+  await sleep(400);
+  await foto(page, '38-botschaft-daneben');
+  await klick(page, '#flakon');
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).lauf.flakons === 4);
+  await weiter(page);
+  await raetselStellen(page, 'mimic');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await klick(page, '#schalter-a');
+  await klick(page, '#schalter-b');
+  const proben = (await spiel(page)).lauf.frage.proben;
+  check('Mimic-Truhe: Hebel verraten die Wahrheitstabelle Zeile für Zeile', Object.keys(proben).sort().join() === '00,10,11' && (await page.$$eval('.proben td:last-child', t => t.map(e => e.textContent))).filter(x => x === '?').length === 1, JSON.stringify(proben));
+  await sleep(600);
+  await foto(page, '39-mimic');
+  await antworte(page, true);
+  check('Mimic-Truhe geöffnet: ein Kaffeeflakon für diesen Lauf', (await spiel(page)).lauf.flakons === 5 && await page.$('.truhe.offen') !== null && await page.$eval('.seelen-zeile', e => e.textContent.includes('Kaffeeflakon')));
+  await sleep(600);
+  await foto(page, '40-mimic-offen');
+  await weiter(page);
+  await raetselStellen(page, 'restore');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await sleep(700);
+  await foto(page, '41-restore');
+  await antworte(page, true);
+  check('Restore in der richtigen Reihenfolge zurückgespielt', (await spiel(page)).lauf.frage.gut === true && await page.$$eval('.medium.soll', m => m.length) >= 1);
+  await sleep(400);
+  await foto(page, '42-restore-geloest');
+
+  /* Tod durch die Truhe: der Blutfleck ist das Rätsel selbst und wartet im nächsten Gang zuerst */
+  await weiter(page);
+  const truhe = await raetselStellen(page, 'mimic');
+  await setze(page, 'S.lauf.leben = 10;');
+  const seelenVorBiss = (await spiel(page)).seelen;
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await antworte(page, false);
+  await ansicht(page, 'tod');
+  const biss = await spiel(page);
+  check('Tod durch die Mimic-Truhe: Blutfleck ist das Rätsel', biss.blut && biss.blut.raetsel && biss.blut.raetsel.gatter === truhe.gatter && biss.blut.seelen === seelenVorBiss && await page.$eval('.tod-begriff', e => e.textContent === 'Mimic-Truhe'));
+  await sleep(2600);
+  await foto(page, '43-tod-durch-truhe');
+  await klick(page, '#weiter');
+  await ansicht(page, 'hub');
+  await klick(page, 'a.kachel[href="#/kreis/3"]');
+  await ansicht(page, 'kreis-seite');
+  check('Kreis sagt, dass das Rätsel zuerst wartet', await page.$eval('.blut-hinweis', e => e.textContent.includes('Rätsel')));
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const bf = await spiel(page);
+  check('Nächster Gang beginnt mit derselben Truhe', bf.lauf.plan[0] === '?blut' && bf.lauf.frage.blut && bf.lauf.frage.raetsel.gatter === truhe.gatter);
+  await antworte(page, true);
+  check('Truhe gelöst: Seelen zurück', (await spiel(page)).blut === null && (await spiel(page)).seelen >= seelenVorBiss);
+  await klick(page, '#rueckzug');
+  await klick(page, '#rz-ja');
+  await ansicht(page, 'kreis-seite');
+
+  /* Der Broadcast-Sturm wirft einmal im Kampf ein Rätsel */
+  await klick(page, '#tor');
+  await ansicht(page, 'nebel');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  let bossRaetsel = null;
+  for (let i = 0; i < 20; i++) {
+    const S = await spiel(page);
+    if (!S.lauf) break;
+    if (S.lauf.frage.raetsel && !bossRaetsel) { bossRaetsel = S.lauf.frage; await sleep(500); await foto(page, '44-boss-raetsel'); }
+    if (S.lauf.frage.beantwortet) await weiter(page); else await antworte(page, true);
+  }
+  await ansicht(page, 'sieg');
+  check('Broadcast-Sturm: ein Rätsel im Kampf, dann besiegt', bossRaetsel && bossRaetsel.bossName === 'Der Broadcast-Sturm' && (await spiel(page)).kreise[3].boss, bossRaetsel ? bossRaetsel.raetsel.art : 'kein Rätsel');
+  await klick(page, '#weiter');
+  await ansicht(page, 'kreis-seite');
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(page, 'hub');
+
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
   const man = await cdp.send('Page.getAppManifest');
@@ -502,20 +642,20 @@ try {
   const derrs = watch(d, 'Desktop');
   await d.goto(BASE, { waitUntil: 'networkidle0' });
   await sleep(2600);
-  await foto(d, '39-desktop-titel');
+  await foto(d, '49-desktop-titel');
   await durchTitel(d);
   await ansicht(d, 'hub');
   await sleep(1000);
-  await foto(d, '40-desktop-lagerfeuer');
+  await foto(d, '50-desktop-lagerfeuer');
   await klick(d, 'a.kachel[href="#/kreis/3"]');
   await ansicht(d, 'kreis-seite');
   await sleep(1000);
-  await foto(d, '41-desktop-kreis');
+  await foto(d, '51-desktop-kreis');
   await klick(d, '#gang');
   await ansicht(d, 'kampf');
   await antworte(d, false);
   await sleep(500);
-  await foto(d, '42-desktop-kampf');
+  await foto(d, '52-desktop-kampf');
   await klick(d, '#rueckzug');
   await klick(d, '#rz-ja');
   await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
@@ -527,15 +667,15 @@ try {
   await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
   await ansicht(d, 'arena-gipfel');
   await sleep(1000);
-  await foto(d, '43-desktop-gipfel');
+  await foto(d, '53-desktop-gipfel');
   await d.goto(BASE + '#/kreis/13', { waitUntil: 'networkidle0' });
   await ansicht(d, 'in-katakomben');
   await sleep(1000);
-  await foto(d, '44-desktop-katakomben');
+  await foto(d, '54-desktop-katakomben');
   await d.goto(BASE + '#/gebeinhaus', { waitUntil: 'networkidle0' });
   await ansicht(d, 'gebeinhaus');
   await sleep(1000);
-  await foto(d, '45-desktop-gebeinhaus');
+  await foto(d, '55-desktop-gebeinhaus');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
 } catch (e) {

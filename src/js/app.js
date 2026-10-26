@@ -4,7 +4,8 @@
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN } from './welt.js';
+import * as R from './raetsel.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -329,7 +330,8 @@ function lagerfeuer(){
       '<h2 class="abschnitt katakomben-abschnitt"><span>' + esc(KATAKOMBEN.nr) + '</span><small>Jederzeit offen · ' + zahl(KUERZEL.length) + ' Kürzel aus AP1 und AP2</small></h2>' +
       '<ul class="kacheln">' + kachel(KATAKOMBEN) + '</ul>' +
       '<details class="spielstand"><summary>Spielstand</summary>' +
-        '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen</p>' +
+        '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen' +
+          (S.raetsel && S.raetsel.versucht ? ' · ' + S.raetsel.geloest + ' von ' + S.raetsel.versucht + ' Rätseln gelöst' : '') + '</p>' +
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
         '<label class="probe"><input type="checkbox" id="probe"' + (S.probe ? ' checked' : '') + '> Prototyp: alle Tore offen <small>Zum Ansehen. Bosse zählen erst, wenn du sie besiegst.</small></label>' +
         '<button type="button" class="knopf leise" id="installieren" hidden>App installieren</button>' +
@@ -370,10 +372,11 @@ function kreisSeite(lf){
       '<section class="kreis-stand">' +
         '<p>' + feuerPunkte(st.feuer) + ' <span>' + (st.feuer >= K.FEUER_ZUM_TOR ? 'Alle Lagerfeuer brennen' : 'Lagerfeuer ' + st.feuer + ' von ' + K.FEUER_ZUM_TOR) + '</span></p>' +
         '<p class="zahlen"><b>' + z.sitzen + '</b> von ' + z.gesamt + ' sitzen · <b>' + z.faellig + '</b> fällig · <b>' + z.neu + '</b> neu</p>' +
-        (S.blut && S.blut.ort === lf ? '<p class="blut-hinweis">Dein Blutfleck liegt hier: <b>' + zahl(S.blut.seelen) + ' Seelen</b>. Die Karte kommt als Erstes.</p>' : '') +
+        (R.IM_GANG[lf] ? '<p class="raetsel-hinweis">Zwischen den Karten lauern hier ' + R.arten(lf).map(a => R.MEHRZAHL[a]).join(', ').replace(/, ([^,]*)$/, ' und $1') + '.</p>' : '') +
+        (S.blut && S.blut.ort === lf ? '<p class="blut-hinweis">Dein Blutfleck liegt hier: <b>' + zahl(S.blut.seelen) + ' Seelen</b>. ' + (S.blut.raetsel ? 'Das Rätsel, das dich erledigt hat, wartet als Erstes.' : 'Die Karte kommt als Erstes.') + '</p>' : '') +
       '</section>' +
       '<div class="aktionen">' +
-        '<button type="button" class="knopf haupt" id="gang">Gang beginnen<small>' + K.GANG + ' Karten, am Ende ein Lagerfeuer</small></button>' +
+        '<button type="button" class="knopf haupt" id="gang">Gang beginnen<small>' + K.GANG + ' Karten' + (R.IM_GANG[lf] ? ' und ' + (R.IM_GANG[lf] === 1 ? 'ein Rätsel' : R.IM_GANG[lf] + ' Rätsel') : '') + ', am Ende ein Lagerfeuer</small></button>' +
         (torOffen || (S.probe && !st.boss) ? '<button type="button" class="knopf nebeltor" id="tor">Nebeltor durchschreiten<small>' + esc(k.boss) + ' wartet</small></button>'
           : st.boss ? '<p class="bezwungen"><b>' + esc(k.boss) + '</b> liegt im Staub. Titel: <b>' + esc(k.titel) + '</b></p>'
           : '<p class="tor-zu">Das Nebeltor öffnet sich nach ' + K.FEUER_ZUM_TOR + ' Lagerfeuern. Dahinter: ' + esc(k.boss) + '.</p>') +
@@ -494,10 +497,25 @@ function laufStart(art, ort, extra){
   S.lauf.frage = neueFrage();
   sichern(); letzteLeben = S.lauf.leben; render(); window.scrollTo(0, 0);
 }
-const gangStart = lf => laufStart('gang', lf, { plan: K.gangPlanen(KARTEN, prog, lf, S.blut && S.blut.ort === lf ? S.blut.id : null), pos: 0, nach: {} });
+/* Ein Gang: zehn Karten, an manchen Orten zusätzlich Rätsel (gleichmäßig verteilt); ein Rätsel als Blutfleck kommt zuerst */
+function gangStart(lf){
+  const blut = S.blut && S.blut.ort === lf ? S.blut : null;
+  const plan = K.gangPlanen(KARTEN, prog, lf, blut && !blut.raetsel ? blut.id : null), n = R.IM_GANG[lf] || 0;
+  for (let k = n; k >= 1; k--) plan.splice(Math.round(plan.length * k / (n + 1)), 0, '?');
+  if (blut && blut.raetsel) plan.unshift('?blut');
+  laufStart('gang', lf, { plan, pos: 0, nach: {} });
+}
+/* Bosse an Rätsel-Orten werfen einmal im Kampf ein Rätsel, als zweite bis vierte Frage */
 function bossStart(ort){
   if (typeof ort === 'string') az(ort).versuche++;
-  laufStart('boss', ort, { phase: 0, phaseTreffer: 0, phaseNeu: ortDaten(ort).phasen.length > 1, zuletzt: [] });
+  laufStart('boss', ort, { phase: 0, phaseTreffer: 0, phaseNeu: ortDaten(ort).phasen.length > 1, zuletzt: [], raetselBei: R.IM_GANG[ort] ? 1 + K.rnd(3) : -1 });
+}
+/* Eine Rätsel-Frage; die Mimic-Truhe merkt sich die Hebel und was sie schon verraten hat */
+function raetselFrage(r, extra){
+  const f = Object.assign({ id: null, typ: 'raetsel', raetsel: r, nachgeholt: false, auftritt: false, blut: false, beantwortet: false }, extra);
+  if (r.art === 'mimic') Object.assign(f, { a: 0, b: 0, proben: { '00': R.gatter(r.gatter).f(0, 0) } });
+  if (r.art === 'restore') f.folge = [];
+  return f;
 }
 
 function neueFrage(){
@@ -505,11 +523,15 @@ function neueFrage(){
   let id, nachgeholt = false, auftritt = false;
   if (boss) {
     const ph = ortDaten(L.ort).phasen[L.phase];
+    auftritt = !!L.phaseNeu; L.phaseNeu = false;
+    if (L.blutOffen && S.blut && S.blut.raetsel) return raetselFrage(S.blut.raetsel, { blut: true, auftritt });
+    if (L.gesamt === L.raetselBei) { L.raetselBei = -1; return raetselFrage(R.fuer(L.ort), { auftritt, bossName: ph.name }); }
     id = L.blutOffen && S.blut ? S.blut.id : K.bossKarte(KARTEN, prog, ph.lfs, L.zuletzt, ph.seltenheit).i;
     L.zuletzt = L.zuletzt.concat(id).slice(-6);
-    auftritt = !!L.phaseNeu; L.phaseNeu = false;
   } else {
     id = L.plan[L.pos];
+    if (id === '?blut') return raetselFrage(S.blut && S.blut.raetsel ? S.blut.raetsel : R.fuer(L.ort), { blut: !!(L.blutOffen && S.blut && S.blut.raetsel) });
+    if (id === '?') return raetselFrage(R.fuer(L.ort), {});
     if (id.startsWith('!')) { id = id.slice(1); nachgeholt = true; }
   }
   const c = KARTE.get(id), blut = !!(L.blutOffen && S.blut && S.blut.id === id);
@@ -540,21 +562,22 @@ function markiert(c){
 const streu = s => s.split('').reduce((h, z) => (h * 31 + z.charCodeAt(0)) >>> 0, 7);
 let letzteLeben = null;
 function kampf(){
-  const L = S.lauf, f = L.frage, c = KARTE.get(f.id), O = ortDaten(L.ort), boss = L.art === 'boss', mx = maxLeben();
+  const L = S.lauf, f = L.frage, r = f.raetsel, c = r ? null : KARTE.get(f.id), O = ortDaten(L.ort), boss = L.art === 'boss', mx = maxLeben();
   const ph = boss ? O.phasen[L.phase] : null;
   hintergrund(boss && O.kampfBild ? O.kampfBild : O.bild, boss ? (typeof L.ort === 'string' ? 'arena-' + L.ort : 'boss') : 'kampf', wetterVon(L.ort));
   const pct = v => Math.max(0, Math.min(100, v / mx * 100));
   const vorher = letzteLeben === null ? L.leben : letzteLeben;
   const fertig = boss ? '' : '<span class="schritte" aria-label="Karte ' + (L.pos + 1) + ' von ' + L.plan.length + '">' +
     L.plan.map((_, i) => '<i class="' + (i < L.pos || (i === L.pos && f.beantwortet) ? 'an' : i === L.pos ? 'jetzt' : '') + '"></i>').join('') + '</span>';
-  const kurz = K.istKuerzel(c), phantom = kurz && c.r === 3 && !boss;
-  const frage = kurz
+  const kurz = !r && K.istKuerzel(c), phantom = kurz && c.r === 3 && !boss;
+  const frage = r ? '' : kurz
     ? (f.typ === 'langform' ? '<p class="frage kuerzel-gross">' + esc(c.n) + '</p>'
       : f.typ === 'erklaerung' ? '<p class="frage">' + esc(K.verdeckt(c)) + '</p>'
       : '<p class="frage langform-gross">' + esc(c.lang) + '</p><p class="klein">' + esc(K.verdeckt(c)) + '</p>')
     : f.typ === 'definition' ? '<p class="frage begriff-gross">' + esc(c.n) + '</p>' : '<p class="frage">' + esc(c.d) + '</p>';
   let antwort = '';
-  if (f.typ === 'tippen') {
+  if (r) antwort = raetselHtml(f);
+  else if (f.typ === 'tippen') {
     antwort = '<form class="tippen" id="tippen" autocomplete="off">' +
       '<input type="text" id="eingabe" enterkeyhint="send" autocomplete="off" autocapitalize="' + (kurz ? 'characters' : 'off') + '" autocorrect="off" spellcheck="false" aria-label="' + (kurz ? 'Kürzel' : 'Begriff') + ' eintippen"' +
         (f.beantwortet ? ' readonly value="' + esc(f.eingabe || '') + '" class="' + (f.gut ? 'ok' : 'falsch') + '"' : '') + '>' +
@@ -592,15 +615,16 @@ function kampf(){
       '</div>' +
       (boss ? '<div class="bossbalken"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
         '<div class="balken"><i style="width:' + ((ph.treffer - L.phaseTreffer) / ph.treffer * 100) + '%"></i></div></div>' : '') +
-      '<section class="karte' + (phantom ? ' phantom-karte' : '') + '" id="karte">' +
-        (f.auftritt && !f.beantwortet ? '<p class="auftritt">' + esc(ph.auftritt) + '</p>' : '') +
+      '<section class="karte' + (phantom ? ' phantom-karte' : '') + (r ? ' raetsel-karte raetsel-' + r.art : '') + '" id="karte">' +
+        (f.auftritt && !f.beantwortet && ph.auftritt ? '<p class="auftritt">' + esc(ph.auftritt) + '</p>' : '') +
         (phantom && !f.beantwortet ? '<p class="phantom">' + esc(PHANTOM[streu(c.i) % PHANTOM.length]) + '</p>' : '') +
-        '<p class="karte-kopf"><span>' + TYP_TEXT[(kurz ? 'k-' : '') + f.typ] + '</span><span class="thema">' + esc(c.t) + (kurz ? ' <b class="rang r' + c.r + '">' + SELTENHEIT[c.r] + '</b>' : '') + '</span></p>' +
+        (r && !f.beantwortet ? '<p class="raetsel-auftritt">' + esc(raetselSatz(f)) + '</p>' : '') +
+        '<p class="karte-kopf"><span>' + (r ? R.NAMEN[r.art] : TYP_TEXT[(kurz ? 'k-' : '') + f.typ]) + '</span><span class="thema">' + esc(r ? r.thema : c.t) + (kurz ? ' <b class="rang r' + c.r + '">' + SELTENHEIT[c.r] + '</b>' : '') + '</span></p>' +
         (O.zeit && boss && !f.beantwortet ? '<div class="uhr" id="uhr" aria-hidden="true"><i></i><span></span></div>' : '') +
-        (f.blut && !f.beantwortet ? '<p class="blut-hinweis">Dein Blutfleck. <b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen bei dieser Karte.</p>' : '') +
+        (f.blut && !f.beantwortet ? '<p class="blut-hinweis">Dein Blutfleck. <b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen bei ' + (r ? 'diesem Rätsel' : 'dieser Karte') + '.</p>' : '') +
         (f.nachgeholt && !f.beantwortet ? '<p class="nach-hinweis">Die kennst du von eben.</p>' : '') +
         frage + antwort +
-        '<div class="rueckmeldung" id="rueckmeldung" aria-live="polite">' + (f.beantwortet ? rueckmeldung(c, f) : '') + '</div>' +
+        '<div class="rueckmeldung" id="rueckmeldung" aria-live="polite">' + (f.beantwortet ? (r ? raetselRueckmeldung(f) : rueckmeldung(c, f)) : '') + '</div>' +
       '</section>' +
       '<div class="rueckzug-frage" id="rueckzug-frage" hidden></div>' +
     '</main>' +
@@ -612,7 +636,8 @@ function kampf(){
   $('#flakon').addEventListener('click', trinken);
   $('#rueckzug').addEventListener('click', rueckzugFragen);
   if (f.beantwortet) { $('#weiter').addEventListener('click', weiter); fokus('#weiter'); return; }
-  if (f.typ === 'tippen') {
+  if (r) raetselBinden(f);
+  else if (f.typ === 'tippen') {
     $('#tippen').addEventListener('submit', e => { e.preventDefault(); tippenPruefen(); });
     $('#passen').addEventListener('click', () => antworten(false, { eingabe: '' }));
     fokus('#eingabe');
@@ -620,6 +645,154 @@ function kampf(){
     $$('.option').forEach(b => b.addEventListener('click', () => { const n = Number(b.dataset.n); antworten(kurz ? n === f.ok : f.optionen[n] === f.id, { gewaehlt: n }); }));
   }
   starteUhr();
+}
+
+/* ---------- Rätsel auf der Karte ---------- */
+function raetselSatz(f){
+  const r = f.raetsel;
+  if (f.bossName) return RAETSEL_BOSS.replace('{boss}', f.bossName);
+  const s = RAETSEL_AUFTRITT[r.art];
+  return s[streu(r.frage || r.intro || r.art) % s.length];
+}
+/* Routingtabelle oder VLAN-Aufbau, wenn eine Aufgabe sich darauf bezieht */
+function zusatzHtml(z){
+  if (z === 'routing') return '<div class="tabelle-huelle"><table class="routen"><caption>Routingtabelle</caption><tr><th>Ziel</th><th>Netz</th><th>Tür</th></tr>' +
+    R.ROUTEN.map(([n, netz, tuer]) => '<tr><td>' + esc(n) + '</td><td>' + netz + '</td><td>' + tuer + '</td></tr>').join('') + '</table></div>';
+  if (z === 'vlan') return '<div class="vlan-plan">' + R.VLAN_AUFBAU.map((sw, i) =>
+    (i ? '<p class="trunk">Port 5 an beiden Switches: Trunk, trägt alle VLANs</p>' : '') +
+    '<div class="switch"><b>' + sw.name + '</b><span class="pcs">' + sw.pcs.map(([pc, v]) => '<span class="pc v' + v + '">PC ' + pc + '<small>VLAN ' + v + '</small></span>').join('') + '</span></div>').join('') + '</div>';
+  return '';
+}
+const FELD_ART = { ip: 'inputmode="decimal"', zahl: 'inputmode="numeric"', praefix: 'inputmode="numeric"', v6kurz: 'inputmode="text"', v6voll: 'inputmode="text"', iid: 'inputmode="text"' };
+function raetselHtml(f){
+  const r = f.raetsel, aus = f.beantwortet ? ' disabled' : '';
+  const knoepfe = (haupt, id) => f.beantwortet ? '' : '<div class="tippen-knoepfe"><button type="' + (id ? 'button' : 'submit') + '" class="knopf haupt"' + (id ? ' id="' + id + '"' : '') + '>' + haupt + '</button><button type="button" class="knopf leise" id="passen">Keine Ahnung</button></div>';
+  if (r.art === 'rechnen') {
+    let h = '<div class="frage raetsel-frage">' + r.frage + '</div>' + zusatzHtml(r.zusatz);
+    if (r.felder) return h + '<form class="felder" id="felder" autocomplete="off" novalidate>' + r.felder.map((x, k) =>
+      '<label class="feld"><span>' + esc(x.label) + '</span><input type="text" id="feld-' + k + '" ' + FELD_ART[x.art] + ' autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="' + (k === r.felder.length - 1 ? 'send' : 'next') + '"' +
+        (f.beantwortet ? ' readonly value="' + esc((f.werte || [])[k] || '') + '" class="' + ((f.ergebnis || [])[k] ? 'ok' : 'falsch') + '"' : '') + '></label>').join('') +
+      '<p class="feld-meldung" id="feld-meldung" aria-live="polite"></p>' + knoepfe('Zuschlagen') + '</form>';
+    const w = r.wahl, gewaehlt = f.gewaehlt || [], auswahl = f.auswahl || [];
+    return h + (w.mehrere && !f.beantwortet ? '<p class="klein">Mehrere Antworten möglich.</p>' : '') +
+      '<div class="optionen' + (w.optionen.length > 4 ? ' eng' : '') + '" role="group" aria-label="Antworten">' + w.optionen.map((o, n) => {
+        const cls = f.beantwortet ? (w.richtig.includes(n) ? ' ok' : gewaehlt.includes(n) ? ' falsch' : ' blass') : auswahl.includes(n) ? ' gewaehlt' : '';
+        return '<button type="button" class="option' + cls + '" data-n="' + n + '"' + (w.mehrere ? ' aria-pressed="' + auswahl.includes(n) + '"' : '') + aus + '>' + esc(o) + '</button>';
+      }).join('') + '</div>' + (w.mehrere ? knoepfe('Zuschlagen', 'zuschlagen') : '');
+  }
+  if (r.art === 'botschaft') return '<div class="frage raetsel-frage">' + r.intro + '</div>' + zusatzHtml(r.zusatz) +
+    '<ol class="botschaft">' + r.zeilen.map((z, k) => {
+      const cls = !f.beantwortet ? '' : k === r.falsch ? ' luegt' : k === f.gewaehlt ? ' daneben' : (r.folge || []).includes(k) ? ' folge' : '';
+      return '<li><button type="button" class="zeile-knopf' + cls + '" data-k="' + k + '"' + aus + '><span class="nr">' + (k + 1) + '</span><span class="text">' + z + '</span></button></li>';
+    }).join('') + '</ol>' + (f.beantwortet ? '' : '<p class="botschaft-ruf">Tipp die erste Zeile an, die lügt.</p><button type="button" class="knopf leise" id="passen">Keine Ahnung</button>');
+  if (r.art === 'mimic') return '<div class="frage raetsel-frage">' + r.frage + '</div><div class="mimic" id="mimic">' + mimicInnen(f) + '</div>' +
+    '<div class="optionen gatter-wahl" role="group" aria-label="Gatter">' + R.GATTER.map(g => {
+      const cls = !f.beantwortet ? '' : g.id === r.gatter ? ' ok' : g.id === f.gewaehltG ? ' falsch' : ' blass';
+      return '<button type="button" class="option gatter-knopf' + cls + '" data-g="' + g.id + '"' + aus + '><b>' + esc(g.de) + '</b>' + (g.de.startsWith(g.id) ? '' : '<small>' + g.id + '</small>') + '</button>';
+    }).join('') + '</div>';
+  if (r.art === 'restore') return '<div class="frage raetsel-frage">' + r.frage + '</div><div id="restore">' + restoreInnen(f) + '</div>' + knoepfe('Zurückspielen', 'zurueckspielen');
+  return '';
+}
+/* Die Truhe: zwei Hebel, ihre Antwort, und was sie bisher verraten hat; nach der Antwort die ganze Wahrheitstabelle */
+const TRUHE = '<svg class="truhe-bild" viewBox="0 0 120 92" aria-hidden="true">' +
+  '<ellipse class="schein" cx="60" cy="44" rx="44" ry="20"/>' +
+  '<rect x="12" y="44" width="96" height="42" rx="4" fill="#4e3219" stroke="#22140a" stroke-width="2"/>' +
+  '<rect x="12" y="60" width="96" height="6" fill="#8a6a36"/><rect x="53" y="54" width="14" height="16" rx="2" fill="#c9a24a" stroke="#5c4413"/>' +
+  '<path class="zaehne" d="M18 46 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8" fill="#efe6d0"/>' +
+  '<g class="deckel"><path d="M12 46 Q60 8 108 46 Z" fill="#5d3c1f" stroke="#22140a" stroke-width="2"/><path d="M12 46 Q60 8 108 46" fill="none" stroke="#8a6a36" stroke-width="5" stroke-dasharray="2 22"/></g>' +
+  '<g class="augen-truhe"><ellipse cx="46" cy="47" rx="3.2" ry="1.6"/><ellipse cx="74" cy="47" rx="3.2" ry="1.6"/></g></svg>';
+function mimicInnen(f){
+  const r = f.raetsel, g = R.gatter(r.gatter), q = g.f(f.a, f.b), aus = f.beantwortet ? ' disabled' : '';
+  return '<div class="truhe' + (f.beantwortet ? (f.gut ? ' offen' : ' biss') : '') + '">' + TRUHE + '</div>' +
+    '<div class="hebel">' +
+      '<button type="button" class="schalter" id="schalter-a" aria-pressed="' + (f.a === 1) + '"' + aus + '>A <b>' + f.a + '</b></button>' +
+      '<button type="button" class="schalter" id="schalter-b" aria-pressed="' + (f.b === 1) + '"' + aus + '>B <b>' + f.b + '</b></button>' +
+      '<span class="lampe' + (q ? ' an' : '') + '">Truhe <b>' + q + '</b></span>' +
+    '</div>' +
+    '<table class="proben"><tr><th>A</th><th>B</th><th>Truhe</th></tr>' + ['00', '01', '10', '11'].map(k => {
+      const wert = f.beantwortet ? g.f(+k[0], +k[1]) : k in f.proben ? f.proben[k] : '?';
+      return '<tr' + (k === '' + f.a + f.b && !f.beantwortet ? ' class="jetzt"' : '') + '><td>' + k[0] + '</td><td>' + k[1] + '</td><td>' + wert + '</td></tr>';
+    }).join('') + '</table>';
+}
+/* Die Woche: Vollsicherungen, Diffs oder Inkremente mit Größe; angetippt wird in der Reihenfolge des Zurückspielens */
+function restoreInnen(f){
+  const r = f.raetsel, w = R.woche(r), folge = f.folge || [], aus = f.beantwortet ? ' disabled' : '';
+  return '<div class="woche" role="group" aria-label="Sicherungen der Woche">' + R.TAGE.map((t, i) => {
+    if (i === r.ausfall) return '<div class="medium brand"><b>' + t + '</b><span>Ausfall</span></div>';
+    if (!w[i]) return '<div class="medium spaeter"><b>' + t + '</b></div>';
+    const pos = folge.indexOf(i);
+    const cls = ' ' + w[i].art.toLowerCase() + (f.beantwortet ? (r.soll.includes(i) ? ' soll' : pos >= 0 ? ' falsch' : '') : pos >= 0 ? ' gewaehlt' : '');
+    return '<button type="button" class="medium' + cls + '" data-t="' + i + '"' + aus + '><b>' + t + '</b><span>' + w[i].art + '</span><small>' + w[i].gb + ' GB</small>' + (pos >= 0 ? '<i>' + (pos + 1) + '</i>' : '') + '</button>';
+  }).join('') + '</div>' +
+  '<p class="folge" id="folge">' + (folge.length ? 'Zurückspielen: ' + folge.map(i => R.TAGE[i]).join(' → ') : 'Noch keine Sicherung gewählt.') + '</p>';
+}
+function raetselBinden(f){
+  const r = f.raetsel, passen = $('#passen');
+  if (passen) passen.addEventListener('click', () => antworten(false, { gepasst: true }));
+  if (r.art === 'rechnen' && r.felder) {
+    $('#felder').addEventListener('submit', e => {
+      e.preventDefault();
+      const werte = r.felder.map((_, k) => $('#feld-' + k).value), erg = r.felder.map((x, k) => R.pruefeFeld(x, werte[k]));
+      const ungueltig = erg.find(x => x.ungueltig);
+      if (ungueltig) { $('#feld-meldung').textContent = ungueltig.ungueltig; fokus('#feld-' + erg.indexOf(ungueltig)); return; }
+      const warum = (erg.find(x => x.warum) || {}).warum;
+      antworten(erg.every(x => x.ok), { werte, ergebnis: erg.map(x => !!x.ok), warum });
+    });
+    fokus('#feld-0');
+  } else if (r.art === 'rechnen') {
+    const w = r.wahl;
+    $$('.option').forEach(b => b.addEventListener('click', () => {
+      const n = Number(b.dataset.n);
+      if (!w.mehrere) return antworten(w.richtig.length === 1 && w.richtig[0] === n, { gewaehlt: [n] });
+      f.auswahl = (f.auswahl || []).includes(n) ? f.auswahl.filter(x => x !== n) : (f.auswahl || []).concat(n);
+      b.classList.toggle('gewaehlt'); b.setAttribute('aria-pressed', String(f.auswahl.includes(n)));
+    }));
+    if (w.mehrere) $('#zuschlagen').addEventListener('click', () => {
+      const a = (f.auswahl || []).slice().sort((x, y) => x - y);
+      if (!a.length) return;
+      antworten(a.length === w.richtig.length && w.richtig.every(x => a.includes(x)), { gewaehlt: a });
+    });
+  } else if (r.art === 'botschaft') {
+    $$('.zeile-knopf').forEach(b => b.addEventListener('click', () => { const k = Number(b.dataset.k); antworten(k === r.falsch, { gewaehlt: k }); }));
+  } else if (r.art === 'mimic') {
+    const hebel = () => {
+      $$('.schalter').forEach(b => b.addEventListener('click', () => {
+        if (b.id === 'schalter-a') f.a ^= 1; else f.b ^= 1;
+        f.proben['' + f.a + f.b] = R.gatter(r.gatter).f(f.a, f.b);
+        sichern();
+        $('#mimic').innerHTML = mimicInnen(f);
+        hebel();
+        fokus('#' + b.id);
+      }));
+    };
+    hebel();
+    $$('.gatter-knopf').forEach(b => b.addEventListener('click', () => antworten(b.dataset.g === r.gatter, { gewaehltG: b.dataset.g })));
+  } else if (r.art === 'restore') {
+    const tippen = () => $$('#restore .medium[data-t]').forEach(b => b.addEventListener('click', () => {
+      const t = Number(b.dataset.t);
+      f.folge = f.folge.includes(t) ? f.folge.filter(x => x !== t) : f.folge.concat(t);
+      sichern();
+      $('#restore').innerHTML = restoreInnen(f);
+      tippen();
+      fokus('#restore .medium[data-t="' + t + '"]');
+    }));
+    tippen();
+    $('#zurueckspielen').addEventListener('click', () => {
+      if (!f.folge.length) { $('#folge').textContent = 'Wähl zuerst die Sicherungen, in der Reihenfolge, in der sie zurückgespielt werden.'; return; }
+      antworten(f.folge.join() === r.soll.join(), { folge: f.folge.slice() });
+    });
+  }
+}
+function raetselRueckmeldung(f){
+  const r = f.raetsel;
+  return '<div class="urteil ' + (f.gut ? 'ok' : 'falsch') + '">' +
+    '<p class="urteil-wort">' + (f.zeit ? 'Zeit um' : f.gut ? 'Gelöst' : 'Daneben') + '</p>' +
+    (f.warum ? '<p class="klein">' + esc(f.warum) + '</p>' : '') +
+    '<p class="loesung raetsel-loesung">' + R.loesung(r) + '</p>' +
+    '<p class="merke">' + r.erklaerung + '</p>' +
+    (f.zeilen && f.zeilen.length ? '<p class="seelen-zeile">' + f.zeilen.map(esc).join(' · ') + '</p>' : '') +
+    (f.spruch ? '<p class="spruch">' + esc(f.spruch) + '</p>' : '') +
+  '</div>';
 }
 
 /* Prüfungsuhr: die Frist steht in der Frage, Neuladen hilft also nicht */
@@ -674,19 +847,26 @@ function antworten(gut, info){
   const L = S.lauf;
   if (!L || L.frage.beantwortet) return;
   stoppeUhr();
-  const f = L.frage, O = ortDaten(L.ort), akt = O.akt;
-  const c = KARTE.get(f.id), boss = L.art === 'boss', fachVorher = K.stand(prog, c).b, kurz = K.istKuerzel(c);
+  const f = L.frage, O = ortDaten(L.ort), akt = O.akt, r = f.raetsel;
+  const c = r ? null : KARTE.get(f.id), boss = L.art === 'boss', fachVorher = r ? 0 : K.stand(prog, c).b, kurz = !r && K.istKuerzel(c);
   const ph = boss ? O.phasen[L.phase] : null, mehrphasig = boss && O.phasen.length > 1;
   Object.assign(f, info, { beantwortet: true, gut });
-  if (f.nachgeholt) { if (!gut) K.fehlerNachtragen(prog, c); }
+  /* Rätsel kommen nicht in den Lernkasten, sie werden nur gezählt */
+  if (r) { S.raetsel = S.raetsel || { geloest: 0, versucht: 0 }; S.raetsel.versucht++; if (gut) S.raetsel.geloest++; }
+  else if (f.nachgeholt) { if (!gut) K.fehlerNachtragen(prog, c); }
   else K.eintragen(prog, c, gut);
   L.gesamt++; S.antworten = (S.antworten || 0) + 1;
   const zeilen = [];
   if (gut) {
     L.richtig++;
-    const g = f.nachgeholt ? 5 : Math.round(K.seelenFuer(fachVorher, boss, akt, S.ng) * (kurz ? K.SELTEN_SEELEN[c.r] : 1));
+    const g = r ? K.raetselSeelen(boss, akt, S.ng) : f.nachgeholt ? 5 : Math.round(K.seelenFuer(fachVorher, boss, akt, S.ng) * (kurz ? K.SELTEN_SEELEN[c.r] : 1));
     S.seelen += g; S.verdient += g; L.plus += g;
     zeilen.push('+' + g + ' Seelen');
+    /* Die Mimic-Truhe öffnet sich: ein Kaffeeflakon für diesen Lauf, oder Seelen, wenn keiner mehr passt */
+    if (r && r.art === 'mimic') {
+      if (O.kaffee === 'ja' && L.flakons < K.FLAKON_MAX) { L.flakons++; zeilen.push('In der Truhe liegt ein Kaffeeflakon'); }
+      else { const x = Math.round(K.MIMIC_SEELEN * K.ngSeelen(S.ng)); S.seelen += x; S.verdient += x; L.plus += x; zeilen.push('In der Truhe liegen Seelen: +' + x); }
+    }
     if (kurz && c.r === 3 && !boss && !f.nachgeholt) zeilen.push('Rotes Phantom vertrieben');
     if (f.blut && S.blut) { S.seelen += S.blut.seelen; L.plus += S.blut.seelen; zeilen.push('Seelen zurückgeholt: +' + zahl(S.blut.seelen)); S.blut = null; L.blutOffen = false; }
     if (boss) {
@@ -705,20 +885,22 @@ function antworten(gut, info){
     }
     if (mehrphasig && ph.treffer_) f.spruch = K.pick(ph.treffer_);
     else if (Math.random() < 0.2) f.spruch = K.pick(TREFFER);
+    if (r && r.art === 'mimic') f.spruch = MIMIC.auf;
   } else {
-    const d = boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng);
+    const d = r && r.art === 'mimic' ? K.schadenFuer(3, boss, akt, S.ng) : boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng);
     L.leben = Math.max(0, L.leben - d);
     if (f.zeit) zeilen.push('Die Zeit ist um');
-    zeilen.push('−' + d + ' Leben' + (!boss && fachVorher >= 3 ? ', die Karte saß schon, das tut mehr weh' : ''));
+    zeilen.push((r && r.art === 'mimic' ? 'Biss: ' : '') + '−' + d + ' Leben' + (!r && !boss && fachVorher >= 3 ? ', die Karte saß schon, das tut mehr weh' : ''));
     if (f.blut && S.blut) { zeilen.push('Deine ' + zahl(S.blut.seelen) + ' Seelen versickern im Boden.'); S.blut = null; L.blutOffen = false; }
-    if (!boss && L.leben > 0 && !L.nach[c.i]) {
+    if (!r && !boss && L.leben > 0 && !L.nach[c.i]) {
       L.plan.splice(Math.min(L.plan.length, L.pos + 4), 0, '!' + c.i);
       L.nach[c.i] = true;
       zeilen.push('Sie kommt in drei Karten wieder.');
     }
     if (mehrphasig && ph.fehler) f.spruch = K.pick(ph.fehler);
-    else if (L.leben > 0 && Math.random() < 0.35) f.spruch = K.pick(DANEBEN);
+    else if (L.leben > 0 && Math.random() < 0.35) f.spruch = K.pick(r ? RAETSEL_DANEBEN : DANEBEN);
     if (kurz && f.typ === 'langform' && f.optionen[f.gewaehlt] === c.j) f.spruch = KUERZEL_SPASS;
+    if (r && r.art === 'mimic') f.spruch = MIMIC.biss;
   }
   if (boss && f.blut) L.blutOffen = false;
   f.zeilen = zeilen;
@@ -778,9 +960,9 @@ function gangEnde(){
 function sterben(){
   const L = S.lauf;
   if (!L) return render();
-  const id = L.frage.id, verloren = S.blut ? S.blut.seelen : 0, fallen = S.seelen;
-  S.blut = fallen > 0 ? { id, ort: L.ort, seelen: fallen } : null;
-  S.zeige = { art: 'tod', id, fallen, verloren, ort: L.ort };
+  const id = L.frage.id, raetsel = L.frage.raetsel || null, verloren = S.blut ? S.blut.seelen : 0, fallen = S.seelen;
+  S.blut = fallen > 0 ? { id, raetsel, ort: L.ort, seelen: fallen } : null;
+  S.zeige = { art: 'tod', id, raetsel, fallen, verloren, ort: L.ort };
   S.seelen = 0; S.tode++; S.lauf = null;
   sichern(); render();
 }
@@ -813,7 +995,7 @@ function zeige(){
   const schliessen = ziel => () => { S.zeige = null; sichern(); if (ziel !== undefined) location.hash = ziel; render(); window.scrollTo(0, 0); };
   const O = z.ort !== undefined ? ortDaten(z.ort) : null;
   if (z.art === 'tod') {
-    const c = KARTE.get(z.id), arena = typeof z.ort === 'string', kurz = K.istKuerzel(c);
+    const r = z.raetsel, c = r ? null : KARTE.get(z.id), arena = typeof z.ort === 'string', kurz = !r && K.istKuerzel(c);
     const titel = z.ort === 'gipfel' ? 'Durchgefallen' : z.ort === 'kokytos' ? 'Du bist erfroren' : 'Du bist gestorben';
     hintergrund(null, z.ort === 'gipfel' ? 'tod-pruefung' : 'tod');
     app.innerHTML =
@@ -821,11 +1003,12 @@ function zeige(){
         '<div class="band"><h1 id="tod-titel">' + titel + '</h1></div>' +
         '<div class="gross-inhalt spaet">' +
           '<p class="tod-von">' + (z.ort === 'gipfel' ? 'Der Ausschuss hat entschieden, wegen' : 'Erledigt von') + '</p>' +
-          '<p class="tod-begriff">' + esc(c.n) + '</p>' +
+          '<p class="tod-begriff">' + esc(r ? R.NAMEN[r.art] : c.n) + '</p>' +
           (kurz ? '<p class="tod-lang">' + markiert(c) + '</p>' : '') +
-          '<p class="tod-def">' + esc(c.d) + '</p>' +
-          (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '') +
-          '<p class="tod-seelen">' + (z.fallen ? '<b>' + zahl(z.fallen) + ' Seelen</b> liegen jetzt bei dieser Karte. ' + (arena ? 'Beim nächsten Versuch' : 'Im nächsten Gang ' + gangOrt(O)) + ' kommt sie zuerst. Richtig beantwortet, holst du sie zurück. Falsch, und sie sind weg.' : 'Du hattest keine Seelen dabei. Wenigstens das.') +
+          (r ? '<div class="tod-def">' + (r.frage || r.intro) + '</div><p class="merke"><b>Lösung:</b> ' + R.loesung(r) + '</p>'
+            : '<p class="tod-def">' + esc(c.d) + '</p>' + (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '')) +
+          '<p class="tod-seelen">' + (z.fallen ? '<b>' + zahl(z.fallen) + ' Seelen</b> liegen jetzt bei ' + (r ? 'diesem Rätsel' : 'dieser Karte') + '. ' + (arena ? 'Beim nächsten Versuch' : 'Im nächsten Gang ' + gangOrt(O)) +
+            (r ? ' wartet es zuerst. Richtig gelöst' : ' kommt sie zuerst. Richtig beantwortet') + ', holst du sie zurück. Falsch, und sie sind weg.' : 'Du hattest keine Seelen dabei. Wenigstens das.') +
             (z.verloren ? ' Die ' + zahl(z.verloren) + ' Seelen vom letzten Mal sind versickert.' : '') + '</p>' +
           '<button type="button" class="knopf haupt" id="weiter">Am Lagerfeuer erwachen</button>' +
         '</div>' +

@@ -5,7 +5,8 @@ Wer stirbt, lässt seine Seelen bei der Karte liegen, die ihn erledigt hat, und 
 Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 
 > **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss,
-> dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss.
+> dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss,
+> und zwischen den Karten Rätsel: Rechengegner, Botschaften, Mimic-Truhen und Restore-Notfälle.
 > **Live:** https://itdavid04.github.io/Souls_Pruefungspruegler/
 
 ## Die Reise, frei nach Dante
@@ -93,6 +94,24 @@ wer es dreimal hintereinander weiß, dem brennt davor eine Kerze. Nach Kategorie
 erst Kürzel aller Art, dann nur legendäre, am Ende nennt er die Langform und du tippst das Kürzel. 30 Leben je Fehler, Kaffee erlaubt.
 Für die Feuerwand zum Ausschuss zählt er nicht, Belohnung und Titel gibt es trotzdem.
 
+### Rätsel zwischen den Karten
+
+An manchen Orten lauern zwischen den zehn Karten eines Gangs zusätzlich Rätsel. Sie kommen nicht in den Lernkasten,
+viele werden jedes Mal neu gewürfelt, dazu kommen die handverlesenen Aufgaben aus der Subnetz-Klappuhr.
+
+| **Rätsel** | **Was du tust** | **Wo** |
+|---|---|---|
+| Rechengegner | Netz-ID, Broadcast und Rechner ausrechnen, Maske und Präfix umrechnen, Subnetze planen, sagen, ob zwei Rechner direkt reden dürfen, durch welche Tür ein Router ein Paket schickt, wer einen Frame im VLAN bekommt, IPv6 kürzen und aufklappen, EUI-64 | Dritter Kreis, Gesims des Zorns (größere Netze und mehr IPv6) |
+| Botschaft am Boden | Ein Gefallener hat seinen Rechenweg hinterlassen, eine Zeile lügt: die erste falsche antippen | Dritter Kreis, Gesims des Zorns |
+| Mimic-Truhe | Zwei Hebel A und B umlegen, beobachten, was die Truhe ausgibt, dann ihr Gatter nennen. Richtig: ein Kaffeeflakon für diesen Lauf. Falsch: Sie beißt | Stadt Dis (LF5), Gesims des Stolzes |
+| Der Server brennt | Vollsicherung, differentiell oder inkrementell: die Sicherungen in der richtigen Reihenfolge zurückspielen | Dritter Kreis, Gesims des Zorns |
+
+Im Dritten Kreis und am Gesims des Zorns sind es zwei Rätsel je Gang, in der Stadt Dis und am Gesims des Stolzes eins.
+Ein Rätsel bringt 20 Seelen, ein Fehler kostet 20 Leben, die Truhe beißt mit 30 (am Berg wie überall dort etwas mehr). Wer sich bei einer Adresse vertippt
+(Buchstaben, fehlende Punkte), bekommt einen Hinweis statt Schaden; Kommas statt Punkten zählen, weil die Handy-Tastatur sie anbietet.
+Wer an einem Rätsel stirbt, lässt die Seelen bei genau diesem Rätsel liegen, und es wartet im nächsten Gang als Erstes.
+Die Bosse dieser Orte werfen einmal im Kampf selbst ein Rätsel.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
@@ -128,7 +147,7 @@ und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor 
 
 ## Technik
 
-Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/welt.js` (Kreise, Gesimse, Arenen, Texte).
+Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Texte).
 Gespeichert wird nur auf dem Gerät: `spp.spiel` (Spielstand) und `spp.prog` (Lernkasten) im localStorage.
 
 ```bash

@@ -217,6 +217,35 @@ export const RAST_BERG = [
   'Jemand hat den Gipfel in ein Gantt-Diagramm eingetragen. Der Balken ist sehr lang.'
 ];
 
+/* Rätsel zwischen den Karten: wie sie auftreten. Düster, aber mit Augenzwinkern */
+export const RAETSEL_AUFTRITT = {
+  rechnen: [
+    'Ein Rechengegner stellt sich dir in den Weg. Er hält dir einen Zettel hin.',
+    'Aus dem Sturm taumelt ein Rechengegner. Auf seiner Stirn steht eine Adresse.',
+    'Ein Rechengegner. Er rechnet nicht mit dir. Du mit ihm schon.',
+    'Jemand hat eine Maske verloren. Ihr Besitzer will wissen, wozu sie gehört.'
+  ],
+  botschaft: [
+    'Am Boden liegt eine Botschaft, in den Stein geritzt. Ein Gefallener hat hier gerechnet. Eine Zeile lügt.',
+    'Eine leuchtende Botschaft am Boden: „Rechenweg voraus.“ Einer der Schritte stimmt nicht.',
+    'Jemand hat hier seinen Rechenweg hinterlassen. Er ist nicht mehr da. Der Fehler schon.'
+  ],
+  mimic: [
+    'Im Gang steht eine Truhe. Sie atmet.',
+    'Eine Truhe mit zwei Schlössern, A und B. Zu schön, um wahr zu sein.',
+    'Die Truhe zuckt, als du näher kommst. Wer ihren wahren Namen kennt, darf sie öffnen.'
+  ],
+  restore: [
+    'Ein Bote stürzt herein: „Der Server brennt!“ Er drückt dir den Sicherungsplan in die Hand.',
+    'Rauch aus dem Serverraum. Irgendwo piept eine USV. Jetzt zählt nur, was gesichert ist.',
+    'Die Platte ist hinüber. Der Chef steht hinter dir und sagt nichts. Das ist schlimmer.'
+  ]
+};
+export const RAETSEL_BOSS = '{boss} hält inne und wirft dir ein Rätsel hin.';
+/* Nach einem falschen Rätsel: es kommt nicht wieder, also auch kein „gleich nochmal“ */
+export const RAETSEL_DANEBEN = ['Hinfallen ist erlaubt. Liegenbleiben nicht.', 'Das war Aufwärmen.', 'Rechenwege lügen nicht. Rechnende manchmal.', 'Das sitzt beim nächsten Mal.'];
+export const MIMIC = { auf: 'Du nennst ihren wahren Namen. Die Truhe seufzt und klappt auf.', biss: 'Die Truhe beißt zu. Sie hieß anders.' };
+
 /* Wenn eine Antwort sitzt oder danebengeht: kurze Zeilen, selten */
 export const TREFFER = ['Sauber.', 'Sitzt.', 'Der Gegner wankt.', 'So sieht das aus.'];
 export const DANEBEN = ['Hinfallen ist erlaubt. Liegenbleiben nicht.', 'Die Karte kommt gleich wieder. Du auch.', 'Daneben. Merk dir den Merksatz.', 'Das war Aufwärmen.'];

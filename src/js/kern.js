@@ -210,6 +210,9 @@ export const bossSeelen = akt => akt === 2 ? 250 : 150;
 /* Neues Spiel+: Seelen und Schaden wachsen mit jedem Durchgang */
 export const ngSeelen = ng => 1 + 0.5 * (ng || 0);
 export const ngSchaden = ng => 1 + 0.25 * (ng || 0);
+/* Rätsel bringen mehr Seelen als eine neue Karte; ein Fehler kostet wie bei einer neuen Karte, nur die Mimic-Truhe beißt fester */
+export const raetselSeelen = (boss, akt = 1, ng = 0) => Math.round((boss ? 25 : 20) * (akt === 2 ? 1.5 : 1) * ngSeelen(ng));
+export const MIMIC_SEELEN = 30;
 /* Fach vor der Antwort: wer eine Karte schon konnte, bekommt mehr Seelen, und ein Fehler tut mehr weh.
    Am Berg (AP2) ist alles eine Stufe härter und bringt anderthalbmal so viele Seelen. */
 export const seelenFuer = (fachVorher, boss, akt = 1, ng = 0) =>
