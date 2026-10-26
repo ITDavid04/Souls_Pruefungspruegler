@@ -7,6 +7,7 @@ Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 > **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss,
 > dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss,
 > und zwischen den Karten Rätsel: Rechengegner, Botschaften, Mimic-Truhen und Restore-Notfälle.
+> Dazu die Werkstatt mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk zum Ausprobieren.
 > **Live:** https://itdavid04.github.io/Souls_Pruefungspruegler/
 
 ## Die Reise, frei nach Dante
@@ -112,6 +113,18 @@ Ein Rätsel bringt 20 Seelen, ein Fehler kostet 20 Leben, die Truhe beißt mit 3
 Wer an einem Rätsel stirbt, lässt die Seelen bei genau diesem Rätsel liegen, und es wartet im nächsten Gang als Erstes.
 Die Bosse dieser Orte werfen einmal im Kampf selbst ein Rätsel.
 
+### Die Werkstatt
+
+Drei Werkzeuge aus dem Reinprügler-Ordner, zum Ausprobieren ohne Leben und Seelen: die **Subnetz-Klappuhr** (Subnetze,
+Router, Switch und VLAN, IPv6), das **Rechenwerk** (binär addieren, Volladdierer, Gatter, Netzmaske als UND, „Welches Gatter
+steckt im Kasten?“) und das **Zahlenwerk** (Zahlensysteme, KB gegen KiB, Leitungsrechner). Sie liegen als eigene Seiten
+in der App, laufen offline und tragen den Souls-Anstrich; erreichbar vom Lagerfeuer.
+
+Nach einem falschen Rätsel und auf dem Todesbildschirm steht „In der Werkstatt nachsehen“. Die Klappuhr ist dann schon auf
+genau diese Aufgabe gestellt (Adresse und Präfix, die Routingtabelle mit dem Ziel, der VLAN-Frame, das IPv6-Beispiel),
+nach einer Mimic-Truhe öffnet das Rechenwerk die Gatterwand. Oben führt „Zurück zum Kampf“ ohne Titel wieder in den Gang.
+Den Übungsteil der Klappuhr (Vorhersagen, Fehler finden) gibt es nur im Spiel, als Rätsel.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
@@ -179,9 +192,15 @@ python3 -I tools/berg_bilder.py
 python3 -I tools/katakomben_bild.py
 ```
 
+```bash
+python3 -I tools/werkstatt.py "~/Desktop/Reinprügler_APP"
+```
+
 Die AP2-Karten bekommen dabei `ap2-` vor die Kennung und die Gesimse 7 bis 12 als Lernfeld, damit sie sich nicht mit der AP1 überschneiden.
 Die Kürzel landen in `data/kuerzel.json` mit `k-` vor der Kennung und der 13 als Ort; neue kommen in die Gänge, über alle Kategorien gemischt,
 die legendären ab dem dritten Gang.
+`tools/werkstatt.py` holt die drei Werkzeuge nach `src/werkstatt/`: ohne Google-Schriften, ohne Gedankenstriche, mit Kopfzeile,
+und die Klappuhr lässt sich per Link voreinstellen (`klappuhr.html#tab=clock&ip=192.168.1.60&p=26`). Den Anstrich liefert `src/werkstatt/werkstatt.css`.
 Die App-Symbole zeichnet `python3 -I tools/icons.py`.
 
 Veröffentlicht wird über GitHub Actions (`.github/workflows/pages.yml`) bei jedem Push auf `main`.

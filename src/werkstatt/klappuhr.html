@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subnetz-Klappuhr · Werkstatt · Prüfungsprügler</title>
+<style>
+:root{
+  --paper:#F6F8F7; --grid:#DCE6EC; --ink:#1E2A33; --muted:#5C6B75; --node:#FFFFFF; --line:#8FA3B1;
+  --pencil:#2E5E8C; --red:#B3261E; --ok:#2F7D4F;
+  --net:#0E7C8C; --netbg:#C8EEF2; --host:#2F7D4F; --hostbg:#D6F0DF; --bc:#C98A00; --bcbg:#FFEBB0;
+  --flap:#20272D; --flapink:#F3F5F6; --flaphl:#2C353D; --lock:#5A6670;
+  --trok:#2F7D4F;--trokbg:#D6F0DF;--trno:#B3261E;--trnobg:#FBE3E1;--trhint:#B07800;--trhintbg:#FFF1CC;
+  --blockA:#C8EEF2; --blockB:#E3F4F6;
+  --p0:#C8EEF2;--s0:#0E7C8C;--p1:#FFE3A3;--s1:#B07800;--p2:#E2D6FA;--s2:#6B45C4;--p3:#D2EFD9;--s3:#2F7D4F;--p4:#FAD4DE;--s4:#B8325A;--p5:#D3E3FA;--s5:#2E5E9C;--p6:#FDDCC6;--s6:#C0561A;--p7:#E6F2C2;--s7:#6A8A12;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141B21; --grid:#1F2A33; --ink:#E3E9ED; --muted:#93A2AC; --node:#1B242C; --line:#5B6E7B;
+    --pencil:#7FB0DE; --red:#F07167; --ok:#6CC58F;
+    --net:#4FD6E3; --netbg:#0F4A53; --host:#6CC58F; --hostbg:#1D4630; --bc:#F4B83E; --bcbg:#57400C;
+    --flap:#0B0F12; --flapink:#F3F5F6; --flaphl:#161D22; --lock:#6E7B85;
+    --trok:#6CC58F;--trokbg:#1D4630;--trno:#F07167;--trnobg:#4A1F1F;--trhint:#F4B83E;--trhintbg:#4A3710;
+    --blockA:#0F4A53; --blockB:#173840;
+    --p0:#0F4A53;--s0:#4FD6E3;--p1:#57400C;--s1:#F4B83E;--p2:#3B2A63;--s2:#B79BFF;--p3:#1D4630;--s3:#6CC58F;--p4:#5A2033;--s4:#FF8FAE;--p5:#1E3A5F;--s5:#7FB0FF;--p6:#5C2E12;--s6:#FF9D5C;--p7:#3A4A12;--s7:#C4E26A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141B21; --grid:#1F2A33; --ink:#E3E9ED; --muted:#93A2AC; --node:#1B242C; --line:#5B6E7B;
+  --pencil:#7FB0DE; --red:#F07167; --ok:#6CC58F;
+  --net:#4FD6E3; --netbg:#0F4A53; --host:#6CC58F; --hostbg:#1D4630; --bc:#F4B83E; --bcbg:#57400C;
+  --flap:#0B0F12; --flapink:#F3F5F6; --flaphl:#161D22; --lock:#6E7B85;
+    --trok:#6CC58F;--trokbg:#1D4630;--trno:#F07167;--trnobg:#4A1F1F;--trhint:#F4B83E;--trhintbg:#4A3710;
+  --blockA:#0F4A53; --blockB:#173840;
+  --p0:#0F4A53;--s0:#4FD6E3;--p1:#57400C;--s1:#F4B83E;--p2:#3B2A63;--s2:#B79BFF;--p3:#1D4630;--s3:#6CC58F;--p4:#5A2033;--s4:#FF8FAE;--p5:#1E3A5F;--s5:#7FB0FF;--p6:#5C2E12;--s6:#FF9D5C;--p7:#3A4A12;--s7:#C4E26A;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;font:16px/1.5 "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:28px 18px 60px}
+h1{font:700 2.6rem/1.05 "Barlow Condensed","Barlow",sans-serif;margin:0 0 6px}
+h2{font:600 1.35rem/1.2 "Barlow Condensed","Barlow",sans-serif;margin:0 0 10px}
+p{margin:0 0 10px;max-width:70ch}
+.lead{color:var(--muted)}
+button{font:500 .95rem "Barlow",sans-serif;color:var(--ink);background:var(--node);border:1.5px solid var(--line);border-radius:6px;padding:7px 13px;cursor:pointer}
+button:hover{border-color:var(--pencil)}
+button.on{background:var(--pencil);border-color:var(--pencil);color:var(--paper)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--bc);outline-offset:1px}
+input,select{font:500 1rem "Barlow",sans-serif;color:var(--ink);background:var(--node);border:1.5px solid var(--line);border-radius:6px;padding:6px 9px}
+input.bad{border-color:var(--red)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.seg{display:flex}
+.seg button{border-radius:0;margin-left:-1.5px}
+.seg button:first-child{border-radius:6px 0 0 6px;margin-left:0}
+.seg button:last-child{border-radius:0 6px 6px 0}
+.panel{background:var(--node);border:1.5px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.hidden{display:none!important}
+.scroll{overflow-x:auto}
+
+/* Klappuhr */
+.clock{display:flex;align-items:flex-start;gap:6px;justify-content:center;flex-wrap:nowrap;margin:8px 0 4px}
+.dot{font:700 3rem/1 "Barlow Condensed",sans-serif;padding-top:38px;color:var(--muted)}
+.oct{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.flap{position:relative;width:clamp(74px,17vw,140px);height:clamp(72px,14vw,112px);background:var(--flap);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;color:var(--flapink);
+  font:700 clamp(2.3rem,7vw,4.2rem)/1 "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.35);overflow:hidden;border:3px solid transparent}
+.flap::before{content:"";position:absolute;left:0;right:0;top:0;height:50%;background:var(--flaphl);z-index:0}
+.flap::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(0,0,0,.55);z-index:2}
+.flap span{position:relative;z-index:1}
+.flap.fixed{color:var(--lock)}
+.flap.fixed .pin{position:absolute;top:6px;right:8px;width:10px;height:10px;border-radius:50%;background:var(--lock);z-index:3}
+.flap.partial{border-color:var(--net)}
+.flap.free{border-color:var(--host)}
+.flap.flip span{animation:flip .22s ease-in}
+@keyframes flip{0%{transform:scaleY(1)}45%{transform:scaleY(.08)}100%{transform:scaleY(1)}}
+@media (prefers-reduced-motion: reduce){.flap.flip span{animation:none}}
+.octmask{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem}
+.role{font-size:.82rem;font-weight:600;text-align:center;line-height:1.2;min-height:2.4em;max-width:140px}
+.role.fixed{color:var(--lock)} .role.partial{color:var(--net)} .role.free{color:var(--host)}
+.badge{display:inline-block;font:700 1.25rem "Barlow Condensed",sans-serif;padding:3px 14px;border-radius:999px;border:2px solid}
+.badge.netid{color:var(--net);border-color:var(--net);background:var(--netbg)}
+.badge.host{color:var(--host);border-color:var(--host);background:var(--hostbg)}
+.badge.bc{color:var(--bc);border-color:var(--bc);background:var(--bcbg)}
+.center{text-align:center}
+.jump{display:inline-block;margin-left:10px;font-weight:700;color:var(--bc);opacity:0;transition:opacity .2s}
+.jump.show{opacity:1}
+.controls{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;align-items:center;margin-top:10px}
+.controls label{font-weight:600}
+input[type=range]{width:100%;accent-color:var(--net);padding:0;border:0;background:transparent}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+.fact{border:1.5px solid var(--grid);border-radius:6px;padding:8px 10px}
+.fact small{display:block;color:var(--muted);font-size:.8rem}
+.fact b{font-size:1.15rem;font-variant-numeric:tabular-nums}
+.fact.netid b{color:var(--net)} .fact.bc b{color:var(--bc)}
+
+/* Päckchenleiste */
+.strip{display:grid;grid-template-columns:repeat(256,1fr);gap:0;margin-top:8px;min-width:768px;border:1.5px solid var(--line);border-radius:4px;overflow:hidden}
+.strip div{height:40px;background:var(--blockB)}
+.strip div.a{background:var(--blockA)}
+.strip div.first{background:var(--net)}
+.strip div.last{background:var(--bc)}
+.strip div.cur{background:var(--ink);box-shadow:0 0 0 2px var(--ink);position:relative;z-index:1}
+.striplabels{position:relative;height:1.4em;color:var(--muted);font-size:.78rem;min-width:768px;font-variant-numeric:tabular-nums}
+.striplabels span{position:absolute;transform:translateX(-50%)}
+.striplabels span:first-child{transform:none}
+.striplabels span:last-child{transform:translateX(-100%)}
+.zoom{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.pack{display:flex;border:2.5px solid;border-radius:6px;overflow:hidden}
+.pack.here{box-shadow:0 0 0 3px var(--ink)}
+.zc{min-width:44px;padding:4px 6px 3px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;line-height:1.1}
+.zc small{display:block;font-size:.66rem;font-weight:600;opacity:.85}
+.zc+.zc{border-left:1px solid rgba(0,0,0,.15)}
+.zc.cur{outline:3px solid var(--ink);outline-offset:-3px}
+.zc.gap{min-width:28px;font-weight:500}
+.blocks{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.blocks span{font-size:.85rem;font-variant-numeric:tabular-nums;border:1.5px solid var(--grid);border-radius:4px;padding:2px 7px}
+.blocks span.here{border-color:var(--ink);font-weight:700}
+
+/* Zwei Rechner */
+.pcs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.pcs{grid-template-columns:1fr}}
+.pc label{font-weight:600;display:block;margin-bottom:4px}
+.pc .calc{font-size:.92rem;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.verdict{font-size:1.1rem;margin:12px 0 4px}
+.verdict b.same{color:var(--host)} .verdict b.diff{color:var(--bc)}
+svg text{font-family:"Barlow",sans-serif}
+.warn{color:var(--red);font-weight:600;font-size:.9rem}
+
+/* Binär */
+details summary{cursor:pointer;font-weight:600}
+.bin{font:500 .98rem/1.7 "Barlow",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.06em}
+.bin table{border-collapse:collapse}
+.bin td{padding:1px 8px 1px 0}
+.bin td:first-child{color:var(--muted);letter-spacing:0;padding-right:14px}
+.b-n{color:var(--net);font-weight:700}
+.b-h{color:var(--host)}
+.b-sep{color:var(--muted)}
+.b-cut{border-left:2px solid var(--bc);margin-left:2px;padding-left:2px}
+.rule{border-top:1.5px solid var(--line)}
+
+/* Router */
+.rtable{width:100%;border-collapse:collapse;min-width:720px}
+.rtable th{text-align:left;color:var(--muted);font-size:.85rem;font-weight:600;padding:4px 6px}
+.rtable td{padding:4px 6px;border-top:1px solid var(--grid);transition:background .2s}
+.rtable td input{width:100%}
+.rtable td.nm{width:150px} .rtable td.pfx{width:90px} .rtable td.ifc{width:130px} .rtable td.res{width:230px;font-size:.9rem} .rtable td.x{width:44px}
+.rtable tr.checking td{background:var(--bcbg)}
+.rtable tr.match td{background:var(--hostbg)}
+.rtable tr.nomatch td{opacity:.55}
+.rtable tr.winner td{background:var(--netbg);font-weight:700}
+.doors{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.door{border:2px solid var(--line);border-radius:6px;padding:10px 16px;min-width:110px;text-align:center;font-weight:600;transition:all .25s}
+.door.win{border-color:var(--net);background:var(--netbg);transform:translateY(-4px)}
+.door.drop{border-color:var(--red);color:var(--red)}
+.zones{margin-top:6px}
+.zone{border:2px solid var(--line);border-radius:10px;padding:8px 10px 10px;margin-top:8px;background:var(--node);transition:background .25s,border-color .25s,opacity .25s}
+.zone .zh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;font-size:.92rem}
+.zone .zh b{font:600 1.05rem "Barlow Condensed",sans-serif}
+.zone .zh span{color:var(--muted);font-variant-numeric:tabular-nums}
+.zone .kids{display:flex;flex-wrap:wrap;gap:10px}
+.zone .kids>.zone{flex:1 1 220px}
+.zone.checking{border-color:var(--bc);background:var(--bcbg)}
+.zone.match{border-color:var(--host);background:var(--hostbg)}
+.zone.nomatch{opacity:.45}
+.zone.winner{border-color:var(--net);border-width:4px;background:var(--netbg)}
+.zone .pkt{display:none;margin-top:6px;font-weight:700;color:var(--net)}
+.zone.winner>.pkt{display:block}
+.swgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.swgrid{grid-template-columns:1fr}}
+.mtab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.mtab th{text-align:left;color:var(--muted);font-size:.82rem;font-weight:600;padding:3px 6px;border-bottom:1.5px solid var(--line)}
+.mtab td{padding:4px 6px;border-top:1px solid var(--grid);font-size:.92rem}
+.mtab tr.new td{background:var(--bcbg)}
+.vtag{display:inline-block;padding:0 7px;border-radius:4px;font-weight:700;font-size:.85rem;border:1.5px solid}
+.log{margin:10px 0 0;padding-left:20px}
+.log li{margin-bottom:4px}
+.cfg{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:8px}
+.cfg label{display:flex;gap:6px;align-items:center;font-size:.92rem}
+.cfg select{padding:3px 6px}
+.hexclock{display:flex;flex-wrap:wrap;gap:12px 8px;justify-content:center;margin:6px 0}
+.grp{display:flex;flex-direction:column;align-items:center;gap:4px}
+.grp .fl{display:flex;gap:2px}
+.hflap{position:relative;width:25px;height:42px;background:var(--flap);border-radius:4px;border:2px solid transparent;color:var(--flapink);
+  display:flex;align-items:center;justify-content:center;font:700 1.5rem/1 "Barlow Condensed",sans-serif;overflow:hidden}
+.hflap::before{content:"";position:absolute;left:0;right:0;top:0;height:50%;background:var(--flaphl)}
+.hflap::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(0,0,0,.55)}
+.hflap span{position:relative;z-index:1}
+.hflap.fixed{color:var(--lock)}
+.hflap.free{border-color:var(--line)}
+.hflap.flip span{animation:flip .22s ease-in}
+.zbar{height:6px;width:100%;border-radius:3px}
+.zlegend{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;font-size:.88rem;color:var(--muted)}
+.zlegend i{display:inline-block;width:22px;height:8px;border-radius:3px;margin-right:6px;vertical-align:1px}
+.nib{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.nib div{width:40px;padding:4px 0;text-align:center;font-weight:700;border:2px solid;border-radius:4px;color:var(--ink)}
+.nib div.cur{box-shadow:0 0 0 3px var(--ink)}
+.v6row{font:600 1.15rem/1.9 "Barlow",sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.v6row .gone{opacity:.28;text-decoration:line-through}
+.v6row .dc{background:var(--bcbg);color:var(--ink);border:2px solid var(--bc);border-radius:4px;padding:0 4px}
+.v6row .hl{background:var(--netbg);border-radius:3px;padding:0 1px;outline:1.5px solid var(--net)}
+.v6row small{display:block;font:500 .82rem "Barlow",sans-serif;color:var(--muted);line-height:1.2}
+.steps6{padding-left:20px;margin:8px 0}
+.steps6 li{margin-bottom:6px}
+.bitbox{font:600 1.05rem "Barlow",sans-serif;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+.bitbox .flipb{background:var(--bcbg);outline:2px solid var(--bc);border-radius:3px;padding:0 2px}
+.cmp{width:100%;border-collapse:collapse;min-width:560px}
+.cmp th,.cmp td{text-align:left;padding:6px 8px;border-top:1px solid var(--grid)}
+.cmp th{color:var(--muted);font-weight:600;font-size:.88rem}
+.note{border-left:4px solid var(--bc);padding:6px 12px;background:var(--bcbg);border-radius:0 6px 6px 0;margin-bottom:12px;max-width:none}
+.explain{min-height:1.6em;font-size:1.02rem;margin-top:10px}
+
+.modebar{margin:0 0 12px}
+.motto{font-weight:600;color:var(--pencil);margin:4px 0 0}
+.tr-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.tr-dots{display:flex;flex-wrap:wrap;gap:5px}
+.tr-dot{width:34px;height:34px;padding:0;border-radius:50%;font-weight:700}
+.tr-dot.cur{border-width:3px;border-color:var(--ink)}
+.tr-dot.ok{background:var(--trokbg);border-color:var(--trok)}
+.tr-count{color:var(--muted);font-weight:600}
+.tr-q{font-size:1.1rem;margin:4px 0 12px;max-width:75ch}
+.tr-panel code{font:600 1em "Barlow",sans-serif;font-variant-numeric:tabular-nums;background:var(--grid);padding:0 5px;border-radius:4px}
+.tr-sub{margin:0 0 8px;color:var(--muted)}
+.tr-fields{display:flex;flex-wrap:wrap;gap:10px 18px}
+.tr-field{display:flex;flex-direction:column;gap:3px;font-weight:600;font-size:.92rem}
+.tr-field input{min-width:200px;font-size:1.05rem}
+.tr-field input.ok{border-color:var(--trok);background:var(--trokbg)}
+.tr-field input.bad{border-color:var(--trno);background:var(--trnobg)}
+.tr-opts{display:flex;flex-wrap:wrap;gap:8px}
+.tr-opt{font-size:1rem;padding:9px 15px}
+.tr-opt.sel{border-color:var(--pencil);border-width:3px;padding:7.5px 13.5px}
+.tr-opt.right{border-color:var(--trok);background:var(--trokbg)}
+.tr-lines{display:flex;flex-direction:column;gap:6px;max-width:760px}
+.tr-line{display:flex;gap:12px;align-items:flex-start;text-align:left;font-size:1rem;padding:9px 12px}
+.tr-n{font-weight:700;color:var(--muted);min-width:1.2em}
+.tr-line.fine{border-color:var(--trok);opacity:.75}
+.tr-line.wrong{border-color:var(--trno);border-width:3px;background:var(--trnobg);padding:7.5px 10.5px}
+.tr-fb{margin:12px 0 0;min-height:1.5em;max-width:75ch;border-radius:6px}
+.tr-fb.ok,.tr-fb.no,.tr-fb.info,.tr-fb.done{padding:9px 13px;border-left:5px solid}
+.tr-fb.ok{border-color:var(--trok);background:var(--trokbg)}
+.tr-fb.no{border-color:var(--trhint);background:var(--trhintbg)}
+.tr-fb.info{border-color:var(--pencil);background:var(--grid)}
+.tr-fb.done{border-color:var(--trok);background:var(--trokbg);font-weight:600}
+.tr-h{display:inline-block;margin-top:4px}
+.tr-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.tr-btns .primary{background:var(--pencil);border-color:var(--pencil);color:var(--paper)}
+.tr-look.hidden{display:none}
+</style>
+<meta name="theme-color" content="#0b0908">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="werkstatt.css">
+</head>
+<body>
+<nav class="werkstatt-kopf" aria-label="Werkstatt"><a class="werkstatt-zurueck" id="werkstatt-zurueck" href="../?zurueck">Zum Lagerfeuer</a><span class="werkstatt-name">Die Werkstatt</span><span class="werkstatt-reiter"><a href="klappuhr.html" aria-current="page">Klappuhr</a><a href="rechenwerk.html">Rechenwerk</a><a href="zahlenwerk.html">Zahlenwerk</a></span></nav>
+<main>
+  <h1>Subnetz-Klappuhr</h1>
+  <p class="lead">Die Maske klebt Blätter fest. Was frei klappen darf, sind die Rechner im Netz.</p>
+  <p class="motto">Frag nicht, was eine Adresse ist, frag, wozu sie gehört.</p>
+
+  <div class="bar">
+    <div class="seg" role="tablist">
+      <button class="on" data-tab="clock">Klappuhr</button>
+      <button data-tab="router">Router (Ausblick)</button>
+      <button data-tab="vlan">Switch &amp; VLAN</button>
+      <button data-tab="v6">IPv6</button>
+    </div>
+  </div>
+
+  <!-- ================= KLAPPUHR ================= -->
+  <section id="tab-clock">
+    <div class="panel">
+      <div class="clock" id="clock"></div>
+      <div class="center" style="margin-top:6px">
+        <span class="badge" id="typeBadge">Host</span><span class="jump" id="jump">Neues Päckchen!</span>
+      </div>
+
+      <div class="bar" style="justify-content:center">
+        <button id="decBtn">−1</button>
+        <button id="incBtn">+1 weiterklappen</button>
+        <button id="blockBtn">Nächstes Päckchen</button>
+        <button id="runBtn">Laufen lassen</button>
+      </div>
+
+      <div class="controls">
+        <label for="ipIn">IP-Adresse</label>
+        <input id="ipIn" value="192.168.1.60" inputmode="decimal" style="max-width:220px">
+        <label for="pfx">Maske</label>
+        <div>
+          <input type="range" id="pfx" min="8" max="30" value="26">
+          <div id="pfxLabel" style="font-variant-numeric:tabular-nums"></div>
+        </div>
+      </div>
+
+      <div class="facts" id="facts"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Päckchen im klappenden Blatt</h2>
+      <p id="stripText" class="lead"></p>
+      <div class="scroll">
+        <div class="strip" id="strip"></div>
+        <div class="striplabels"><span style="left:0">0</span><span style="left:25%">64</span><span style="left:50%">128</span><span style="left:75%">192</span><span style="left:100%">255</span></div>
+      </div>
+      <div class="blocks" id="blocks"></div>
+      <h2 style="margin-top:18px">Lupe: die Päckchen rund um die Klappe</h2>
+      <div class="zoom" id="zoom"></div>
+      <p class="lead" style="margin:10px 0 0;font-size:.9rem">Jede Farbe ist ein eigenes Päckchen, also ein eigenes Netz. Dick umrandet: das Päckchen und die Stellung, auf der die Klappe gerade steht.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Dürfen die beiden direkt reden?</h2>
+      <p class="lead">Beide Rechner benutzen die Maske von oben. Jeder schaut durch seine Maske: gleiches Päckchen oder nicht?</p>
+      <div class="pcs">
+        <div class="pc"><label for="pcA">Rechner A (Absender)</label><input id="pcA" value="192.168.1.62"><div class="calc" id="calcA"></div></div>
+        <div class="pc"><label for="pcB">Rechner B (Ziel)</label><input id="pcB" value="192.168.1.65"><div class="calc" id="calcB"></div></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <div class="scroll"><svg id="pcSvg" viewBox="0 0 700 220" style="width:100%;min-width:520px;height:auto" role="img" aria-label="Weg des Pakets"></svg></div>
+
+      <details style="margin-top:12px">
+        <summary>Binär zeigen: die UND-Verknüpfung</summary>
+        <div class="scroll bin" id="bin" style="margin-top:10px"></div>
+        <p class="lead" style="margin-top:8px">UND heißt: Nur wo IP <b>und</b> Maske eine 1 haben, bleibt eine 1 stehen. Die Maske schneidet so den Hostanteil weg, übrig bleibt die Netz-ID.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= ROUTER ================= -->
+  <section id="tab-router" class="hidden">
+    <p class="note">Ausblick: Hier geht es weiter, wenn das Paket beim Router ankommt. Der Router stellt dieselbe Frage wie der Rechner, nur für jede Zeile seiner Tabelle.</p>
+
+    <div class="panel">
+      <div class="controls" style="margin-top:0">
+        <label for="dst">Ziel-IP des Pakets</label>
+        <input id="dst" value="10.20.3.70" style="max-width:220px">
+      </div>
+      <div class="clock" id="dstClock" style="margin-top:14px"></div>
+      <div class="bar">
+        <button id="routeBtn">Zustellen</button>
+        <button id="resetRouteBtn">Zurücksetzen</button>
+        <label style="display:flex;gap:6px;align-items:center;font-size:.95rem"><input type="checkbox" id="slow" checked style="width:auto">langsam zeigen</label>
+      </div>
+      <div class="explain" id="rExplain">Jede Zeile ist eine Schablone. Das Paket wird von grob nach fein an alle gehalten.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Zoom: von grob nach fein</h2>
+      <p class="lead">Jede Zeile der Tabelle ist ein Kasten. Je mehr Blätter festgeklebt sind, desto kleiner und genauer der Ort. Das Paket fällt so tief hinein, wie es passt.</p>
+      <div class="zones" id="zones"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Routingtabelle</h2>
+      <div class="scroll">
+        <table class="rtable">
+          <thead><tr><th>Bezeichnung</th><th>Zielnetz</th><th>Maske</th><th>Ausgang</th><th>Passt?</th><th></th></tr></thead>
+          <tbody id="rbody"></tbody>
+        </table>
+      </div>
+      <div class="bar" style="margin-bottom:0"><button id="addRoute">Zeile hinzufügen</button></div>
+      <div class="doors" id="doors"></div>
+      <p class="lead" style="margin-top:12px">Regel: Passen mehrere Zeilen, gewinnt die <b>längste Maske</b>, die genaueste Schablone. 0.0.0.0/0 passt immer und ist deshalb nur der Notausgang.</p>
+    </div>
+  </section>
+
+  <!-- ================= VLAN ================= -->
+  <section id="tab-vlan" class="hidden">
+    <div class="panel">
+      <p class="lead" style="margin-bottom:8px">Ein Switch ist eine Tabelle: welche MAC hängt an welchem Port. VLAN ist nur eine Spalte mehr. Zwischen den Switches läuft ein Trunk, dort bekommt jeder Frame einen VLAN-Aufkleber (Tag).</p>
+      <div class="bar" style="margin:6px 0">
+        <label>Von <select id="vFrom"></select></label>
+        <label>An <select id="vTo"></select></label>
+        <button id="vSend">Frame senden</button>
+        <button id="vReply">Antwort zurück</button>
+        <button id="vClear">MAC-Tabellen leeren</button>
+      </div>
+      <div class="scroll"><svg id="vSvg" viewBox="0 40 760 350" style="width:100%;min-width:600px;height:auto" role="img" aria-label="Zwei Switches mit Rechnern"></svg></div>
+      <ol class="log" id="vLog"><li>Wähle Absender und Ziel und sende einen Frame. Die Tabellen sind noch leer, der erste Frame wird geflutet.</li></ol>
+    </div>
+    <div class="swgrid">
+      <div class="panel"><h2>MAC-Tabelle Switch 1</h2><table class="mtab"><thead><tr><th>MAC</th><th>Port</th><th>VLAN</th></tr></thead><tbody id="mt1"></tbody></table></div>
+      <div class="panel"><h2>MAC-Tabelle Switch 2</h2><table class="mtab"><thead><tr><th>MAC</th><th>Port</th><th>VLAN</th></tr></thead><tbody id="mt2"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <h2>Ports einstellen (untagged / Access)</h2>
+      <div class="cfg" id="vCfg"></div>
+      <p class="lead" style="margin-top:10px">Port 5 ist an beiden Switches der Trunk (tagged) und trägt alle VLANs.</p>
+    </div>
+  </section>
+
+  <!-- ================= IPv6 ================= -->
+  <section id="tab-v6" class="hidden">
+    <div class="panel">
+      <h2>Hex-Klappuhr</h2>
+      <p class="lead">Jedes Blatt hat nur 16 Stellungen (0 bis f) und steht für 4 Bit. Also gilt: <b>ein Blatt = /4</b>. Man zählt Blätter statt Bits.</p>
+      <div class="hexclock" id="hexclock"></div>
+      <div class="zlegend"><span><i style="background:var(--s0)"></i>Provider-Präfix (bis /48)</span><span><i style="background:var(--s1)"></i>Subnetz-ID (/48 bis /64)</span><span><i style="background:var(--line)"></i>Interface-ID (ab /64, fix 64 Bit)</span></div>
+      <div class="bar" style="justify-content:center">
+        <button id="v6Prev">Vorheriges Subnetz</button>
+        <button id="v6Next">Nächstes Subnetz</button>
+      </div>
+      <div class="controls">
+        <label for="v6ip">Adresse</label>
+        <input id="v6ip" value="2001:db8:abcd:12::1" style="max-width:420px">
+        <label for="v6pfx">Präfix</label>
+        <div><input type="range" id="v6pfx" min="16" max="64" value="48"><div id="v6pfxLabel"></div></div>
+      </div>
+      <div class="facts" id="v6facts"></div>
+      <div id="v6nib" style="margin-top:14px"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Kürzen und Aufklappen</h2>
+      <p class="lead">Gib eine Adresse ein, lang oder gekürzt. Das Tool zeigt beide Richtungen.</p>
+      <input id="v6short" value="2001:0db8:0000:0000:0000:ff00:0042:8329" style="width:100%;max-width:520px">
+      <div class="scroll" id="v6rows" style="margin-top:10px"></div>
+      <p class="lead" style="margin-top:8px">Regel 1: Führende Nullen in einer Gruppe dürfen weg. Regel 2: <b>Einmal</b> dürfen mehrere Nullgruppen am Stück zu <b>::</b> werden, sonst weiß niemand, wie viele Nullgruppen wohin gehören.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Subnetz-Planer (typische IHK-Aufgabe)</h2>
+      <div class="bar">
+        <label>Zugewiesenes Präfix <input id="plBase" value="2001:db8:abcd::/48" style="width:220px"></label>
+        <label>Benötigte Subnetze <input id="plN" type="number" min="1" value="200" style="width:100px"></label>
+      </div>
+      <ol class="steps6" id="plSteps"></ol>
+      <div class="scroll" id="plList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>EUI-64: aus der MAC wird die Interface-ID</h2>
+      <p class="lead">Merksatz: <b>Aufschneiden, FFFE rein, zweite Ziffer um 2 wackeln.</b></p>
+      <div class="bar"><label>MAC-Adresse <input id="euiMac" value="AA:00:00:00:00:01" style="width:220px"></label>
+        <span class="lead" style="font-size:.9rem">(die MACs aus dem Switch-Reiter)</span></div>
+      <ol class="steps6" id="euiSteps"></ol>
+      <p class="lead" style="font-size:.92rem">Praxis: Moderne Betriebssysteme würfeln die Interface-ID meist zufällig, weil man Geräte sonst über ihre MAC verfolgen könnte. In der Prüfung wird EUI-64 trotzdem gefragt.</p>
+    </div>
+
+    <div class="panel">
+      <h2>v4 und v6 im Vergleich</h2>
+      <div class="scroll"><table class="cmp">
+        <tr><th>Merkmal</th><th>IPv4</th><th>IPv6</th></tr>
+        <tr><td>Länge</td><td>32 Bit</td><td>128 Bit</td></tr>
+        <tr><td>Schreibweise</td><td>4 Oktette dezimal</td><td>8 Gruppen hex, je 4 Ziffern</td></tr>
+        <tr><td>Ein Blatt</td><td>256 Stellungen = 8 Bit</td><td>16 Stellungen = 4 Bit</td></tr>
+        <tr><td>Hostanteil</td><td>variabel</td><td>praktisch immer 64 Bit (/64)</td></tr>
+        <tr><td>Broadcast</td><td>ja</td><td>nein, dafür Multicast (ff00::/8)</td></tr>
+        <tr><td>Link-Local</td><td>169.254.0.0/16 (APIPA)</td><td>fe80::/10</td></tr>
+        <tr><td>Loopback</td><td>127.0.0.1</td><td>::1</td></tr>
+        <tr><td>Privat / intern</td><td>10/8, 172.16/12, 192.168/16</td><td>fc00::/7 (ULA)</td></tr>
+        <tr><td>Adresse automatisch</td><td>DHCP</td><td>SLAAC oder DHCPv6</td></tr>
+      </table></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- Grundfunktionen ---------- */
+const $=s=>document.querySelector(s);
+const toInt=str=>{const p=String(str).trim().split(".");if(p.length!==4)return null;let n=0;for(const x of p){if(!/^\d{1,3}$/.test(x))return null;const v=+x;if(v>255)return null;n=n*256+v;}return n>>>0;};
+const toIp=n=>[24,16,8,0].map(s=>(n>>>s)&255).join(".");
+const maskOf=p=>p===0?0:(0xFFFFFFFF<<(32-p))>>>0;
+const netOf=(ip,p)=>(ip&maskOf(p))>>>0;
+const bcOf=(ip,p)=>(netOf(ip,p)|(~maskOf(p)>>>0))>>>0;
+const octs=n=>[24,16,8,0].map(s=>(n>>>s)&255);
+
+/* ---------- Farben ---------- */
+const packIdx=(addr,p)=>Math.floor(addr/Math.pow(2,32-p))%8;
+const tint=i=>`var(--p${i})`, strong=i=>`var(--s${i})`;
+
+/* ---------- Klappuhr ---------- */
+let ip=toInt("192.168.1.60"), pfx=26, lastNet=null, runTimer=null;
+
+function buildClock(el,count=4){
+  el.innerHTML="";
+  for(let i=0;i<count;i++){
+    if(i) {const d=document.createElement("div");d.className="dot";d.textContent=".";el.appendChild(d);}
+    const o=document.createElement("div");o.className="oct";
+    o.innerHTML=`<div class="flap"><span>0</span><i class="pin"></i></div><div class="octmask"></div><div class="role"></div>`;
+    el.appendChild(o);
+  }
+}
+function setFlaps(el,value,p,showRoles=true){
+  const vals=octs(value), m=octs(maskOf(p));
+  el.querySelectorAll(".oct").forEach((o,i)=>{
+    const f=o.querySelector(".flap"), s=f.querySelector("span");
+    if(s.textContent!==String(vals[i])){s.textContent=vals[i];f.classList.remove("flip");void f.offsetWidth;f.classList.add("flip");}
+    let role = p>=8*(i+1)?"fixed":(p<=8*i?"free":"partial");
+    f.className="flap "+(showRoles?role:"")+(f.classList.contains("flip")?" flip":"");
+    f.querySelector(".pin").style.display=(showRoles&&role==="fixed")?"block":"none";
+    o.querySelector(".octmask").textContent=showRoles?"Maske "+m[i]:"";
+    const block=256-m[i];
+    const r=o.querySelector(".role");
+    r.className="role "+role;
+    r.textContent=!showRoles?"":role==="fixed"?"festgeklebt":role==="free"?"klappt frei (0 bis 255)":`klappt in ${block}er-Päckchen`;
+  });
+}
+
+function renderClock(){
+  const net=netOf(ip,pfx), bc=bcOf(ip,pfx);
+  setFlaps($("#clock"),ip,pfx);
+  const ci=packIdx(net,pfx);
+  $("#clock").querySelectorAll(".flap").forEach(f=>{f.style.borderColor=f.classList.contains("partial")?strong(ci):"";});
+  $("#clock").querySelectorAll(".role").forEach(r=>{r.style.color=r.classList.contains("partial")?strong(ci):"";});
+  const b=$("#typeBadge");
+  if(ip===net){b.className="badge netid";b.textContent="Netz-ID, kein Rechner";}
+  else if(ip===bc){b.className="badge bc";b.textContent="Broadcast, kein Rechner";}
+  else {b.className="badge host";b.textContent="Host: hier darf ein Rechner wohnen";}
+  const j=$("#jump");
+  if(lastNet!==null&&lastNet!==net){j.classList.add("show");clearTimeout(j._t);j._t=setTimeout(()=>j.classList.remove("show"),1300);}
+  lastNet=net;
+
+  $("#pfxLabel").textContent=`/${pfx}  =  ${toIp(maskOf(pfx))}`;
+  const hosts=Math.pow(2,32-pfx)-2;
+  $("#facts").innerHTML=`
+    <div class="fact netid"><small>Netz-ID (erstes Blatt im Päckchen)</small><b>${toIp(net)}</b></div>
+    <div class="fact"><small>Erster Rechner</small><b>${toIp(net+1>>>0)}</b></div>
+    <div class="fact"><small>Letzter Rechner</small><b>${toIp(bc-1>>>0)}</b></div>
+    <div class="fact bc"><small>Broadcast (letztes Blatt)</small><b>${toIp(bc)}</b></div>
+    <div class="fact"><small>Rechner pro Päckchen</small><b>${hosts.toLocaleString("de-DE")}</b></div>`;
+  renderStrip(); renderPcs();
+}
+
+function renderStrip(){
+  const idx=Math.min(3,Math.floor(pfx/8));
+  const m=octs(maskOf(pfx))[idx], block=256-m, cur=octs(ip)[idx];
+  const unit=Math.pow(2,24-8*idx), base=netOf(ip,8*idx);
+  const names=["erste","zweite","dritte","vierte"];
+  $("#stripText").textContent = block===256
+    ? `Das ${names[idx]} Blatt klappt komplett frei: ein einziges Päckchen von 0 bis 255.`
+    : `Das ${names[idx]} Blatt klappt in Päckchen von ${block}: 256 − ${m} = ${block}. Das ergibt ${256/block} Päckchen.`;
+  let h="";
+  for(let v=0;v<256;v++){
+    const ix=packIdx(base+v*unit,pfx);
+    h+=`<div class="${v===cur?"cur":""}" style="${v===cur?"":"background:"+tint(ix)}" title="${v}"></div>`;
+  }
+  $("#strip").innerHTML=h;
+  let bl="";
+  if(block>=16){ for(let st=0;st<256;st+=block){const ix=packIdx(base+st*unit,pfx);bl+=`<span class="${cur>=st&&cur<st+block?"here":""}" style="background:${tint(ix)};border-color:${strong(ix)}">${st} bis ${st+block-1}</span>`;} }
+  $("#blocks").innerHTML=bl;
+
+  // Lupe
+  const curStart=cur-(cur%block);
+  const show=block<=16?Math.min(Math.floor(48/block),256/block):Math.min(4,256/block);
+  let first=curStart-Math.floor((show-1)/2)*block;
+  first=Math.max(0,Math.min(first,256-show*block));
+  let z="";
+  const lastOct = idx===3;
+  for(let k=0;k<show;k++){
+    const st=first+k*block, en=st+block-1, ix=packIdx(base+st*unit,pfx);
+    let vals=[];
+    if(block<=16){for(let v=st;v<=en;v++)vals.push(v);}
+    else vals=[st,st+1,st+2,null,en-2,en-1,en];
+    const cells=vals.map(v=>{
+      if(v===null)return `<div class="zc gap" style="background:${tint(ix)}">…</div>`;
+      let lab="";
+      if(lastOct){lab=v===st?"Netz-ID":v===en?"Broadcast":"Host";}
+      else{lab=v===st?"Anfang":v===en?"Ende":"";}
+      const isCur=v===cur;
+      return `<div class="zc${isCur?" cur":""}" style="background:${tint(ix)};color:var(--ink)">${v}<small>${lab||"&nbsp;"}</small></div>`;
+    }).join("");
+    z+=`<div class="pack${cur>=st&&cur<=en?" here":""}" style="border-color:${strong(ix)}">${cells}</div>`;
+  }
+  $("#zoom").innerHTML=z;
+}
+
+/* ---------- Zwei Rechner ---------- */
+function renderPcs(){
+  const a=toInt($("#pcA").value), b=toInt($("#pcB").value);
+  $("#pcA").classList.toggle("bad",a===null); $("#pcB").classList.toggle("bad",b===null);
+  const svg=$("#pcSvg");
+  if(a===null||b===null){$("#verdict").innerHTML=`<span class="warn">Bitte zwei gültige IP-Adressen eingeben.</span>`;svg.innerHTML="";$("#bin").innerHTML="";return;}
+  const na=netOf(a,pfx), nb=netOf(b,pfx);
+  const hostWarn=(x,n)=>x===n?` <span class="warn">Achtung, das ist die Netz-ID, kein Rechner!</span>`:x===bcOf(x,pfx)?` <span class="warn">Achtung, das ist der Broadcast, kein Rechner!</span>`:"";
+  $("#calcA").innerHTML=`Netz-ID: <b>${toIp(na)}</b>/${pfx}${hostWarn(a,na)}`;
+  $("#calcB").innerHTML=`Netz-ID: <b>${toIp(nb)}</b>/${pfx}${hostWarn(b,nb)}`;
+  const same=na===nb, gw=na+1>>>0;
+  const ia=packIdx(na,pfx); let ib=packIdx(nb,pfx); if(!same&&ia===ib) ib=(ib+1)%8;
+  $("#verdict").innerHTML = same
+    ? `<b class="same">Gleiches Päckchen.</b> A stellt direkt zu, kein Router nötig.`
+    : `<b class="diff">Anderes Päckchen.</b> A darf nicht direkt zustellen und gibt das Paket an sein Gateway (hier angenommen: ${toIp(gw)}).`;
+
+  const box=(x,y,w,title,sub,col)=>`<rect x="${x}" y="${y}" width="${w}" height="62" rx="8" fill="var(--node)" stroke="${col}" stroke-width="2.5"/>
+    <text x="${x+w/2}" y="${y+26}" text-anchor="middle" font-weight="700" font-size="17" fill="var(--ink)">${title}</text>
+    <text x="${x+w/2}" y="${y+47}" text-anchor="middle" font-size="14" fill="var(--muted)">${sub}</text>`;
+  const defs=`<defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--host)"/></marker><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--bc)"/></marker></defs>`;
+  let s=defs;
+  if(same){
+    s+=`<rect x="20" y="20" width="660" height="110" rx="12" fill="${tint(ia)}" fill-opacity=".45" stroke="${strong(ia)}" stroke-dasharray="7 6" stroke-width="2"/>
+        <text x="36" y="42" font-size="14" fill="${strong(ia)}" font-weight="600">Netz ${toIp(na)}/${pfx}</text>`;
+    s+=box(50,52,180,"Rechner A",toIp(a),strong(ia))+box(470,52,180,"Rechner B",toIp(b),strong(ia));
+    s+=`<path d="M232,83 L466,83" stroke="var(--host)" stroke-width="3" marker-end="url(#m1)"/>
+        <text x="350" y="72" text-anchor="middle" font-size="15" fill="var(--host)" font-weight="600">direkt</text>`;
+    svg.setAttribute("viewBox","0 0 700 150");
+  } else {
+    s+=`<rect x="20" y="20" width="290" height="110" rx="12" fill="${tint(ia)}" fill-opacity=".45" stroke="${strong(ia)}" stroke-dasharray="7 6" stroke-width="2"/>
+        <text x="34" y="42" font-size="14" fill="${strong(ia)}" font-weight="600">Netz ${toIp(na)}/${pfx}</text>
+        <rect x="390" y="20" width="290" height="110" rx="12" fill="${tint(ib)}" fill-opacity=".45" stroke="${strong(ib)}" stroke-dasharray="7 6" stroke-width="2"/>
+        <text x="404" y="42" font-size="14" fill="${strong(ib)}" font-weight="600">Netz ${toIp(nb)}/${pfx}</text>`;
+    s+=box(70,52,180,"Rechner A",toIp(a),strong(ia))+box(460,52,180,"Rechner B",toIp(b),strong(ib));
+    s+=box(260,148,180,"Router","Gateway "+toIp(gw),"var(--ink)");
+    s+=`<path d="M160,116 C160,170 200,179 256,179" fill="none" stroke="var(--bc)" stroke-width="3" marker-end="url(#m2)"/>
+        <path d="M444,179 C500,179 550,170 550,120" fill="none" stroke="var(--bc)" stroke-width="3" marker-end="url(#m2)"/>
+        <path d="M252,83 L456,83" stroke="var(--red)" stroke-width="2" stroke-dasharray="5 5"/>
+        <text x="354" y="74" text-anchor="middle" font-size="14" fill="var(--red)" font-weight="600">direkt: nicht erlaubt</text>`;
+    svg.setAttribute("viewBox","0 0 700 220");
+  }
+  svg.innerHTML=s;
+  renderBin(a,b);
+}
+
+function bitsHtml(n,p,cut=true){
+  const s=n.toString(2).padStart(32,"0"); let h="";
+  for(let i=0;i<32;i++){
+    if(i&&i%8===0)h+=`<span class="b-sep">.</span>`;
+    const cls=i<p?"b-n":"b-h";
+    h+=`<span class="${cls}${cut&&i===p?" b-cut":""}">${s[i]}</span>`;
+  }
+  return h;
+}
+function renderBin(a,b){
+  const m=maskOf(pfx);
+  const row=(label,n,dec)=>`<tr><td>${label}</td><td>${bitsHtml(n,pfx)}</td><td class="b-sep">${dec}</td></tr>`;
+  $("#bin").innerHTML=`<table>
+    ${row("IP A",a,toIp(a))}${row("Maske /"+pfx,m,toIp(m))}
+    <tr class="rule">${`<td>A UND Maske</td><td>${bitsHtml(netOf(a,pfx),pfx)}</td><td><b>${toIp(netOf(a,pfx))}</b></td>`}</tr>
+    <tr><td>&nbsp;</td><td></td><td></td></tr>
+    ${row("IP B",b,toIp(b))}${row("Maske /"+pfx,m,toIp(m))}
+    <tr class="rule">${`<td>B UND Maske</td><td>${bitsHtml(netOf(b,pfx),pfx)}</td><td><b>${toIp(netOf(b,pfx))}</b></td>`}</tr>
+  </table>
+  <p style="margin-top:8px">${netOf(a,pfx)===netOf(b,pfx)?"Beide Ergebnisse gleich → gleiches Netz.":"Ergebnisse unterschiedlich → verschiedene Netze → über den Router."}</p>`;
+}
+
+/* ---------- Events Klappuhr ---------- */
+function setIp(n){ip=n>>>0;$("#ipIn").value=toIp(ip);$("#ipIn").classList.remove("bad");renderClock();}
+$("#incBtn").onclick=()=>setIp(ip+1);
+$("#decBtn").onclick=()=>setIp(ip-1);
+$("#blockBtn").onclick=()=>setIp(netOf(ip,pfx)+Math.pow(2,32-pfx));
+$("#runBtn").onclick=()=>{
+  if(runTimer){clearInterval(runTimer);runTimer=null;$("#runBtn").textContent="Laufen lassen";$("#runBtn").classList.remove("on");}
+  else{runTimer=setInterval(()=>setIp(ip+1),420);$("#runBtn").textContent="Anhalten";$("#runBtn").classList.add("on");}
+};
+$("#ipIn").addEventListener("input",e=>{const n=toInt(e.target.value);e.target.classList.toggle("bad",n===null);if(n!==null){ip=n;renderClock();}});
+$("#pfx").addEventListener("input",e=>{pfx=+e.target.value;lastNet=null;renderClock();});
+$("#pcA").addEventListener("input",renderPcs);
+$("#pcB").addEventListener("input",renderPcs);
+
+/* ---------- Router ---------- */
+let routes=[
+  {name:"Internet",net:"0.0.0.0",p:0,ifc:"Internet"},
+  {name:"Firmennetz",net:"10.0.0.0",p:8,ifc:"eth0"},
+  {name:"Standort Berlin",net:"10.20.0.0",p:16,ifc:"eth1"},
+  {name:"Standort Hamburg",net:"10.30.0.0",p:16,ifc:"eth2"},
+  {name:"Etage 3",net:"10.20.3.0",p:24,ifc:"eth3"},
+  {name:"Büro Technik",net:"10.20.3.0",p:26,ifc:"eth4"},
+  {name:"Büro Verwaltung",net:"10.20.3.64",p:26,ifc:"eth5"}
+];
+const DEFAULT_ROUTES=JSON.parse(JSON.stringify(routes));
+let routing=false;
+function renderRoutes(){
+  const tb=$("#rbody"); tb.innerHTML="";
+  routes.forEach((r,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="nm"><input data-f="name" value="${r.name||""}"></td>
+      <td><input data-f="net" value="${r.net}"></td>
+      <td class="pfx"><input data-f="p" type="number" min="0" max="32" value="${r.p}"></td>
+      <td class="ifc"><input data-f="ifc" value="${r.ifc}"></td>
+      <td class="res"></td>
+      <td class="x"><button aria-label="Zeile löschen">✕</button></td>`;
+    tr.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",e=>{
+      const f=e.target.dataset.f; routes[i][f]=f==="p"?Math.max(0,Math.min(32,+e.target.value||0)):e.target.value; validateRow(tr,i); resetRoute(); renderDoors(); renderZones();
+    }));
+    tr.querySelector("button").onclick=()=>{routes.splice(i,1);renderRoutes();resetRoute();};
+    tb.appendChild(tr); validateRow(tr,i);
+  });
+  renderDoors(); renderZones();
+}
+function renderZones(){
+  const items=routes.map((r,i)=>({i,r,n:toInt(r.net)})).filter(x=>x.n!==null).map(x=>({...x,n:netOf(x.n,x.r.p)}));
+  items.sort((a,b)=>a.r.p-b.r.p||a.i-b.i);
+  const kids={}, roots=[];
+  for(const it of items){
+    let parent=null;
+    for(const c of items){
+      if(c===it||c.r.p>it.r.p||(c.r.p===it.r.p&&c.i>=it.i))continue;
+      if(netOf(it.n,c.r.p)===c.n&&(!parent||c.r.p>parent.r.p||(c.r.p===parent.r.p&&c.i>parent.i)))parent=c;
+    }
+    if(parent)(kids[parent.i]=kids[parent.i]||[]).push(it); else roots.push(it);
+  }
+  const draw=it=>`<div class="zone" data-zone="${it.i}">
+      <div class="zh"><b>${escapeHtml(it.r.name||"ohne Namen")}</b><span>${toIp(it.n)}/${it.r.p}</span><span>→ Tür ${escapeHtml(it.r.ifc)}</span></div>
+      <div class="pkt">📦 Paket landet hier</div>
+      ${kids[it.i]?`<div class="kids">${kids[it.i].map(draw).join("")}</div>`:""}
+    </div>`;
+  $("#zones").innerHTML=roots.map(draw).join("")||`<p class="lead">Keine gültigen Zeilen.</p>`;
+}
+function escapeHtml(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function zoneEl(i){return document.querySelector(`[data-zone="${i}"]`);}
+function validateRow(tr,i){
+  const r=routes[i], n=toInt(r.net), cell=tr.querySelector(".res"), inp=tr.querySelector('[data-f="net"]');
+  inp.classList.toggle("bad",n===null);
+  if(n===null){cell.innerHTML=`<span class="warn">keine gültige Adresse</span>`;return;}
+  cell.innerHTML = netOf(n,r.p)!==n ? `<span class="warn">Hostbits gesetzt, Netz-ID wäre ${toIp(netOf(n,r.p))}</span>` : "";
+}
+function renderDoors(){
+  const names=[...new Set(routes.map(r=>r.ifc.trim()).filter(Boolean))];
+  $("#doors").innerHTML=names.map(n=>`<div class="door" data-door="${n}">Tür ${n}</div>`).join("")+`<div class="door" data-door="__drop">verwerfen</div>`;
+}
+function resetRoute(){
+  routing=false;
+  document.querySelectorAll("#rbody tr").forEach((tr,i)=>{tr.className="";validateRow(tr,i);});
+  document.querySelectorAll(".door").forEach(d=>d.classList.remove("win","drop"));
+  document.querySelectorAll(".zone").forEach(z=>z.classList.remove("checking","match","nomatch","winner"));
+  $("#rExplain").textContent="Jede Zeile ist eine Schablone. Das Paket wird an alle gehalten.";
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function route(){
+  const dst=toInt($("#dst").value);
+  if(dst===null){$("#rExplain").innerHTML=`<span class="warn">Bitte eine gültige Ziel-IP eingeben.</span>`;return;}
+  resetRoute(); routing=true;
+  const slow=$("#slow").checked, rows=[...document.querySelectorAll("#rbody tr")];
+  let best=-1;
+  const orderIdx=routes.map((r,i)=>i).sort((a,b)=>routes[a].p-routes[b].p||a-b);
+  for(const i of orderIdx){
+    if(!routing)return;
+    const r=routes[i], n=toInt(r.net), tr=rows[i], cell=tr.querySelector(".res"), z=zoneEl(i);
+    if(n===null){tr.className="nomatch";continue;}
+    tr.className="checking"; if(z)z.classList.add("checking");
+    const calc=netOf(dst,r.p);
+    $("#rExplain").innerHTML=`Schablone ${i+1}: ${toIp(dst)} UND /${r.p} = <b>${toIp(calc)}</b>, Zielnetz ist ${toIp(netOf(n,r.p))}.`;
+    if(slow)await sleep(900);
+    if(!routing)return;
+    const ok=calc===netOf(n,r.p);
+    tr.className=ok?"match":"nomatch";
+    if(z){z.classList.remove("checking");z.classList.add(ok?"match":"nomatch");}
+    cell.innerHTML=ok?`passt (/${r.p})`:`passt nicht (${toIp(calc)})`;
+    if(ok&&(best<0||r.p>routes[best].p))best=i;
+  }
+  if(slow)await sleep(400);
+  if(!routing)return;
+  if(best<0){
+    document.querySelector('[data-door="__drop"]').classList.add("drop");
+    $("#rExplain").innerHTML=`Keine Schablone passt und es gibt keine Default-Route: <b>Das Paket wird verworfen.</b>`;
+    return;
+  }
+  rows[best].className="winner";
+  const wz=zoneEl(best); if(wz){wz.classList.remove("match");wz.classList.add("winner");}
+  const matches=rows.filter((tr,i)=>tr.classList.contains("match")||i===best).length;
+  const w=routes[best];
+  const door=document.querySelector(`[data-door="${CSS.escape(w.ifc.trim())}"]`); if(door)door.classList.add("win");
+  $("#rExplain").innerHTML = matches>1
+    ? `${matches} Schablonen passen. Gewinner ist die längste Maske: <b>${w.net}/${w.p}</b> → raus über <b>${w.ifc}</b>.`
+    : `Genau eine Schablone passt: <b>${w.net}/${w.p}</b> → raus über <b>${w.ifc}</b>.`;
+}
+$("#routeBtn").onclick=route;
+$("#resetRouteBtn").onclick=resetRoute;
+$("#addRoute").onclick=()=>{routes.push({name:"Neues Netz",net:"10.20.3.128",p:26,ifc:"eth6"});renderRoutes();resetRoute();};
+$("#dst").addEventListener("input",e=>{const n=toInt(e.target.value);e.target.classList.toggle("bad",n===null);if(n!==null)setFlaps($("#dstClock"),n,32,false);resetRoute();});
+
+/* ---------- Switch & VLAN ---------- */
+const VCOL={10:0,20:1,30:4};
+const vt=v=>`<span class="vtag" style="background:${tint(VCOL[v])};border-color:${strong(VCOL[v])};color:var(--ink)">VLAN ${v}</span>`;
+let pcs=[
+  {n:1,sw:1,port:1,vlan:10},{n:2,sw:1,port:2,vlan:10},{n:3,sw:1,port:3,vlan:20},{n:4,sw:1,port:4,vlan:20},
+  {n:5,sw:2,port:1,vlan:10},{n:6,sw:2,port:2,vlan:20},{n:7,sw:2,port:3,vlan:20},{n:8,sw:2,port:4,vlan:30}
+];
+const DEFAULT_PCS=JSON.parse(JSON.stringify(pcs));
+const mac=n=>`AA:00:00:00:00:0${n}`;
+let mt={1:[],2:[]}, vState=null;
+const TRUNK=5;
+
+function vInit(){
+  const opts=pcs.map(p=>`<option value="${p.n}">PC ${p.n}</option>`).join("");
+  $("#vFrom").innerHTML=opts; $("#vTo").innerHTML=opts+`<option value="bc">Broadcast (alle)</option>`;
+  $("#vFrom").value="1"; $("#vTo").value="5";
+  $("#vCfg").innerHTML=pcs.map((p,i)=>`<label>PC ${p.n} (SW${p.sw}, Port ${p.port}) <select data-i="${i}">${[10,20,30].map(v=>`<option ${v===p.vlan?"selected":""}>${v}</option>`).join("")}</select></label>`).join("");
+  $("#vCfg").querySelectorAll("select").forEach(sel=>sel.onchange=e=>{pcs[+e.target.dataset.i].vlan=+e.target.value;mt={1:[],2:[]};vState=null;vDraw();vTables();$("#vLog").innerHTML="<li>VLAN geändert, Tabellen geleert.</li>";});
+  vDraw(); vTables();
+}
+function learn(sw,m,port,vlan,log){
+  const t=mt[sw], e=t.find(x=>x.mac===m&&x.vlan===vlan);
+  if(e){ if(e.port!==port){e.port=port;log.push(`Switch ${sw} aktualisiert: ${m} jetzt an Port ${port}.`);} e.fresh=false; return; }
+  t.push({mac:m,port,vlan,fresh:true});
+  log.push(`Switch ${sw} lernt: ${m} hängt an Port ${port} ${port===TRUNK?"(Trunk) ":""}in VLAN ${vlan}.`);
+}
+function vSend(){
+  Object.values(mt).flat().forEach(e=>e.fresh=false);
+  const src=pcs.find(p=>p.n===+$("#vFrom").value), toVal=$("#vTo").value;
+  const dst=toVal==="bc"?null:pcs.find(p=>p.n===+toVal);
+  const log=[], got=new Set(), ignored=new Set(), trunk={used:false,vlan:src.vlan};
+  if(dst&&dst.n===src.n){$("#vLog").innerHTML="<li>Absender und Ziel sind gleich.</li>";return;}
+  const dm=dst?mac(dst.n):"FF:FF:FF:FF:FF:FF", v=src.vlan;
+  log.push(`PC ${src.n} schickt einen Frame an ${dst?"PC "+dst.n+" ("+dm+")":"alle (Broadcast "+dm+")"}. Er selbst weiß nichts von VLANs.`);
+  // Switch handling
+  const handle=(sw,inPort,fromTrunk)=>{
+    learn(sw,mac(src.n),inPort,v,log);
+    const local=pcs.filter(p=>p.sw===sw&&p.vlan===v&&!(p.n===src.n));
+    const entry=dst?mt[sw].find(x=>x.mac===dm&&x.vlan===v):null;
+    let outs=[];
+    if(entry){ outs=[entry.port]; log.push(`Switch ${sw} kennt ${dm} in VLAN ${v} → gezielt raus über Port ${entry.port}${entry.port===TRUNK?" (Trunk)":""}.`); }
+    else {
+      outs=local.map(p=>p.port); if(!fromTrunk) outs.push(TRUNK);
+      log.push(dst?`Switch ${sw} kennt ${dm} in VLAN ${v} nicht → flutet an alle Ports von VLAN ${v}${fromTrunk?"":" und den Trunk"}.`:`Broadcast → Switch ${sw} flutet an alle Ports von VLAN ${v}${fromTrunk?"":" und den Trunk"}.`);
+    }
+    outs=outs.filter(o=>o!==inPort);
+    for(const o of outs){
+      if(o===TRUNK){ trunk.used=true; log.push(`Auf dem Trunk bekommt der Frame den Aufkleber VLAN ${v}.`); handle(sw===1?2:1,TRUNK,true); }
+      else { const pc=pcs.find(p=>p.sw===sw&&p.port===o); if(!pc)continue;
+        if(!dst||pc.n===dst.n) got.add(pc.n); else ignored.add(pc.n); }
+    }
+    if(fromTrunk) log.push(`Switch ${sw} nimmt den Aufkleber ab, bevor der Frame an einen Access-Port geht.`);
+  };
+  handle(src.sw,src.port,false);
+  if(dst&&dst.vlan!==v) log.push(`PC ${dst.n} ist in VLAN ${dst.vlan}, der Absender in VLAN ${v}. Der Frame kommt nie an, dafür braucht es einen Router.`);
+  else if(dst) log.push(got.has(dst.n)?`PC ${dst.n} hat den Frame bekommen.`:`PC ${dst.n} hat den Frame nicht bekommen.`);
+  if(ignored.size) log.push(`PC ${[...ignored].join(", PC ")} ${ignored.size>1?"haben den Frame auch bekommen, verwerfen ihn aber":"hat den Frame auch bekommen, verwirft ihn aber"}: nicht die eigene MAC.`);
+  vState={src:src.n,got,ignored,trunk};
+  $("#vLog").innerHTML=log.map(l=>`<li>${l}</li>`).join("");
+  vDraw(); vTables();
+}
+function vTables(){
+  for(const sw of [1,2]){
+    $("#mt"+sw).innerHTML=mt[sw].length?mt[sw].map(e=>`<tr class="${e.fresh?"new":""}"><td>${e.mac}</td><td>${e.port}${e.port===TRUNK?" (Trunk)":""}</td><td>${vt(e.vlan)}</td></tr>`).join(""):`<tr><td colspan="3" class="lead">leer</td></tr>`;
+  }
+}
+function vDraw(){
+  const svg=$("#vSvg"); let h=`<defs><marker id="vm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--ink)"/></marker></defs>`;
+  const swX={1:40,2:420}, swY=200, swW=300;
+  const portX=(sw,port)=>swX[sw]+30+(port-1)*60;
+  for(const sw of [1,2]){
+    h+=`<rect x="${swX[sw]}" y="${swY}" width="${swW}" height="54" rx="8" fill="var(--node)" stroke="var(--ink)" stroke-width="2.5"/>
+        <text x="${swX[sw]+4}" y="${swY+76}" text-anchor="start" font-size="16" font-weight="700" fill="var(--ink)">Switch ${sw}</text>`;
+    for(let port=1;port<=5;port++){
+      const pc=pcs.find(p=>p.sw===sw&&p.port===port), x=portX(sw,port);
+      const col=port===TRUNK?"var(--ink)":strong(VCOL[pc.vlan]);
+      h+=`<rect x="${x-14}" y="${swY+10}" width="28" height="22" rx="3" fill="${port===TRUNK?"var(--paper)":tint(VCOL[pc.vlan])}" stroke="${col}" stroke-width="2"/>
+          <text x="${x}" y="${swY+26}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${port}</text>
+          <text x="${x}" y="${swY+47}" text-anchor="middle" font-size="10" fill="var(--muted)">${port===TRUNK?"":"VLAN "+pc.vlan}</text>`;
+      if(pc){
+        const got=vState&&vState.got.has(pc.n), ign=vState&&vState.ignored.has(pc.n), isSrc=vState&&vState.src===pc.n;
+        const stroke=got?"var(--host)":ign?"var(--red)":strong(VCOL[pc.vlan]);
+        h+=`<line x1="${x}" y1="${swY+10}" x2="${x}" y2="126" stroke="${isSrc||got||ign?"var(--ink)":strong(VCOL[pc.vlan])}" stroke-width="${isSrc||got||ign?3:2}"/>
+            <rect x="${x-27}" y="60" width="54" height="66" rx="6" fill="${tint(VCOL[pc.vlan])}" stroke="${stroke}" stroke-width="${got||ign||isSrc?4:2}"/>
+            <text x="${x}" y="84" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">PC ${pc.n}</text>
+            <text x="${x}" y="102" text-anchor="middle" font-size="10" fill="var(--ink)">…:0${pc.n}</text>
+            <text x="${x}" y="118" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)">${isSrc?"sendet":got?"erhalten":ign?"verwirft":""}</text>`;
+      }
+    }
+  }
+  const tx1=portX(1,TRUNK), tx2=portX(2,TRUNK);
+  const used=vState&&vState.trunk.used;
+  h+=`<line x1="${tx1}" y1="${swY+32}" x2="${tx1}" y2="${swY+54}" stroke="var(--ink)" stroke-width="${used?5:3}"/><line x1="${tx2}" y1="${swY+32}" x2="${tx2}" y2="${swY+54}" stroke="var(--ink)" stroke-width="${used?5:3}"/><path d="M${tx1},${swY+54} C${tx1},${swY+170} ${tx2},${swY+170} ${tx2},${swY+54}" fill="none" stroke="var(--ink)" stroke-width="${used?5:3}"/>
+      <text x="${(tx1+tx2)/2}" y="${swY+172}" text-anchor="middle" font-size="13" fill="var(--muted)">Trunk (tagged) zwischen Port 5 und Port 5</text>`;
+  if(used){const v=vState.trunk.vlan;
+    h+=`<rect x="${(tx1+tx2)/2-40}" y="${swY+114}" width="80" height="24" rx="5" fill="${tint(VCOL[v])}" stroke="${strong(VCOL[v])}" stroke-width="2.5"/>
+        <text x="${(tx1+tx2)/2}" y="${swY+131}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">Tag ${v}</text>`;}
+  svg.innerHTML=h;
+}
+$("#vSend").onclick=vSend;
+$("#vReply").onclick=()=>{const f=$("#vFrom").value,t=$("#vTo").value;if(t==="bc")return;$("#vFrom").value=t;$("#vTo").value=f;vSend();};
+$("#vClear").onclick=()=>{mt={1:[],2:[]};vState=null;vDraw();vTables();$("#vLog").innerHTML="<li>Tabellen geleert.</li>";};
+
+/* ---------- IPv6 ---------- */
+const V6={
+  parse(str){
+    str=String(str).trim().toLowerCase();
+    if(!/^[0-9a-f:]+$/.test(str))return null;
+    const parts=str.split("::"); if(parts.length>2)return "double";
+    const L=parts[0]?parts[0].split(":"):[], Rr=parts.length===2&&parts[1]?parts[1].split(":"):[];
+    if(parts.length===1&&L.length!==8)return null;
+    if(parts.length===2&&L.length+Rr.length>7)return null;
+    const fill=parts.length===2?8-L.length-Rr.length:0;
+    const all=[...L,...Array(fill).fill("0"),...Rr];
+    if(all.some(g=>!/^[0-9a-f]{1,4}$/.test(g)))return null;
+    return {n:BigInt("0x"+all.map(g=>g.padStart(4,"0")).join("")),fillAt:L.length,fill};
+  },
+  hex(n){return n.toString(16).padStart(32,"0");},
+  groups(n){const h=V6.hex(n);return [...Array(8).keys()].map(i=>h.slice(i*4,i*4+4));},
+  run(gs){let bs=-1,bl=0;for(let i=0;i<8;){if(gs[i]==="0000"){let j=i;while(j<8&&gs[j]==="0000")j++;if(j-i>bl&&j-i>=2){bs=i;bl=j-i;}i=j;}else i++;}return {bs,bl};},
+  short(n){const gs=V6.groups(n).map(g=>g.replace(/^0+(?=.)/,""));const {bs,bl}=V6.run(V6.groups(n));
+    if(bs<0)return gs.join(":");return gs.slice(0,bs).join(":")+"::"+gs.slice(bs+bl).join(":");},
+  mask(p){return p===0?0n:((1n<<BigInt(p))-1n)<<BigInt(128-p);},
+  net(n,p){return n&V6.mask(p);}
+};
+const MAX6=(1n<<128n)-1n;
+let v6=V6.parse("2001:db8:abcd:12::1").n, v6p=48;
+
+function buildHex(){
+  let h="";
+  for(let g=0;g<8;g++){h+=`<div class="grp"><div class="fl">`;for(let k=0;k<4;k++)h+=`<div class="hflap" data-nib="${g*4+k}"><span>0</span></div>`;h+=`</div><div class="zbar" data-zb="${g}"></div></div>`;}
+  $("#hexclock").innerHTML=h;
+}
+function renderV6(){
+  const hx=V6.hex(v6), net=V6.net(v6,v6p), ci=Number((net>>BigInt(128-v6p))%8n);
+  document.querySelectorAll(".hflap").forEach(f=>{
+    const i=+f.dataset.nib, sp=f.querySelector("span");
+    if(sp.textContent!==hx[i]){sp.textContent=hx[i];f.classList.remove("flip");void f.offsetWidth;f.classList.add("flip");}
+    const role=(i+1)*4<=v6p?"fixed":i*4>=v6p?"free":"partial";
+    f.classList.remove("fixed","free","partial"); f.classList.add(role);
+    f.style.borderColor=role==="partial"?strong(ci):role==="free"?"":"transparent";
+  });
+  document.querySelectorAll(".zbar").forEach(z=>{const g=+z.dataset.zb;z.style.background=g<3?"var(--s0)":g<4?"var(--s1)":"var(--line)";});
+  $("#v6pfxLabel").innerHTML=`/${v6p} = ${Math.floor(v6p/4)} Blätter festgeklebt${v6p%4?` + ${v6p%4} Bit im nächsten Blatt`:""}`;
+  const sub64=v6p<=64?`2<sup>${64-v6p}</sup> = ${(2n**BigInt(64-v6p)).toLocaleString("de-DE")}`:"keins";
+  $("#v6facts").innerHTML=`
+    <div class="fact netid"><small>Netzpräfix</small><b>${V6.short(net)}/${v6p}</b></div>
+    <div class="fact"><small>/64-Netze darin</small><b>${sub64}</b></div>
+    <div class="fact"><small>Adressen darin</small><b>2<sup>${128-v6p}</sup></b></div>`;
+  const k=v6p%4, i=Math.floor(v6p/4);
+  if(k===0){$("#v6nib").innerHTML=`<p class="lead" style="margin:0">Das Präfix endet genau an einer Blattgrenze, der einfache Fall. Die nächsten Blätter klappen frei von 0 bis f.</p>`;}
+  else{
+    const step=2**(4-k), cur=parseInt(hx[i],16);
+    let cells="";for(let v=0;v<16;v++){const ix=Math.floor(v/step)%8;cells+=`<div class="${v===cur?"cur":""}" style="background:${tint(ix)};border-color:${strong(ix)}">${v.toString(16)}</div>`;}
+    const starts=[...Array(16/step).keys()].map(x=>(x*step).toString(16)).join(", ");
+    $("#v6nib").innerHTML=`<p style="margin:0"><b>Krummes Präfix!</b> Blatt ${i+1} klappt nur in ${step}er-Päckchen: ${starts}. Genau wie bei IPv4, nur mit 16 statt 256 Stellungen.</p><div class="nib">${cells}</div>`;
+  }
+}
+function setV6(n){v6=((n%(MAX6+1n))+(MAX6+1n))%(MAX6+1n);$("#v6ip").value=V6.short(v6);$("#v6ip").classList.remove("bad");renderV6();}
+$("#v6Next").onclick=()=>setV6(V6.net(v6,v6p)+(1n<<BigInt(128-v6p)));
+$("#v6Prev").onclick=()=>setV6(V6.net(v6,v6p)-(1n<<BigInt(128-v6p)));
+$("#v6ip").addEventListener("input",e=>{const r=V6.parse(e.target.value);const ok=r&&r!=="double";e.target.classList.toggle("bad",!ok);if(ok){v6=r.n;renderV6();}});
+$("#v6pfx").addEventListener("input",e=>{v6p=+e.target.value;renderV6();});
+
+function renderShort(){
+  const r=V6.parse($("#v6short").value), box=$("#v6rows");
+  $("#v6short").classList.toggle("bad",!r||r==="double");
+  if(r==="double"){box.innerHTML=`<p class="warn">Zweimal :: ist verboten, dann weiß niemand, wie viele Nullgruppen an welche Stelle gehören.</p>`;return;}
+  if(!r){box.innerHTML=`<p class="warn">Keine gültige IPv6-Adresse.</p>`;return;}
+  const gs=V6.groups(r.n);
+  const row1=gs.map((g,i)=>(r.fill&&i>=r.fillAt&&i<r.fillAt+r.fill)?`<span class="hl">${g}</span>`:g).join(":");
+  const row2=gs.map(g=>{const m=g.match(/^0+(?=.)/);return m?`<span class="gone">${m[0]}</span>${g.slice(m[0].length)}`:g;}).join(":");
+  const {bs,bl}=V6.run(gs); const st=gs.map(g=>g.replace(/^0+(?=.)/,""));
+  const row3= bs<0 ? st.join(":") : `${st.slice(0,bs).join(":")}<span class="dc">::</span>${st.slice(bs+bl).join(":")}`;
+  box.innerHTML=`<div class="v6row"><small>1 · Voll ausgeschrieben${r.fill?" (markiert: beim Aufklappen eingefügte Nullgruppen)":""}</small>${row1}</div>
+    <div class="v6row"><small>2 · Führende Nullen pro Gruppe weg</small>${row2}</div>
+    <div class="v6row"><small>3 · Längste Nullgruppen-Kette einmal zu ::${bs<0?" (hier keine Kette aus mindestens 2 Nullgruppen)":""}</small>${row3}</div>`;
+}
+$("#v6short").addEventListener("input",renderShort);
+
+function renderPlan(){
+  const [a,pp]=$("#plBase").value.split("/"), r=V6.parse(a||""), p=+pp, N=Math.max(1,Math.floor(+$("#plN").value||1));
+  const ok=r&&r!=="double"&&Number.isInteger(p)&&p>=0&&p<=127;
+  $("#plBase").classList.toggle("bad",!ok);
+  if(!ok){$("#plSteps").innerHTML=`<li class="warn">Bitte z. B. 2001:db8:abcd::/48 eingeben.</li>`;$("#plList").innerHTML="";return;}
+  const bits=Math.ceil(Math.log2(N)), np=p+bits, base=V6.net(r.n,p);
+  let steps=[`${N} Subnetze brauchen <b>${bits} Bit</b>, denn 2<sup>${bits}</sup> = ${2**bits} ≥ ${N}${bits>0?` (2<sup>${bits-1}</sup> = ${2**(bits-1)} wäre zu wenig)`:""}.`,
+    `Neues Präfix: /${p} + ${bits} = <b>/${np}</b>.`,
+    bits%4===0?`${bits} Bit = <b>${bits/4} ${bits===4?"Blatt":"Blätter"}</b>, sie zählen hoch, der Rest bleibt stehen.`:`${bits} Bit sind keine ganzen Blätter (${bits}/4 = ${(bits/4).toString().replace(".",",")}). Das letzte Blatt klappt in Päckchen. Prüfungsfalle!`];
+  if(np<=64)steps.push(`Jedes /${np} enthält 2<sup>${64-np}</sup> = ${(2n**BigInt(64-np)).toLocaleString("de-DE")} /64-Netz${64-np?"e":""}.`);
+  else steps.push(`<span class="warn">Kleiner als /64, in der Praxis vermeiden, weil SLAAC ein /64 braucht.</span>`);
+  $("#plSteps").innerHTML=steps.map(x=>`<li>${x}</li>`).join("");
+  if(np>128){$("#plList").innerHTML="";return;}
+  const size=1n<<BigInt(128-np), total=1n<<BigInt(bits);
+  const show=[0n,1n,2n,3n].filter(x=>x<total); if(total>5n)show.push(-1n); show.push(total-1n);
+  const uniq=[...new Set(show.map(String))].map(BigInt);
+  const fn=Math.floor(p/4), ln=Math.ceil(np/4);
+  const line=k=>{
+    if(k===-1n)return `<div class="v6row">…</div>`;
+    const n=base+k*size, hx=V6.hex(n);
+    let h="";for(let i=0;i<Math.max(16,ln+(4-ln%4)%4);i++){if(i&&i%4===0)h+=":";h+=(i>=fn&&i<ln)?`<span class="hl">${hx[i]}</span>`:hx[i];}
+    return `<div class="v6row"><small>Subnetz ${(k+1n).toLocaleString("de-DE")}</small>${h}${np<=64?"::":""}/${np} &nbsp; → &nbsp; ${V6.short(n)}/${np}</div>`;
+  };
+  $("#plList").innerHTML=uniq.map(line).join("");
+}
+$("#plBase").addEventListener("input",renderPlan);
+$("#plN").addEventListener("input",renderPlan);
+
+function renderEui(){
+  const raw=$("#euiMac").value.trim().replace(/[-.]/g,":"), parts=raw.split(":");
+  const ok=parts.length===6&&parts.every(x=>/^[0-9a-fA-F]{2}$/.test(x));
+  $("#euiMac").classList.toggle("bad",!ok);
+  if(!ok){$("#euiSteps").innerHTML=`<li class="warn">Bitte eine MAC wie AA:00:00:00:00:01 eingeben.</li>`;return;}
+  const b=parts.map(x=>parseInt(x,16)), up=x=>x.toString(16).padStart(2,"0").toUpperCase();
+  const f=b[0]^2, bin=x=>x.toString(2).padStart(8,"0");
+  const bitsHtml=x=>{const s=bin(x);return s.slice(0,6)+`<span class="flipb">${s[6]}</span>`+s[7];};
+  const iid=[f,b[1],b[2],0xff,0xfe,b[3],b[4],b[5]].map(x=>x.toString(16).padStart(2,"0"));
+  const groups=[iid[0]+iid[1],iid[2]+iid[3],iid[4]+iid[5],iid[6]+iid[7]];
+  const full=0n, ll=V6.parse("fe80::"+groups.join(":")).n;
+  $("#euiSteps").innerHTML=`
+    <li><b>Aufschneiden:</b> <span class="v6row">${up(b[0])}:${up(b[1])}:${up(b[2])} <span class="dc">|</span> ${up(b[3])}:${up(b[4])}:${up(b[5])}</span></li>
+    <li><b>FF:FE reinstecken:</b> <span class="v6row">${up(b[0])}:${up(b[1])}:${up(b[2])}:<span class="hl">FF:FE</span>:${up(b[3])}:${up(b[4])}:${up(b[5])}</span></li>
+    <li><b>7. Bit im ersten Byte umdrehen:</b> <span class="bitbox">${bitsHtml(b[0])}</span> → <span class="bitbox">${bitsHtml(f)}</span>, also <b>${up(b[0])} → ${up(f)}</b> (zweite Ziffer ${f>b[0]?"+2":"−2"}).</li>
+    <li><b>Als Interface-ID in 4 Gruppen:</b> <span class="v6row">${groups.join(":")}</span></li>
+    <li><b>Mit Link-Local-Präfix:</b> <span class="v6row">${V6.short(ll)}</span></li>`;
+}
+$("#euiMac").addEventListener("input",renderEui);
+
+
+/* ---------- Werkzeug-Ansichten laden ---------- */
+function lookClock(ipS,p,a,b){
+  pfx=p; $("#pfx").value=p; lastNet=null;
+  if(a){$("#pcA").value=a;$("#pcB").value=b;}
+  setIp(toInt(ipS));
+  (a?$("#pcSvg"):$("#clock")).scrollIntoView({block:"center",behavior:"smooth"});
+}
+function lookRoute(d){
+  routes=JSON.parse(JSON.stringify(DEFAULT_ROUTES)); renderRoutes(); resetRoute();
+  $("#dst").value=d; setFlaps($("#dstClock"),toInt(d),32,false);
+  $("#slow").checked=true; $("#dstClock").scrollIntoView({block:"start",behavior:"smooth"}); route();
+}
+function lookVlan(from,to,pre){
+  pcs=JSON.parse(JSON.stringify(DEFAULT_PCS)); vInit(); mt={1:[],2:[]}; vState=null;
+  if(pre){$("#vFrom").value=String(pre[0]);$("#vTo").value=String(pre[1]);vSend();}
+  $("#vFrom").value=String(from); $("#vTo").value=String(to); vSend();
+  $("#vSvg").scrollIntoView({block:"center",behavior:"smooth"});
+}
+function lookV6short(x){$("#v6short").value=x;renderShort();$("#v6short").scrollIntoView({block:"center",behavior:"smooth"});}
+function lookPlan(b,n){$("#plBase").value=b;$("#plN").value=n;renderPlan();$("#plBase").scrollIntoView({block:"center",behavior:"smooth"});}
+function lookEui(m){$("#euiMac").value=m;renderEui();$("#euiMac").scrollIntoView({block:"center",behavior:"smooth"});}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("on",x===b));
+  ["clock","router","vlan","v6"].forEach(t=>$("#tab-"+t).classList.toggle("hidden",b.dataset.tab!==t));
+  if(b.dataset.tab!=="clock"&&runTimer)$("#runBtn").click();
+});
+
+/* ---------- Start ---------- */
+buildClock($("#clock")); buildClock($("#dstClock"));
+renderClock();
+setFlaps($("#dstClock"),toInt("10.20.3.70"),32,false);
+renderRoutes();
+vInit();
+buildHex(); renderV6(); renderShort(); renderPlan(); renderEui();
+
+/* ---------- Sprung aus dem Prüfungsprügler: #tab=clock&ip=192.168.1.60&p=26 (a, b: zwei Rechner),
+   #tab=router&ziel=10.20.3.70, #tab=vlan&von=1&an=5 (vor=1,5: ein Frame vorher), #tab=v6&kurz=… oder &plan=…&n=… oder &mac=… ---------- */
+(function(){
+  const q=new URLSearchParams(location.hash.slice(1)), tab=q.get("tab");
+  if(!tab) return;
+  const knopf=document.querySelector('[data-tab="'+tab+'"]'); if(knopf) knopf.click();
+  setTimeout(()=>{
+    if(tab==="clock"&&q.get("ip")) lookClock(q.get("ip"),+q.get("p")||24,q.get("a"),q.get("b"));
+    if(tab==="router"&&q.get("ziel")) lookRoute(q.get("ziel"));
+    if(tab==="vlan"&&q.get("von")) lookVlan(+q.get("von"),q.get("an")==="bc"?"bc":+q.get("an"),q.get("vor")?q.get("vor").split(",").map(Number):null);
+    if(tab==="v6"){ if(q.get("kurz")) lookV6short(q.get("kurz")); else if(q.get("plan")) lookPlan(q.get("plan"),+q.get("n")); else if(q.get("mac")) lookEui(q.get("mac")); }
+  },60);
+})();
+</script>
+<script src="werkstatt.js"></script>
+</body>
+</html>

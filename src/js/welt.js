@@ -217,6 +217,14 @@ export const RAST_BERG = [
   'Jemand hat den Gipfel in ein Gantt-Diagramm eingetragen. Der Balken ist sehr lang.'
 ];
 
+/* Die Werkstatt: Werkzeuge zum Ausprobieren, ohne Leben und Seelen (src/werkstatt, aus tools/werkstatt.py) */
+export const WERKSTATT = [
+  ['klappuhr.html', 'Subnetz-Klappuhr', 'Subnetze, Router, VLAN und IPv6'],
+  ['rechenwerk.html', 'Rechenwerk', 'Binär addieren, Gatter, Masken'],
+  ['zahlenwerk.html', 'Zahlenwerk', 'Zahlensysteme, KB und KiB']
+];
+export const WERKSTATT_SATZ = 'Hier wird nicht gekämpft. Hier wird nachgesehen.';
+
 /* Rätsel zwischen den Karten: wie sie auftreten. Düster, aber mit Augenzwinkern */
 export const RAETSEL_AUFTRITT = {
   rechnen: [

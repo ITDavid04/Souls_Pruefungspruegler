@@ -596,6 +596,17 @@ body[data-wetter="staub"] .bg::after { opacity: .7; background-image: radial-gra
 .medium:disabled { cursor: default; }
 .folge { font-size: 14.5px; color: #d6ccbb; min-height: 1.4em; }
 
+/* ---------- Werkstatt am Lagerfeuer und der Sprung nach einem falschen Rätsel ---------- */
+.werkstatt-abschnitt { color: #c9b48f; }
+.werkstatt-liste { list-style: none; padding: 0; display: grid; gap: 8px; }
+.werkstatt-liste a { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--linie); border-left: 3px solid var(--gold-tief); border-radius: 6px; background: linear-gradient(90deg, rgba(60, 44, 28, .35), transparent 70%), var(--stein); text-decoration: none; }
+.werkstatt-liste b { font: 700 17px/1.2 var(--f-titel); letter-spacing: .03em; color: #f4e9d2; }
+.werkstatt-liste span { font-size: 14px; color: var(--blass); }
+@media (hover: hover) { .werkstatt-liste a:hover { border-color: var(--gold-tief); } }
+.werkstatt-sprung { width: 100%; margin-top: 4px; }
+.tod .werkstatt-sprung { margin-top: 0; }
+@media (min-width: 720px) { .werkstatt-liste { grid-template-columns: repeat(3, 1fr); } }
+
 /* ---------- Hinweis bei neuer Fassung ---------- */
 .toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }
 html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }

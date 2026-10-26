@@ -8,6 +8,7 @@
      felder    [{ label, art, soll }]   art: ip, zahl, praefix, v6kurz, v6voll, iid
      wahl      { optionen, richtig: [Index], mehrere }
      zusatz    'routing' oder 'vlan': die Routingtabelle oder der VLAN-Aufbau stehen mit auf der Karte
+     werkstatt wohin ein falsches Rätsel in der Werkstatt führt, zum Beispiel klappuhr.html#tab=clock&ip=192.168.1.60&p=26
      zeilen, falsch, folge   bei Botschaften: der Rechenweg, die erste falsche Zeile, Folgefehler
      erklaerung              HTML, steht nach der Antwort da */
 import { rnd, pick, wpick } from './kern.js';
@@ -15,6 +16,16 @@ import { rnd, pick, wpick } from './kern.js';
 const zahl = n => Number(n).toLocaleString('de-DE');
 const hoch = (b, e) => b + '<sup>' + e + '</sup>';
 const ORD = ['ersten', 'zweiten', 'dritten', 'vierten'];
+/* Sprungziele in der Werkstatt (src/werkstatt): die Klappuhr stellt sich auf die Aufgabe, das Rechenwerk zeigt die Gatter */
+const WERK = {
+  uhr: (ip, p, a, b) => 'klappuhr.html#tab=clock&ip=' + ip + '&p=' + p + (b ? '&a=' + a + '&b=' + b : ''),
+  router: ziel => 'klappuhr.html#tab=router&ziel=' + ziel,
+  vlan: (von, an, vor) => 'klappuhr.html#tab=vlan&von=' + von + '&an=' + an + (vor ? '&vor=' + vor : ''),
+  v6: a => 'klappuhr.html#tab=v6&kurz=' + encodeURIComponent(a),
+  plan: (basis, n) => 'klappuhr.html#tab=v6&plan=' + encodeURIComponent(basis) + '&n=' + n,
+  eui: mac => 'klappuhr.html#tab=v6&mac=' + encodeURIComponent(mac),
+  gatter: () => 'rechenwerk.html#gatter'
+};
 
 /* ---------- IPv4 ---------- */
 export const ipZahl = s => {
@@ -62,7 +73,7 @@ function ipv4Netz(gross){
       { label: 'Broadcast', art: 'ip', soll: ipText(bcast(ip, p)) },
       { label: 'Rechner', art: 'zahl', soll: String(2 ** h - 2) }
     ],
-    erklaerung: rechenweg(ip, p)
+    erklaerung: rechenweg(ip, p), werkstatt: WERK.uhr(ipText(ip), p)
   };
 }
 const ARTEN_ADRESSE = ['Ein Rechner (Host)', 'Die Netz-ID', 'Der Broadcast'];
@@ -78,7 +89,8 @@ function ipv4Art(){
     wahl: { optionen: ARTEN_ADRESSE, richtig: [art] },
     erklaerung: (p === 24 ? 'Bei /24 ist das ganze letzte Oktett frei, von 0 bis 255. '
       : 'Blockgröße 256 − ' + s.mw + ' = ' + s.block + '. ' + s.v + ' liegt im Päckchen ' + s.start + ' bis ' + (s.start + s.block - 1) + '. ') +
-      'Die erste Adresse ist die Netz-ID, die letzte der Broadcast, alles dazwischen sind Rechner. <b>Frag nicht, was eine Adresse ist, frag, wozu sie gehört.</b>'
+      'Die erste Adresse ist die Netz-ID, die letzte der Broadcast, alles dazwischen sind Rechner. <b>Frag nicht, was eine Adresse ist, frag, wozu sie gehört.</b>',
+    werkstatt: WERK.uhr(ipText(ip), p)
   };
 }
 function ipv4Direkt(){
@@ -94,7 +106,8 @@ function ipv4Direkt(){
     frage: '<code>' + ipText(a) + '/' + p + '</code> will an <code>' + ipText(b) + '/' + p + '</code> senden. Geht das direkt?',
     wahl: { optionen: ['Ja, gleiches Netz', 'Nein, über den Router'], richtig: [gleich ? 0 : 1] },
     erklaerung: 'Blockgröße ' + block + '. ' + sa.v + ' liegt im Päckchen ' + sa.start + ' bis ' + (sa.start + block - 1) + ', ' + sb.v + ' im Päckchen ' + sb.start + ' bis ' + (sb.start + block - 1) + '. ' +
-      (gleich ? 'Gleiches Netz, der Absender stellt direkt zu.' : 'Zwei verschiedene Netze, der Absender gibt das Paket an sein Gateway.')
+      (gleich ? 'Gleiches Netz, der Absender stellt direkt zu.' : 'Zwei verschiedene Netze, der Absender gibt das Paket an sein Gateway.'),
+    werkstatt: WERK.uhr(ipText(a), p, ipText(a), ipText(b))
   };
 }
 function maskenWeg(p){
@@ -104,8 +117,8 @@ function maskenWeg(p){
 }
 function ipv4Maske(){
   const p = 17 + rnd(14);
-  if (Math.random() < 0.5) return { art: 'rechnen', thema: 'IPv4', frage: 'Schreib <code>/' + p + '</code> als Subnetzmaske.', felder: [{ label: 'Maske', art: 'ip', soll: ipText(maske(p)) }], erklaerung: maskenWeg(p) };
-  return { art: 'rechnen', thema: 'IPv4', frage: 'Welches Präfix hat die Maske <code>' + ipText(maske(p)) + '</code>?', felder: [{ label: 'Präfix', art: 'praefix', soll: String(p) }], erklaerung: maskenWeg(p) };
+  if (Math.random() < 0.5) return { art: 'rechnen', thema: 'IPv4', frage: 'Schreib <code>/' + p + '</code> als Subnetzmaske.', felder: [{ label: 'Maske', art: 'ip', soll: ipText(maske(p)) }], erklaerung: maskenWeg(p), werkstatt: WERK.uhr('192.168.1.1', p) };
+  return { art: 'rechnen', thema: 'IPv4', frage: 'Welches Präfix hat die Maske <code>' + ipText(maske(p)) + '</code>?', felder: [{ label: 'Präfix', art: 'praefix', soll: String(p) }], erklaerung: maskenWeg(p), werkstatt: WERK.uhr('192.168.1.1', p) };
 }
 function ipv4Planung(){
   const gross = Math.random() < 0.4, basisP = gross ? 16 : 24, n = gross ? 5 + rnd(300) : 3 + rnd(38);
@@ -116,7 +129,8 @@ function ipv4Planung(){
     frage: 'Das Netz <code>' + basis + '/' + basisP + '</code> soll in <b>' + n + ' gleich große Subnetze</b> geteilt werden. Neues Präfix und Rechner je Subnetz?',
     felder: [{ label: 'Neues Präfix', art: 'praefix', soll: String(np) }, { label: 'Rechner je Subnetz', art: 'zahl', soll: String(2 ** h - 2) }],
     erklaerung: n + ' Subnetze brauchen ' + bits + ' Bit' + (2 ** bits === n ? ', ' + hoch(2, bits) + ' = ' + n + ' passt genau' : ', denn ' + hoch(2, bits - 1) + ' = ' + 2 ** (bits - 1) + ' ist zu wenig und ' + hoch(2, bits) + ' = ' + 2 ** bits + ' reicht') +
-      '. /' + basisP + ' + ' + bits + ' = /' + np + '. Für Rechner bleiben ' + h + ' Bit: ' + hoch(2, h) + ' − 2 = ' + zahl(2 ** h - 2) + '.'
+      '. /' + basisP + ' + ' + bits + ' = /' + np + '. Für Rechner bleiben ' + h + ' Bit: ' + hoch(2, h) + ' − 2 = ' + zahl(2 ** h - 2) + '.',
+    werkstatt: WERK.uhr(basis, np)
   };
 }
 
@@ -143,7 +157,7 @@ function botschaftIpv4(gross){
   fehler.push([4, 'Nutzbare Rechner: ' + hoch(2, h) + ' = ' + zahl(2 ** h), 'Netz-ID und Broadcast sind keine Rechner: ' + hoch(2, h) + ' − 2 = <b>' + zahl(2 ** h - 2) + '</b>.']);
   const [falsch, zeile, erklaerung] = pick(fehler);
   zeilen[falsch] = zeile;
-  return { art: 'botschaft', thema: 'IPv4', intro: 'Aufgabe: Netzdaten für <code>' + ipText(ip) + '/' + p + '</code>.', zeilen, falsch, folge: [], erklaerung };
+  return { art: 'botschaft', thema: 'IPv4', intro: 'Aufgabe: Netzdaten für <code>' + ipText(ip) + '/' + p + '</code>.', zeilen, falsch, folge: [], erklaerung, werkstatt: WERK.uhr(ipText(ip), p) };
 }
 
 /* ---------- IPv6 ---------- */
@@ -186,7 +200,8 @@ function v6Kurz(){
     art: 'rechnen', thema: 'IPv6',
     frage: 'Kürze so weit wie möglich: <code>' + V6.voll(g) + '</code>',
     felder: [{ label: 'Gekürzt', art: 'v6kurz', soll: k }],
-    erklaerung: 'Erst die führenden Nullen jeder Gruppe weg, dann die längste Kette aus Nullgruppen zu ::. Das geht nur einmal, eine einzelne Nullgruppe bleibt als 0 stehen. Ergibt <b>' + k + '</b>.'
+    erklaerung: 'Erst die führenden Nullen jeder Gruppe weg, dann die längste Kette aus Nullgruppen zu ::. Das geht nur einmal, eine einzelne Nullgruppe bleibt als 0 stehen. Ergibt <b>' + k + '</b>.',
+    werkstatt: WERK.v6(V6.voll(g))
   };
 }
 function v6Voll(){
@@ -196,14 +211,15 @@ function v6Voll(){
     art: 'rechnen', thema: 'IPv6',
     frage: 'Klappe vollständig auf, alle 32 Ziffern: <code>' + k + '</code>',
     felder: [{ label: 'Ausgeschrieben', art: 'v6voll', soll: V6.voll(g) }],
-    erklaerung: (k.includes('::') ? da + ' Gruppen stehen da, :: steht also für ' + (8 - da) + ' Nullgruppen. ' : '') + 'Jede Gruppe vorne mit Nullen auf vier Ziffern auffüllen: <b>' + V6.voll(g) + '</b>.'
+    erklaerung: (k.includes('::') ? da + ' Gruppen stehen da, :: steht also für ' + (8 - da) + ' Nullgruppen. ' : '') + 'Jede Gruppe vorne mit Nullen auf vier Ziffern auffüllen: <b>' + V6.voll(g) + '</b>.',
+    werkstatt: WERK.v6(V6.voll(g))
   };
 }
 function v6Planung(){
   if (Math.random() < 0.4) {
     const p = pick([48, 52, 56, 60]);
     return { art: 'rechnen', thema: 'IPv6', frage: 'Wie viele /64-Netze stecken in einem <code>/' + p + '</code>?', felder: [{ label: 'Anzahl', art: 'zahl', soll: String(2 ** (64 - p)) }],
-      erklaerung: (64 - p) + ' Bit Unterschied: ' + hoch(2, 64 - p) + ' = <b>' + zahl(2 ** (64 - p)) + '</b>.' };
+      erklaerung: (64 - p) + ' Bit Unterschied: ' + hoch(2, 64 - p) + ' = <b>' + zahl(2 ** (64 - p)) + '</b>.', werkstatt: WERK.plan('2001:db8:abcd::/' + p, 2 ** (64 - p)) };
   }
   const n = 3 + rnd(298), bits = Math.ceil(Math.log2(n)), basis = '2001:db8:' + rnd(65536).toString(16) + '::/48';
   return {
@@ -211,7 +227,8 @@ function v6Planung(){
     frage: 'Sie haben <code>' + basis + '</code> und brauchen <b>' + n + ' Subnetze</b>. Welches Präfix bekommen die Subnetze?',
     felder: [{ label: 'Neues Präfix', art: 'praefix', soll: String(48 + bits) }],
     erklaerung: n + ' Subnetze brauchen ' + bits + ' Bit' + (2 ** bits === n ? '' : ', denn ' + hoch(2, bits - 1) + ' = ' + 2 ** (bits - 1) + ' ist zu wenig') + '. Subnetze sind kleiner, das Präfix wird länger: /48 + ' + bits + ' = <b>/' + (48 + bits) + '</b>.' +
-      (bits % 4 === 0 ? ' Das sind genau ' + bits / 4 + (bits === 4 ? ' Hex-Stelle.' : ' Hex-Stellen.') : '')
+      (bits % 4 === 0 ? ' Das sind genau ' + bits / 4 + (bits === 4 ? ' Hex-Stelle.' : ' Hex-Stellen.') : ''),
+    werkstatt: WERK.plan(basis, n)
   };
 }
 function eui64(){
@@ -223,7 +240,8 @@ function eui64(){
     frage: 'EUI-64: Welche Interface-ID entsteht aus der MAC <code>' + mac + '</code>?',
     felder: [{ label: 'Interface-ID (4 Gruppen)', art: 'iid', soll: iid }],
     erklaerung: 'Aufschneiden: ' + b.slice(0, 3).map(H).join(':').toUpperCase() + ' | FF:FE | ' + b.slice(3).map(H).join(':').toUpperCase() +
-      '. Dann das siebte Bit des ersten Bytes umdrehen: ' + H(b[0]).toUpperCase() + ' wird ' + H(erst).toUpperCase() + '. Ergibt <b>' + iid + '</b>.'
+      '. Dann das siebte Bit des ersten Bytes umdrehen: ' + H(b[0]).toUpperCase() + ' wird ' + H(erst).toUpperCase() + '. Ergibt <b>' + iid + '</b>.',
+    werkstatt: WERK.eui(mac)
   };
 }
 
@@ -328,6 +346,26 @@ const FEST = {
       'Das siebte Bit hat den Wert 2: <b>00 wird 02</b>. Zeile 4 ist ein Folgefehler, richtig ist 021a:2bff:fe3c:4d5e.', 'IPv6', undefined, [3])
   ]
 };
+/* Sprungziele der handverlesenen Aufgaben, wie in der Klappuhr (dort hießen sie look…), in derselben Reihenfolge */
+const U = WERK.uhr, RT = WERK.router, VL = WERK.vlan, PL = WERK.plan, EUI = WERK.eui('00:1A:2B:3C:4D:5E');
+const FEST_WERKSTATT = {
+  ipv4: [U('192.168.10.77', 24), U('192.168.1.60', 26), U('192.168.1.130', 26), U('10.0.5.9', 30), U('172.16.0.63', 26), U('172.16.0.64', 26), U('172.16.0.63', 24), U('172.20.37.200', 20), U('192.168.5.62', 27, '192.168.5.62', '192.168.5.66')],
+  ipv4Botschaft: [U('192.168.1.100', 26), U('10.1.1.0', 30), U('192.168.0.0', 23), U('192.168.3.0', 25)],
+  router: ['10.20.3.70', '10.20.3.10', '10.20.3.200', '10.20.99.1', '10.30.1.1', '10.99.0.1', '8.8.8.8'].map(RT),
+  routerBotschaft: ['10.20.3.70', '10.20.3.70', '192.168.7.7'].map(RT),
+  vlan: [VL(1, 5), VL(5, 1, '1,5'), VL(3, 'bc'), VL(3, 8), VL(1, 5), VL(1, 3)],
+  vlanBotschaft: [VL(1, 5), VL(1, 5), VL(1, 5)],
+  v6: [WERK.v6('2001:0db8:0000:0000:0000:ff00:0042:8329'), WERK.v6('fe80:0000:0000:0000:0204:61ff:fe9d:f156'), WERK.v6('2001:0db8:0000:0001:0000:0000:0000:0001'), WERK.v6('2001:db8::1'),
+    PL('2001:db8:abcd::/48', 60), PL('2001:db8:abcd::/48', 16), PL('2001:db8:abcd::/48', 256), EUI],
+  v6Botschaft: [WERK.v6('2001:0db8:0000:0000:0001:0000:0000:0001'), PL('2001:db8:abcd::/48', 200), EUI]
+};
+for (const [k, liste] of Object.entries(FEST_WERKSTATT)) {
+  if (liste.length !== FEST[k].length) throw new Error('Sprungziele passen nicht zu den Aufgaben: ' + k);
+  liste.forEach((w, i) => { FEST[k][i].werkstatt = w; });
+}
+/* Name des Werkzeugs zu einem Sprungziel */
+export const werkzeug = w => w.startsWith('klappuhr') ? 'Klappuhr' : w.startsWith('rechenwerk') ? 'Rechenwerk' : 'Zahlenwerk';
+
 /* Die Routingtabelle und der VLAN-Aufbau, auf die sich die Aufgaben beziehen */
 export const ROUTEN = [['Internet', '0.0.0.0/0', 'Internet'], ['Firmennetz', '10.0.0.0/8', 'eth0'], ['Standort Berlin', '10.20.0.0/16', 'eth1'], ['Standort Hamburg', '10.30.0.0/16', 'eth2'],
   ['Etage 3', '10.20.3.0/24', 'eth3'], ['Büro Technik', '10.20.3.0/26', 'eth4'], ['Büro Verwaltung', '10.20.3.64/26', 'eth5']];
@@ -346,7 +384,7 @@ export const GATTER = [
 export const gatter = id => GATTER.find(g => g.id === id);
 function mimic(){
   const g = wpick(GATTER, g => g.id === 'NOT' ? 0.5 : 1);
-  return { art: 'mimic', thema: 'Logik', gatter: g.id, frage: 'Welches Gatter steckt in der Truhe?', erklaerung: g.satz };
+  return { art: 'mimic', thema: 'Logik', gatter: g.id, frage: 'Welches Gatter steckt in der Truhe?', erklaerung: g.satz, werkstatt: WERK.gatter() };
 }
 
 /* ---------- Restore: der Server brennt, welche Sicherungen spielst du zurück? ---------- */

@@ -24,8 +24,11 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  /* Seiten: die Werkstatt hat eigene, alles andere ist die App (auch mit ?zurueck) */
   if (req.mode === 'navigate') {
-    e.respondWith(caches.match('./index.html', { cacheName: SHELL }).then(r => r || fetch(req)));
+    e.respondWith(caches.match(req, { cacheName: SHELL, ignoreSearch: true })
+      .then(r => r || caches.match('./index.html', { cacheName: SHELL }))
+      .then(r => r || fetch(req)));
     return;
   }
   e.respondWith(caches.match(req, { cacheName: SHELL, ignoreSearch: true }).then(r => r || fetch(req)));

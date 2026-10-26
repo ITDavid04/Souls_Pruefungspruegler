@@ -5,7 +5,8 @@
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
    Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Katakomben der Kürzel mit Gebeinhaus
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
-   Installierbarkeit, Start ohne Netz, keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
+   Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
+   Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
 import puppeteer from 'puppeteer-core';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -156,6 +157,9 @@ try {
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
   const errs = watch(page, 'Handy');
+  /* Alles muss vom eigenen Server kommen, auch in der Werkstatt (keine Google-Schriften) */
+  const fremd = [];
+  page.on('request', r => { const u = r.url(); if (!u.startsWith(BASE) && !u.startsWith('data:') && !u.startsWith('blob:')) fremd.push(u); });
   await page.goto(BASE, { waitUntil: 'networkidle0' });
 
   await ansicht(page, 'titel');
@@ -615,6 +619,49 @@ try {
   await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
   await ansicht(page, 'hub');
 
+  /* Werkstatt: vom Lagerfeuer erreichbar, Sprung aus einem falschen Rätsel, Rückweg ohne Titel */
+  check('Lagerfeuer zeigt die drei Werkzeuge der Werkstatt', (await page.$$eval('.werkstatt-liste a', a => a.map(e => e.getAttribute('href')))).join() === 'werkstatt/klappuhr.html,werkstatt/rechenwerk.html,werkstatt/zahlenwerk.html');
+  await klick(page, 'a.kachel[href="#/kreis/3"]');
+  await ansicht(page, 'kreis-seite');
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const sprung = await raetselStellen(page, 'ipv4Netz');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await antworte(page, false);
+  const ziel = await page.$eval('.werkstatt-sprung', a => a.getAttribute('href'));
+  check('Falsches Rätsel bietet die Werkstatt an, auf genau diese Aufgabe gestellt', ziel === 'werkstatt/' + sprung.werkstatt && ziel.includes('tab=clock'), ziel);
+  await sleep(400);
+  await foto(page, '45-werkstatt-sprung');
+  const vorWerkstatt = (await spiel(page)).lauf.frage;
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.$eval('.werkstatt-sprung', a => a.click())]);
+  await page.waitForSelector('#werkstatt-zurueck');
+  const ip = new URLSearchParams(sprung.werkstatt.split('#')[1]).get('ip');
+  await warte(page, v => document.getElementById('ipIn') && document.getElementById('ipIn').value === v, ip);
+  check('Klappuhr steht auf der Adresse aus dem Rätsel, der Weg zurück führt in den Kampf', await page.$eval('#werkstatt-zurueck', e => e.textContent === 'Zurück zum Kampf') && await page.$eval('#pfx', e => e.value) === new URLSearchParams(sprung.werkstatt.split('#')[1]).get('p'), ip);
+  await sleep(600);
+  await foto(page, '46-werkstatt-klappuhr');
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.$eval('#werkstatt-zurueck', a => a.click())]);
+  await ansicht(page, 'kampf');
+  const nachWerkstatt = await spiel(page);
+  check('Zurück aus der Werkstatt: ohne Titel in denselben Kampf', nachWerkstatt.lauf.frage.beantwortet && JSON.stringify(nachWerkstatt.lauf.frage.raetsel) === JSON.stringify(vorWerkstatt.raetsel) && await page.evaluate(() => !location.search));
+  await klick(page, '#rueckzug');
+  await klick(page, '#rz-ja');
+  await ansicht(page, 'kreis-seite');
+  const breiten = [];
+  for (const seite of ['klappuhr.html#tab=v6&plan=2001%3Adb8%3Aabcd%3A%3A%2F48&n=60', 'rechenwerk.html#gatter', 'zahlenwerk.html']) {
+    await page.goto(BASE + 'werkstatt/' + seite, { waitUntil: 'networkidle0' });
+    await page.waitForSelector('#werkstatt-zurueck');
+    await sleep(300);
+    breiten.push(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth));
+    if (seite.startsWith('rechenwerk')) { await sleep(400); await foto(page, '47-werkstatt-rechenwerk'); }
+  }
+  check('Werkstatt passt aufs Handy, nichts ragt seitlich heraus', breiten.every(b => b <= 0), breiten.join(', '));
+  check('Werkstatt lädt nichts aus dem Netz', fremd.length === 0, fremd.slice(0, 3).join(' '));
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await durchTitel(page);
+  await ansicht(page, 'hub');
+
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
   const man = await cdp.send('Page.getAppManifest');
@@ -631,6 +678,8 @@ try {
   await ansicht(page, 'hub');
   const bilderOffline = await page.evaluate(async () => (await Promise.all([...document.querySelectorAll('.kachel')].map(k => fetch(getComputedStyle(k).backgroundImage.match(/url\("([^"]+)"\)/)[1]).then(r => r.ok, () => false)))).every(Boolean));
   check('Startet ohne Netz, Bilder inklusive', bilderOffline);
+  await page.goto(BASE + 'werkstatt/rechenwerk.html', { waitUntil: 'load' });
+  check('Werkstatt ohne Netz', await page.$('#werkstatt-zurueck') !== null && await page.$eval('h1', e => e.textContent.includes('Rechenwerk')));
   await page.setOfflineMode(false);
   check('Handy: keine Fehler in der Konsole', errs.length === 0, errs.slice(0, 3).join(' | '));
   await page.close();
@@ -676,6 +725,17 @@ try {
   await ansicht(d, 'gebeinhaus');
   await sleep(1000);
   await foto(d, '55-desktop-gebeinhaus');
+  await d.goto(BASE + 'werkstatt/klappuhr.html#tab=router&ziel=10.20.3.70', { waitUntil: 'networkidle0' });
+  await d.waitForSelector('#werkstatt-zurueck');
+  check('Desktop: Werkstatt ohne laufenden Kampf führt zum Lagerfeuer', await d.$eval('#werkstatt-zurueck', e => e.textContent === 'Zum Lagerfeuer') && await d.$eval('#dst', e => e.value === '10.20.3.70'));
+  await sleep(1200);
+  await foto(d, '56-desktop-klappuhr');
+  await d.goto(BASE + 'werkstatt/rechenwerk.html#gatter', { waitUntil: 'networkidle0' });
+  await sleep(600);
+  await foto(d, '57-desktop-rechenwerk');
+  await d.goto(BASE + 'werkstatt/zahlenwerk.html', { waitUntil: 'networkidle0' });
+  await sleep(600);
+  await foto(d, '58-desktop-zahlenwerk');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
 } catch (e) {

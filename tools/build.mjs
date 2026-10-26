@@ -1,7 +1,7 @@
 /* Baut die App nach docs/ (nicht im Repository; der Workflow .github/workflows/pages.yml lädt docs/ zu GitHub Pages hoch).
    Aufruf: npm run build
    - setzt die Karten (data/karten-ap1.json, data/karten-ap2.json und die Kürzel aus data/kuerzel.json) in index.html ein
-   - kopiert Skripte, Stil, Symbole, die benutzten Bilder und die Schriften
+   - kopiert Skripte, Stil, Symbole, die benutzten Bilder, die Schriften und die Werkstatt (src/werkstatt, aus tools/werkstatt.py)
    - erzeugt den Service Worker mit Prüfsumme und Liste aller Dateien
    - bricht ab, wenn in den eigenen Texten Gedankenstriche stehen (in den Karten wird nur gezählt) */
 import { readFile, writeFile, mkdir, rm, copyFile, readdir } from 'node:fs/promises';
@@ -63,6 +63,13 @@ for (const f of await readdir(path.join(SRC, 'js'))) {
   await put('js/' + f, code);
 }
 await copy(path.join(SRC, 'manifest.webmanifest'), 'manifest.webmanifest');
+/* Werkstatt: Klappuhr, Rechenwerk, Zahlenwerk mit Stil und Kopfzeile; nichts davon darf aus dem Netz laden */
+for (const f of await readdir(path.join(SRC, 'werkstatt'))) {
+  const inhalt = await read(path.join(SRC, 'werkstatt', f));
+  noDashes('src/werkstatt/' + f, inhalt);
+  if (/(src|href)="https?:|url\(https?:|fonts\.googleapis/.test(inhalt)) throw new Error('src/werkstatt/' + f + ': lädt etwas aus dem Netz, offline geht das nicht');
+  await put('werkstatt/' + f, inhalt);
+}
 for (const f of await readdir(path.join(SRC, 'icons'))) await copy(path.join(SRC, 'icons', f), 'icons/' + f);
 await put('.nojekyll', '');
 

@@ -5,7 +5,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ } from './welt.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -119,6 +119,11 @@ function vibrieren(muster){
 let rastSatz = null;
 /* Der Titel kommt bei jedem Start der App, nicht nur beim ersten; erst danach geht es dorthin, wo man war */
 let titelGezeigt = false, aufraeumen = null;
+/* Zurück aus der Werkstatt (../?zurueck): ohne Titel dorthin, wo man war */
+if (new URLSearchParams(location.search).has('zurueck')) {
+  titelGezeigt = true;
+  history.replaceState(null, '', location.pathname + location.hash);
+}
 function render(){
   stoppeUhr();
   if (aufraeumen) { aufraeumen(); aufraeumen = null; }
@@ -329,6 +334,8 @@ function lagerfeuer(){
       '</ul>' +
       '<h2 class="abschnitt katakomben-abschnitt"><span>' + esc(KATAKOMBEN.nr) + '</span><small>Jederzeit offen · ' + zahl(KUERZEL.length) + ' Kürzel aus AP1 und AP2</small></h2>' +
       '<ul class="kacheln">' + kachel(KATAKOMBEN) + '</ul>' +
+      '<h2 class="abschnitt werkstatt-abschnitt"><span>Die Werkstatt</span><small>' + esc(WERKSTATT_SATZ) + '</small></h2>' +
+      '<ul class="werkstatt-liste">' + WERKSTATT.map(([seite, name, was]) => '<li><a href="werkstatt/' + seite + '"><b>' + esc(name) + '</b><span>' + esc(was) + '</span></a></li>').join('') + '</ul>' +
       '<details class="spielstand"><summary>Spielstand</summary>' +
         '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen' +
           (S.raetsel && S.raetsel.versucht ? ' · ' + S.raetsel.geloest + ' von ' + S.raetsel.versucht + ' Rätseln gelöst' : '') + '</p>' +
@@ -792,7 +799,15 @@ function raetselRueckmeldung(f){
     '<p class="merke">' + r.erklaerung + '</p>' +
     (f.zeilen && f.zeilen.length ? '<p class="seelen-zeile">' + f.zeilen.map(esc).join(' · ') + '</p>' : '') +
     (f.spruch ? '<p class="spruch">' + esc(f.spruch) + '</p>' : '') +
+    (!f.gut ? werkstattSprung(r) : '') +
   '</div>';
+}
+/* Nach einem falschen Rätsel: in der Werkstatt nachsehen, das Werkzeug steht schon auf genau dieser Aufgabe */
+function werkstattSprung(r){
+  if (!r.werkstatt) return '';
+  const name = R.werkzeug(r.werkstatt);
+  return '<a class="knopf leise werkstatt-sprung" href="werkstatt/' + esc(r.werkstatt) + '">In der Werkstatt nachsehen<small>' +
+    (name === 'Klappuhr' ? 'Die Klappuhr steht schon auf dieser Aufgabe' : 'Im Rechenwerk stehen alle Gatter an der Wand') + '</small></a>';
 }
 
 /* Prüfungsuhr: die Frist steht in der Frage, Neuladen hilft also nicht */
@@ -1005,7 +1020,7 @@ function zeige(){
           '<p class="tod-von">' + (z.ort === 'gipfel' ? 'Der Ausschuss hat entschieden, wegen' : 'Erledigt von') + '</p>' +
           '<p class="tod-begriff">' + esc(r ? R.NAMEN[r.art] : c.n) + '</p>' +
           (kurz ? '<p class="tod-lang">' + markiert(c) + '</p>' : '') +
-          (r ? '<div class="tod-def">' + (r.frage || r.intro) + '</div><p class="merke"><b>Lösung:</b> ' + R.loesung(r) + '</p>'
+          (r ? '<div class="tod-def">' + (r.frage || r.intro) + '</div><p class="merke"><b>Lösung:</b> ' + R.loesung(r) + '</p>' + werkstattSprung(r)
             : '<p class="tod-def">' + esc(c.d) + '</p>' + (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '')) +
           '<p class="tod-seelen">' + (z.fallen ? '<b>' + zahl(z.fallen) + ' Seelen</b> liegen jetzt bei ' + (r ? 'diesem Rätsel' : 'dieser Karte') + '. ' + (arena ? 'Beim nächsten Versuch' : 'Im nächsten Gang ' + gangOrt(O)) +
             (r ? ' wartet es zuerst. Richtig gelöst' : ' kommt sie zuerst. Richtig beantwortet') + ', holst du sie zurück. Falsch, und sie sind weg.' : 'Du hattest keine Seelen dabei. Wenigstens das.') +

@@ -1,0 +1,74 @@
+/* Werkstatt: die Werkzeuge aus dem Reinprügler-Ordner im Souls-Anstrich der App.
+   Die Werkzeuge bringen ihre eigenen Farbvariablen mit; hier werden sie für das dunkle Schema überschrieben
+   (html:root wiegt mehr als ihre :root-Regeln). Ihre Schriftnamen zeigen auf die Schriften der App, damit alles offline läuft. */
+
+@font-face { font-family: 'Cinzel'; src: url(../fonts/cinzel-latin-wght-normal.woff2) format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(../fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(../fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 100 450; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(../fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 451 900; font-display: swap; }
+@font-face { font-family: 'Barlow'; src: url(../fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 100 450; font-display: swap; }
+@font-face { font-family: 'Barlow'; src: url(../fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 451 900; font-display: swap; }
+@font-face { font-family: 'Barlow Condensed'; src: url(../fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Archivo'; src: url(../fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 100 450; font-display: swap; }
+@font-face { font-family: 'Archivo'; src: url(../fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 451 900; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: local('DejaVu Sans Mono'), local('Menlo'), local('Consolas'), local('Liberation Mono'), local('Courier New'); }
+
+html:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Subnetz-Klappuhr */
+  --paper: #0b0908; --grid: #2a221b; --ink: #ece4d6; --muted: #b0a492; --node: #17120f; --line: #5a4a3a;
+  --pencil: #e0b866; --red: #ef7464; --ok: #8fca7a;
+  --net: #e0b866; --netbg: #3a2a14; --host: #8fca7a; --hostbg: #1c2a17; --bc: #e8813a; --bcbg: #3d1f0c;
+  --flap: #0f0b09; --flapink: #f3e6c9; --flaphl: #1c1611; --lock: #7a6a58;
+  --blockA: #3a2a14; --blockB: #241b12;
+  /* Rechenwerk und Zahlenwerk */
+  --ground: #0b0908; --ground-2: #120e0b; --ink-soft: #b0a492; --rule: #43372d; --panel: #17120f;
+  --board: #0a0807; --board-edge: #43372d; --board-seam: #000; --glyph: #f3e6c9;
+  --signal: #e0b866; --signal-ink: #14100c; --enamel: #e8813a; --focus: #e0b866; --off: #4a3c30; --bad: #ef7464;
+}
+html:root[data-theme="dark"] body { background: radial-gradient(90% 40% at 50% 0%, rgba(120, 52, 14, .18), transparent 70%), #0b0908; color: #ece4d6; }
+html:root[data-theme="dark"] h1 { font-family: 'Cinzel', Georgia, serif; font-weight: 700; font-size: clamp(1.7rem, 7.5vw, 2.5rem); letter-spacing: .02em; color: #f3e6c9; overflow-wrap: anywhere; text-shadow: 0 0 24px rgba(232, 129, 58, .25); }
+html:root[data-theme="dark"] h2 { font-family: 'Cinzel', Georgia, serif; font-weight: 700; letter-spacing: .03em; color: #e9dcc4; }
+html:root[data-theme="dark"] .motto { font: italic 500 1.25rem/1.35 'Cormorant Garamond', Georgia, serif; color: #d9cdb8; border-left: 2px solid #a8823c; padding-left: 12px; }
+html:root[data-theme="dark"] :focus-visible { outline-color: #e0b866; }
+section[id] { scroll-margin-top: 90px; }
+
+/* Kopfzeile: zurück, Name, die drei Werkzeuge */
+.werkstatt-kopf {
+  position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(11, 9, 8, .96); border-bottom: 1px solid #43372d; box-shadow: 0 8px 16px -10px #000;
+  font: 400 15px/1.2 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+.werkstatt-zurueck { color: #b0a492; text-decoration: none; padding: 6px 0; }
+.werkstatt-zurueck::before { content: "‹ "; }
+.werkstatt-zurueck:hover { color: #ece4d6; }
+.werkstatt-name { font: 600 11.5px/1 'Cinzel', Georgia, serif; letter-spacing: .22em; text-transform: uppercase; color: #e0b866; }
+.werkstatt-reiter { display: flex; gap: 6px; margin-left: auto; }
+.werkstatt-reiter a { padding: 7px 11px; border: 1px solid #43372d; border-radius: 4px; color: #ece4d6; text-decoration: none; font: 600 13px/1 'Cinzel', Georgia, serif; letter-spacing: .04em; background: #17120f; }
+.werkstatt-reiter a[aria-current="page"] { border-color: #a8823c; color: #e0b866; background: #2a1f12; }
+@media (hover: hover) { .werkstatt-reiter a:hover { border-color: #a8823c; } }
+@media (max-width: 560px) {
+  .werkstatt-reiter { margin-left: 0; width: 100%; }
+  .werkstatt-reiter a { flex: 1; text-align: center; padding: 9px 4px; }
+  .werkstatt-name { margin-left: auto; }
+}
+
+/* Zahlenwerk: lange Zahlen (Yotta, Quetta) dürfen das Raster nicht aufs Doppelte strecken, die Tabellen scrollen in sich */
+html:root[data-theme="dark"] .readouts { grid-template-columns: minmax(0, 1fr); }
+html:root[data-theme="dark"] .readout table, html:root[data-theme="dark"] .allprefix table { display: block; max-width: 100%; overflow-x: auto; }
+html:root[data-theme="dark"] .calc .out { overflow-wrap: anywhere; }
+
+/* Rechenwerk: lange Aufgabennamen und die Tabelle aller Gatter bleiben in der Bildschirmbreite */
+html:root[data-theme="dark"] #taskSel { max-width: 100%; }
+html:root[data-theme="dark"] table.matrix { display: block; max-width: 100%; overflow-x: auto; }
+
+/* Klappuhr: vier Blätter passen auch aufs Handy */
+@media (max-width: 480px) {
+  html:root[data-theme="dark"] .clock { gap: 3px; }
+  html:root[data-theme="dark"] .flap { width: clamp(58px, 19vw, 74px); height: 66px; font-size: 2rem; }
+  html:root[data-theme="dark"] .dot { font-size: 2rem; padding-top: 30px; }
+  html:root[data-theme="dark"] .oct { width: clamp(58px, 19vw, 74px); }
+  html:root[data-theme="dark"] .role { font-size: .68rem; max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
+  html:root[data-theme="dark"] .octmask { font-size: .78rem; text-align: center; }
+}

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rechenwerk · Werkstatt · Prüfungsprügler</title>
+<style>
+:root{
+  --ground:#e4e1d8;--ground-2:#d6d2c6;--ink:#1b2026;--ink-soft:#55606b;
+  --rule:#bdb8aa;--panel:#efece4;
+  --board:#14171a;--board-edge:#2c3136;
+  --signal:#d8a531;--enamel:#2d5f6b;--focus:#2d5f6b;
+  --off:#454d54;--ok:#6f9e6a;--bad:#c9604f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#191d21;--ground-2:#12161a;--ink:#e6e3da;--ink-soft:#9aa3ac;
+    --rule:#343b42;--panel:#1f2429;--board:#0c0e10;--board-edge:#262b30;
+    --enamel:#6fb3c2;--focus:#6fb3c2;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#191d21;--ground-2:#12161a;--ink:#e6e3da;--ink-soft:#9aa3ac;
+  --rule:#343b42;--panel:#1f2429;--board:#0c0e10;--board-edge:#262b30;
+  --enamel:#6fb3c2;--focus:#6fb3c2;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ground);color:var(--ink);font-family:Archivo,Arial,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding:28px 20px 72px}
+h1{font-size:19px;font-weight:600;margin:0 0 6px}
+h2{font-size:16px;font-weight:600;margin:0 0 10px}
+p{max-width:66ch;margin:0 0 10px}
+.sub{color:var(--ink-soft);font-size:14.5px}
+section{margin-top:40px;border-top:1px solid var(--rule);padding-top:24px}
+
+.board{background:var(--board);border:1px solid var(--board-edge);border-radius:6px;padding:22px 16px;overflow-x:auto;
+  box-shadow:0 18px 34px -24px rgba(0,0,0,.7)}
+.grid{display:grid;gap:5px;justify-content:center;min-width:min-content}
+.g1{grid-template-columns:88px repeat(9,40px) 96px}
+.g2{grid-template-columns:104px repeat(8,34px) 16px repeat(8,34px) 132px}
+.lab{font-size:13px;color:#8b949c;align-self:center;text-align:right;padding-right:8px}
+.dec{font-family:"IBM Plex Mono",monospace;font-size:14px;color:#c9d0d6;align-self:center;padding-left:10px;font-variant-numeric:tabular-nums}
+.dot{align-self:center;text-align:center;color:#5c646b;font-family:"IBM Plex Mono",monospace;font-size:19px}
+.bit{height:40px;display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:500;
+  background:#1c2024;color:var(--off);border-radius:3px;border:1px solid #23282d;
+  transition:background .15s,color .15s,border-color .15s}
+.g2 .bit{height:34px;font-size:16px}
+.bit.one{color:var(--signal)}
+.bit.click{cursor:pointer}
+.bit.click:hover{border-color:#4a5259}
+.bit.click:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.bit.blank{background:transparent;border-color:transparent}
+.bit.pend{color:#333a3f}
+.bit.active{border-color:var(--signal);background:#2a2415}
+.bit.ask{border-color:var(--enamel);background:#15242a;color:#8fc3d0;cursor:pointer}
+.bit.ok{border-color:var(--ok);background:#1a2a1a;color:var(--ok)}
+.bit.bad{border-color:var(--bad);background:#2c1a17;color:var(--bad)}
+.rowgap{height:8px;grid-column:1/-1}
+.weights{display:grid;gap:5px;justify-content:center;min-width:min-content;margin-top:8px}
+.weights div{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:#5c646b;text-align:center}
+
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+button{font:inherit;font-weight:500;font-size:15px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--rule);border-radius:4px;padding:9px 17px;cursor:pointer}
+button:hover{background:var(--ground-2)}
+button.primary{background:var(--enamel);border-color:var(--enamel);color:#fff}
+button.ghost{padding:6px 13px;font-size:14px;background:transparent}
+button.ghost[aria-pressed="true"]{background:var(--enamel);border-color:var(--enamel);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+select{font:inherit;font-size:15px;padding:8px 10px;background:var(--panel);color:var(--ink);border:1px solid var(--rule);border-radius:4px}
+.score{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--ink-soft);margin-left:auto;font-variant-numeric:tabular-nums}
+
+.say{margin-top:14px;padding:14px 16px;background:var(--panel);border:1px solid var(--rule);border-radius:4px;min-height:58px}
+.say b{color:var(--enamel);font-weight:500}
+.say .mono{font-family:"IBM Plex Mono",monospace}
+.say.wrong{border-color:var(--bad)}
+.say.right{border-color:var(--ok)}
+
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:15px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--rule);text-align:center;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--ink-soft);font-size:13.5px}
+td.m{font-family:"IBM Plex Mono",monospace}
+tr.unseen td{color:var(--rule)}
+tr.now td{background:var(--panel);box-shadow:inset 3px 0 0 var(--signal)}
+.blockhead td{background:var(--ground-2);font-size:13px;color:var(--ink-soft);text-align:left;font-weight:500}
+.reveal{margin-top:14px;padding:14px 16px;border:1px dashed var(--rule);border-radius:4px;color:var(--ink-soft)}
+.reveal.on{border-style:solid;border-color:var(--enamel);color:var(--ink)}
+.reveal b{color:var(--enamel);font-weight:500}
+
+.circuit{background:var(--board);border:1px solid var(--board-edge);border-radius:6px;padding:16px;margin-top:14px;overflow-x:auto}
+svg{display:block;margin:0 auto;max-width:100%;height:auto}
+.wire{stroke:#454d54;stroke-width:2;fill:none}
+.wire.hot{stroke:var(--signal)}
+.gate{fill:#1c2024;stroke:#3a4249;stroke-width:1.5}
+.glab{font-family:"IBM Plex Mono",monospace;font-size:17px;fill:#e6e3da;text-anchor:middle}
+.gsub{font-family:Archivo,sans-serif;font-size:10px;fill:#7d858c;text-anchor:middle}
+.pin{font-family:"IBM Plex Mono",monospace;font-size:13px;fill:#8b949c}
+.val{font-family:"IBM Plex Mono",monospace;font-size:13px;fill:#454d54}
+.val.hot{fill:var(--signal)}
+
+
+/* ---------- Gatterwand ---------- */
+.switches{display:flex;gap:14px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+.sw{
+  display:flex;align-items:center;gap:12px;background:#1c2024;border:1px solid #2c3136;
+  border-radius:5px;padding:10px 16px;cursor:pointer;font:inherit;color:#8b949c;
+}
+.sw:hover{border-color:#4a5259}
+.sw:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.sw .nm{font-family:"IBM Plex Mono",monospace;font-size:16px}
+.sw .st{
+  font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:500;
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  border-radius:4px;background:#14171a;color:var(--off);
+}
+.sw.on .st{color:var(--signal);background:#2a2415}
+
+.wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:12px}
+.tile{background:#1c2024;border:1px solid #2c3136;border-radius:5px;padding:12px 8px;text-align:center}
+.tile .box{
+  position:relative;width:62px;height:52px;margin:0 auto 8px;
+  border:1.5px solid #3a4249;border-radius:3px;background:#14171a;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:18px;color:#e6e3da;
+}
+.tile .box .neg{
+  position:absolute;right:-7px;top:50%;margin-top:-5px;width:10px;height:10px;
+  border:1.5px solid #3a4249;border-radius:50%;background:#14171a;
+}
+.tile .nm{font-size:13px;color:#c9d0d6}
+.tile .en{font-size:11px;color:#6d757c;font-family:"IBM Plex Mono",monospace}
+.lamp{
+  width:22px;height:22px;border-radius:50%;margin:10px auto 0;
+  background:#22272b;border:1px solid #2f353a;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--off);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,box-shadow .15s,color .15s;
+}
+.lamp.on{background:var(--signal);color:#14171a;box-shadow:0 0 14px -2px var(--signal)}
+
+.matrix td.hot{color:var(--signal);font-weight:500}
+.matrix tr.now td{background:var(--panel);box-shadow:inset 3px 0 0 var(--signal)}
+.matrix th{font-family:"IBM Plex Mono",monospace}
+
+/* ---------- Blackbox ---------- */
+.bb{display:flex;gap:26px;align-items:center;justify-content:center;flex-wrap:wrap}
+.bb .box{
+  width:96px;height:78px;border:2px dashed #4a5259;border-radius:4px;background:#14171a;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:34px;color:#6d757c;
+}
+.bb .box.solved{border-style:solid;border-color:var(--signal);color:var(--signal);font-size:20px}
+.guesses{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.guesses button{padding:7px 14px;font-size:14px}
+.probe{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.probe span{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;padding:3px 8px;border-radius:3px;
+  background:#1c2024;color:#454d54;border:1px solid #2c3136;
+}
+.probe span.done{color:var(--signal);border-color:#4a4029}
+.ghostaddr{font-family:"IBM Plex Mono",monospace;color:#5c646b;font-size:14px;text-align:center;margin-bottom:12px}
+.ghostaddr b{color:#c9d0d6;font-weight:500}
+.tasks{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+footer{margin-top:44px;border-top:1px solid var(--rule);padding-top:18px;color:var(--ink-soft);font-size:14px;max-width:66ch}
+
+@media (max-width:760px){
+  .g1{grid-template-columns:56px repeat(9,28px) 66px}
+  .g2{grid-template-columns:62px repeat(8,24px) 12px repeat(8,24px) 92px}
+  .bit{height:28px;font-size:15px}
+  .g2 .bit{height:26px;font-size:13px}
+  .lab{font-size:11.5px;padding-right:5px}
+  .dec{font-size:12px;padding-left:6px}
+  .wrap{padding:20px 12px 56px}
+}
+</style>
+<meta name="theme-color" content="#0b0908">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="werkstatt.css">
+</head>
+<body>
+<nav class="werkstatt-kopf" aria-label="Werkstatt"><a class="werkstatt-zurueck" id="werkstatt-zurueck" href="../?zurueck">Zum Lagerfeuer</a><span class="werkstatt-name">Die Werkstatt</span><span class="werkstatt-reiter"><a href="klappuhr.html">Klappuhr</a><a href="rechenwerk.html" aria-current="page">Rechenwerk</a><a href="zahlenwerk.html">Zahlenwerk</a></span></nav>
+<div class="wrap">
+
+<h1>Rechenwerk</h1>
+<p class="sub">Schriftliche Addition wie in der zweiten Klasse, nur mit zwei Ziffern statt zehn. Am Ende steht eine Schaltung, die niemand vorher hingeschrieben hat.</p>
+
+<section id="addieren" style="border-top:none;padding-top:22px">
+  <h2>Spalte für Spalte, von rechts</h2>
+  <p class="sub">Die Bits der oberen beiden Zeilen lassen sich anklicken.</p>
+
+  <div class="controls" style="margin:0 0 14px">
+    <button id="modeShow" class="ghost" aria-pressed="true">Vorführen</button>
+    <button id="modePrac" class="ghost" aria-pressed="false">Üben</button>
+    <span class="score" id="score"></span>
+  </div>
+
+  <div class="board">
+    <div class="grid g1" id="grid"></div>
+    <div class="weights g1" id="weights"></div>
+  </div>
+
+  <div class="controls">
+    <button id="stepBtn" class="primary">Nächste Spalte</button>
+    <button id="allBtn">Bis zum Ende</button>
+    <button id="resetBtn">Von vorn</button>
+    <button id="randBtn">Andere Zahlen</button>
+  </div>
+
+  <div class="say" id="say"></div>
+</section>
+
+<section id="faelle">
+  <h2>Die Fälle, die dabei vorkommen</h2>
+  <p class="sub">Jede gerechnete Spalte hakt hier eine Zeile ab. Oben die vier Fälle ohne Übertrag von rechts, unten dieselben vier mit.</p>
+  <table>
+    <thead><tr><th>Übertrag rein</th><th>A</th><th>B</th><th>Summe</th><th>Übertrag raus</th></tr></thead>
+    <tbody id="ttBody"></tbody>
+  </table>
+  <div class="reveal" id="reveal1"></div>
+  <div class="reveal" id="reveal2"></div>
+</section>
+
+<section id="schaltung">
+  <h2>Dieselben Regeln als Schaltung</h2>
+  <p class="sub">Zwei Halbaddierer und ein ODER. Die Leitungen führen die Werte der Spalte, die gerade dran ist. Im Kästchen steht die deutsche Normschreibweise, darunter der englische Name.</p>
+  <div class="circuit" id="circuit"></div>
+  <p class="sub" id="circuitNote"></p>
+</section>
+
+<section id="maske">
+  <h2>Wozu die Gatter sonst gut sind</h2>
+  <p class="sub">Zwei Oktette statt einem, nicht weil das dritte Oktett hier viel zu tun hätte, sondern damit sichtbar bleibt, dass eine Adresse aus vier davon besteht und die Maske über alle vier läuft.</p>
+  <div class="tasks">
+    <select id="taskSel"></select>
+    <button id="taskReset">Werte zurücksetzen</button>
+  </div>
+  <div class="board">
+    <div class="ghostaddr" id="ghostaddr"></div>
+    <div class="grid g2" id="grid2"></div>
+    <div class="weights g2" id="weights2"></div>
+  </div>
+  <div class="say" id="say2"></div>
+</section>
+
+
+<section id="gatter">
+  <h2>Alle Gatter auf einmal</h2>
+  <p class="sub">Zwei Schalter, sieben Ausgänge. Die Kästchen tragen die deutsche Normschreibweise; der kleine Kreis am Ausgang bedeutet, dass das Ergebnis danach umgedreht wird.</p>
+  <div class="board">
+    <div class="switches">
+      <button class="sw" id="swA"><span class="nm">A</span><span class="st">0</span></button>
+      <button class="sw" id="swB"><span class="nm">B</span><span class="st">0</span></button>
+    </div>
+    <div class="wall" id="wall"></div>
+  </div>
+  <p class="sub" style="margin-top:12px">Drei Gatter reichen aus, um jedes andere zu bauen, und eines allein reicht auch: aus NAND lässt sich alles zusammensetzen. Deshalb bestehen echte Chips überwiegend daraus.</p>
+  <table class="matrix">
+    <thead><tr id="matHead"></tr></thead>
+    <tbody id="matBody"></tbody>
+  </table>
+</section>
+
+<section id="kasten">
+  <h2>Welches Gatter steckt im Kasten?</h2>
+  <p class="sub">Im Kasten sitzt eines der sieben. Probier Eingänge durch, bis du es weißt, dann rate. Unten steht, welche Kombinationen du schon getestet hast.</p>
+  <div class="board">
+    <div class="bb">
+      <div class="switches" style="margin:0;flex-direction:column">
+        <button class="sw" id="qA"><span class="nm">A</span><span class="st">0</span></button>
+        <button class="sw" id="qB"><span class="nm">B</span><span class="st">0</span></button>
+      </div>
+      <div class="box" id="qBox">?</div>
+      <div class="lamp" id="qLamp">0</div>
+    </div>
+    <div class="probe" id="qProbe"></div>
+  </div>
+  <div class="guesses" id="qGuess"></div>
+  <div class="say" id="qSay"></div>
+  <div class="controls"><button id="qNew">Neuer Kasten</button><span class="score" id="qScore"></span></div>
+</section>
+
+<footer>
+  Die Additionsschaltung rechnet vorzeichenlos mit acht Bit. Was über 255 hinausgeht, fällt links als Übertrag heraus.
+</footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  function bitOf(v,i){ return (v >> i) & 1; }
+  function mkLab(t){ var d=document.createElement("div"); d.className="lab"; d.textContent=t; return d; }
+  function mkDec(){ var d=document.createElement("div"); d.className="dec"; return d; }
+  function mkBit(cls){ var d=document.createElement("div"); d.className="bit "+(cls||""); return d; }
+  function setBit(el,v,extra,clickable){
+    el.textContent = (v===null||v===undefined) ? "" : String(v);
+    el.className = "bit" + (clickable ? " click" : "") + (v===1 ? " one" : "") +
+                   ((v===null||v===undefined) ? " pend" : "") + (extra ? " "+extra : "");
+  }
+
+  /* ===================== Teil 1 ===================== */
+  var A = 0b01101011, B = 0b00101110;
+  var mode = "show";
+  var pos, carry, sum, uSum, uCar, feedback;
+  var seen = {}, tries = 0, hits = 0;
+  var cellsCarry=[], cellsA=[], cellsB=[], cellsS=[], decA, decB, decS;
+
+  function reset(keepSeen){
+    pos = 0;
+    carry = new Array(9).fill(null); carry[0] = 0;
+    sum = new Array(8).fill(null);
+    uSum = new Array(8).fill(0); uCar = new Array(9).fill(0);
+    feedback = null;
+    if(!keepSeen){ /* Tabelle bleibt absichtlich erhalten */ }
+    paint();
+  }
+
+  function buildGrid(){
+    var grid = $("grid"), weights = $("weights");
+    grid.innerHTML = ""; weights.innerHTML = "";
+
+    grid.appendChild(mkLab("Übertrag"));
+    for(var i = 8; i >= 0; i--){
+      var c = mkBit("pend"); cellsCarry[i] = c;
+      (function(k){
+        c.onclick = function(){ if(mode==="practice" && k===pos+1 && pos<8){ uCar[k] ^= 1; feedback=null; paint(); } };
+        c.onkeydown = function(e){ if((e.key==="Enter"||e.key===" ") && mode==="practice" && k===pos+1){ e.preventDefault(); uCar[k]^=1; feedback=null; paint(); } };
+      })(i);
+      grid.appendChild(c);
+    }
+    grid.appendChild(mkDec());
+
+    function operandRow(label, get, flip, store){
+      grid.appendChild(mkLab(label));
+      grid.appendChild(mkBit("blank"));
+      for(var i = 7; i >= 0; i--){
+        var d = mkBit("click"); d.tabIndex = 0;
+        (function(k){
+          d.onclick = function(){ flip(k); reset(true); };
+          d.onkeydown = function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(k); reset(true); } };
+        })(i);
+        store[i] = d; grid.appendChild(d);
+      }
+      var dd = mkDec(); grid.appendChild(dd); return dd;
+    }
+    decA = operandRow("A", null, function(k){ A ^= (1<<k); }, cellsA);
+    decB = operandRow("B", null, function(k){ B ^= (1<<k); }, cellsB);
+
+    var sp = document.createElement("div"); sp.className = "rowgap"; grid.appendChild(sp);
+
+    grid.appendChild(mkLab("Summe"));
+    grid.appendChild(mkBit("blank"));
+    for(i = 7; i >= 0; i--){
+      var s = mkBit("pend");
+      (function(k){
+        s.onclick = function(){ if(mode==="practice" && k===pos && pos<8){ uSum[k] ^= 1; feedback=null; paint(); } };
+        s.onkeydown = function(e){ if((e.key==="Enter"||e.key===" ") && mode==="practice" && k===pos){ e.preventDefault(); uSum[k]^=1; feedback=null; paint(); } };
+      })(i);
+      cellsS[i] = s; grid.appendChild(s);
+    }
+    decS = mkDec(); grid.appendChild(decS);
+
+    weights.appendChild(document.createElement("div"));
+    weights.appendChild(document.createElement("div"));
+    for(i = 7; i >= 0; i--){
+      var w = document.createElement("div"); w.textContent = Math.pow(2,i); weights.appendChild(w);
+    }
+    weights.appendChild(document.createElement("div"));
+  }
+
+  function paint(){
+    var asking = mode === "practice" && pos <= 7;
+    for(var i = 0; i <= 8; i++){
+      if(asking && i === pos + 1){
+        setBit(cellsCarry[i], uCar[i], feedback === "carry" || feedback === "both" ? "bad" : "ask", true);
+        cellsCarry[i].tabIndex = 0;
+      } else {
+        setBit(cellsCarry[i], carry[i], (i === pos && pos < 8) ? "active" : "");
+        cellsCarry[i].tabIndex = -1;
+      }
+    }
+    for(i = 0; i < 8; i++){
+      setBit(cellsA[i], bitOf(A,i), i === pos ? "active" : "", true); cellsA[i].tabIndex = 0;
+      setBit(cellsB[i], bitOf(B,i), i === pos ? "active" : "", true); cellsB[i].tabIndex = 0;
+      if(asking && i === pos){
+        setBit(cellsS[i], uSum[i], feedback === "sum" || feedback === "both" ? "bad" : "ask", true);
+        cellsS[i].tabIndex = 0;
+      } else {
+        setBit(cellsS[i], sum[i], i === pos ? "active" : "");
+        cellsS[i].tabIndex = -1;
+      }
+    }
+    decA.textContent = A; decB.textContent = B;
+    var done = pos > 7, val = 0;
+    for(i = 0; i < 8; i++) if(sum[i]) val += Math.pow(2,i);
+    decS.textContent = done ? (val + (carry[8] ? " + Ü" : "")) : "";
+
+    $("stepBtn").textContent = mode === "practice" ? "Prüfen" : "Nächste Spalte";
+    $("stepBtn").disabled = done;
+    $("allBtn").disabled = mode === "practice" || done;
+    $("score").textContent = mode === "practice" ? ("Spalten richtig im ersten Versuch: " + hits + " von " + tries) : "";
+
+    paintTable(); paintCircuit(); paintSay();
+  }
+
+  function paintSay(){
+    var el = $("say");
+    el.className = "say";
+    if(pos > 7){
+      var val = 0; for(var i = 0; i < 8; i++) if(sum[i]) val += Math.pow(2,i);
+      el.className = "say right";
+      el.innerHTML = "Fertig. <span class='mono'>" + A + " + " + B + " = " + (val + carry[8]*256) + "</span>." +
+        (carry[8] ? " Der letzte Übertrag hat keine Spalte mehr, in die er hineinpasst. Bei acht Bit heißt das Überlauf." : "");
+      return;
+    }
+    var a = bitOf(A,pos), b = bitOf(B,pos), c = carry[pos];
+    var s = a^b^c, co = (a+b+c) >= 2 ? 1 : 0;
+
+    if(mode === "practice"){
+      if(feedback && feedback !== "ok"){
+        el.className = "say wrong";
+        var what = feedback === "sum" ? "Die Summe stimmt nicht."
+                 : feedback === "carry" ? "Der Übertrag stimmt nicht."
+                 : "Summe und Übertrag stimmen beide nicht.";
+        el.innerHTML = what + " Rechne die Spalte im Kopf zusammen: <span class='mono'>" + a + " + " + b +
+          (pos ? " + " + c : "") + "</span>. Was dabei über die 1 hinausgeht, gehört nach links.";
+      } else {
+        el.innerHTML = "Stelle " + Math.pow(2,pos) + ": trag die Summe in die untere Zeile und den Übertrag in das Feld links oben ein, dann prüfen.";
+      }
+      return;
+    }
+    var t = "Stelle " + Math.pow(2,pos) + ": <span class='mono'>" + a + " + " + b +
+      (pos ? " + " + c + " (Übertrag)" : "") + "</span> ergibt " + (a+b+c) + ". Das schreibt man als <b>" + s + "</b> hin";
+    t += co ? ", und <b>1</b> geht als Übertrag nach links." : ", ein Übertrag entsteht nicht.";
+    el.innerHTML = t;
+  }
+
+  function commit(){
+    var a = bitOf(A,pos), b = bitOf(B,pos), c = carry[pos];
+    sum[pos] = a^b^c;
+    carry[pos+1] = (a+b+c) >= 2 ? 1 : 0;
+    seen[c+","+a+","+b] = true;
+    pos++;
+  }
+  function stepOnce(){
+    if(pos > 7) return;
+    if(mode === "show"){ commit(); feedback = null; paint(); return; }
+    var a = bitOf(A,pos), b = bitOf(B,pos), c = carry[pos];
+    var s = a^b^c, co = (a+b+c) >= 2 ? 1 : 0;
+    var sOk = uSum[pos] === s, cOk = uCar[pos+1] === co;
+    if(feedback === null) tries++;
+    if(sOk && cOk){
+      if(feedback === null) hits++;
+      commit(); feedback = null; paint(); return;
+    }
+    feedback = (!sOk && !cOk) ? "both" : (!sOk ? "sum" : "carry");
+    paint();
+  }
+
+  /* ===================== Teil 2 ===================== */
+  var ROWS = [];
+  [0,1].forEach(function(c){ [[0,0],[0,1],[1,0],[1,1]].forEach(function(ab){ ROWS.push({c:c,a:ab[0],b:ab[1]}); }); });
+
+  function paintTable(){
+    var cur = pos <= 7 ? (carry[pos]+","+bitOf(A,pos)+","+bitOf(B,pos)) : null;
+    var html = "";
+    ROWS.forEach(function(r, idx){
+      if(idx === 0) html += '<tr class="blockhead"><td colspan="5">ohne Übertrag von rechts: der Halbaddierer</td></tr>';
+      if(idx === 4) html += '<tr class="blockhead"><td colspan="5">mit Übertrag von rechts: daraus wird der Volladdierer</td></tr>';
+      var key = r.c+","+r.a+","+r.b, ok = seen[key];
+      var s = r.a^r.b^r.c, co = (r.a+r.b+r.c) >= 2 ? 1 : 0;
+      html += '<tr class="' + (ok ? "seen" : "unseen") + (key === cur ? " now" : "") + '">' +
+        '<td class="m">'+r.c+'</td><td class="m">'+r.a+'</td><td class="m">'+r.b+'</td>' +
+        '<td class="m">'+(ok?s:"·")+'</td><td class="m">'+(ok?co:"·")+'</td></tr>';
+    });
+    $("ttBody").innerHTML = html;
+
+    var half = ROWS.slice(0,4).every(function(r){ return seen[r.c+","+r.a+","+r.b]; });
+    var full = ROWS.slice(4).every(function(r){ return seen[r.c+","+r.a+","+r.b]; });
+    var r1 = $("reveal1"), r2 = $("reveal2");
+    if(half){
+      r1.className = "reveal on";
+      r1.innerHTML = "Die obere Hälfte ist vollständig, und das ist keine Additionsregel mehr, sondern sind zwei Gatter. " +
+        "Die Summenspalte ist genau dann 1, wenn A und B verschieden sind: <b>XOR</b>. " +
+        "Die Übertragsspalte ist genau dann 1, wenn beide 1 sind: <b>AND</b>. " +
+        "Zusammen heißt das Halbaddierer, und er steht hier, ohne dass ihn jemand gebaut hätte.";
+    } else { r1.className = "reveal"; r1.textContent = "Die oberen vier Zeilen sind noch nicht alle vorgekommen."; }
+    if(full){
+      r2.className = "reveal on";
+      r2.innerHTML = "Die untere Hälfte ebenfalls. Die Summe ist jetzt A XOR B XOR Übertrag, und ein neuer Übertrag entsteht, " +
+        "sobald mindestens zwei der drei Eingänge 1 sind. Genau dafür braucht es einen zweiten Halbaddierer und ein ODER.";
+    } else { r2.className = "reveal"; r2.textContent = "Die unteren vier sind noch nicht alle vorgekommen."; }
+  }
+
+  /* ===================== Teil 3 ===================== */
+  function gate(x,y,sym,name){
+    return '<rect class="gate" x="'+x+'" y="'+y+'" width="56" height="52" rx="3"/>'+
+           '<text class="glab" x="'+(x+28)+'" y="'+(y+27)+'">'+sym+'</text>'+
+           '<text class="gsub" x="'+(x+28)+'" y="'+(y+42)+'">'+name+'</text>';
+  }
+  function wire(d,hot){ return '<path class="wire'+(hot?" hot":"")+'" d="'+d+'"/>'; }
+  function val(x,y,v,anchor){
+    return '<text class="val'+(v?" hot":"")+'" x="'+x+'" y="'+y+'"'+(anchor?' text-anchor="'+anchor+'"':"")+'>'+v+'</text>';
+  }
+  function paintCircuit(){
+    var live = pos <= 7;
+    var a = live ? bitOf(A,pos) : 0, b = live ? bitOf(B,pos) : 0, c = live ? carry[pos] : 0;
+    var s1 = a^b, c1 = a&b, S = s1^c, c2 = s1&c, C = c1|c2;
+
+    var g = '<svg viewBox="0 0 660 250" role="img" aria-label="Volladdierer aus zwei Halbaddierern">';
+    g += '<text class="pin" x="6" y="52">A</text>'  + val(24,52,a);
+    g += '<text class="pin" x="6" y="96">B</text>'  + val(24,96,b);
+    g += '<text class="pin" x="6" y="196">Ü rein</text>' + val(62,196,c);
+
+    g += wire("M44 47 H130", a);
+    g += wire("M70 47 V128 H130", a);
+    g += wire("M44 91 H100 V63 H130", b);
+    g += wire("M100 91 H130 V91", b);
+    g += gate(130,32,"=1","XOR");
+    g += gate(130,112,"&","AND");
+
+    g += wire("M186 58 H250 V74 H310", s1) + wire("M220 58 V158 H310", s1);
+    g += gate(310,48,"=1","XOR");
+    g += gate(310,132,"&","AND");
+    g += wire("M84 190 H280 V100 H310", c) + wire("M280 190 V170 H310", c);
+
+    g += wire("M366 74 H576", S);
+    g += '<text class="pin" x="586" y="79">Summe</text>' + val(570,62,S,"end");
+
+    g += gate(450,158,"≥1","OR");
+    g += wire("M186 138 H410 V172 H450", c1);
+    g += wire("M366 158 H420 V198 H450", c2);
+    g += wire("M506 184 H576", C);
+    g += '<text class="pin" x="586" y="189">Ü raus</text>' + val(570,172,C,"end");
+
+    g += val(200,50,s1) + val(258,132,c1) + val(382,64,S) + val(408,152,c2);
+    g += '</svg>';
+    $("circuit").innerHTML = g;
+    $("circuitNote").innerHTML = live
+      ? "Gezeigt wird Stelle " + Math.pow(2,pos) + ". Der linke Halbaddierer verrechnet A und B, der rechte sein Ergebnis mit dem Übertrag von rechts. Das ODER sammelt die beiden möglichen Überträge ein; beide zugleich kann es nie geben."
+      : "Die Addition ist durch. Ändere die Zahlen oder fang von vorn an, dann laufen die Leitungen wieder mit.";
+  }
+
+  /* ===================== Teil 4: zwei Oktette ===================== */
+  function oct(v){ return (v >> 8) + "." + (v & 255); }
+  function lz16(v){ for(var i = 15; i >= 0; i--) if((v >> i) & 1) return 15 - i; return 16; }
+
+  var TASKS = [
+    {name:"AND: Netzadresse aus Adresse und Maske", pre:"192.168.",
+     inputs:[{l:"Adresse", v:(1<<8)|130},{l:"Maske", v:(255<<8)|192}],
+     derived:[{l:"UND", f:function(i){ return i[0] & i[1]; }}],
+     txt:function(i,d){ return "Die Maske lässt oben alles durch und löscht unten alles weg. Übrig bleibt <b>192.168." + oct(d[0]) +
+       "</b> als Netzadresse. Im dritten Oktett steht die Maske auf lauter Einsen, deshalb passiert dort sichtbar nichts, " +
+       "genau das ist der Punkt: dieselbe Operation läuft über alle vier Oktette, sie fällt nur dort nicht auf."; }},
+
+    {name:"NOT: Wildcard aus der Maske", pre:"255.255.",
+     inputs:[{l:"Maske", v:(255<<8)|192}],
+     derived:[{l:"NICHT", f:function(i){ return (~i[0]) & 0xFFFF; }}],
+     txt:function(i,d){ return "Jedes Bit umgedreht: aus 255.255.255.192 wird <b>0.0." + oct(d[0]) +
+       "</b>. Das ist die Wildcard, wie sie in Zugriffslisten steht. Die Maske sagt, welche Bits fest sind, die Wildcard, welche frei sind."; }},
+
+    {name:"OR: Broadcast aus Netzadresse und Wildcard", pre:"192.168.",
+     inputs:[{l:"Netz", v:(1<<8)|128},{l:"Wildcard", v:(0<<8)|63}],
+     derived:[{l:"ODER", f:function(i){ return i[0] | i[1]; }}],
+     txt:function(i,d){ return "Alle freien Bits auf 1 gesetzt: <b>192.168." + oct(d[0]) +
+       "</b>. Das ist die höchste Adresse im Netz, also der Broadcast. Netzadresse heißt alle freien Bits aus, Broadcast heißt alle an."; }},
+
+    {name:"Gleiches Netz? Der Weg, den man von Hand geht", pre:"192.168.",
+     inputs:[{l:"Adresse 1", v:(1<<8)|130},{l:"Adresse 2", v:(1<<8)|190},{l:"Maske", v:(255<<8)|192}],
+     derived:[{l:"1 UND Maske", f:function(i){ return i[0] & i[2]; }},
+              {l:"2 UND Maske", f:function(i){ return i[1] & i[2]; }}],
+     txt:function(i,d){
+       var same = d[0] === d[1];
+       return "Zwei Adressen liegen im selben Netz, wenn ihre Netzanteile gleich sind. Also beide maskieren und vergleichen: " +
+         "<span class='mono'>192.168." + oct(d[0]) + "</span> gegen <span class='mono'>192.168." + oct(d[1]) + "</span>, " +
+         (same ? "gleich, also <b>dasselbe Netz</b>." : "verschieden, also <b>verschiedene Netze</b>.") +
+         " Das ist die Definition, und so würde man es mit Stift rechnen."; }},
+
+    {name:"Gleiches Netz? Dieselbe Frage als XOR", pre:"192.168.",
+     inputs:[{l:"Adresse 1", v:(1<<8)|130},{l:"Adresse 2", v:(1<<8)|190},{l:"Maske", v:(255<<8)|192}],
+     derived:[{l:"1 XOR 2", f:function(i){ return i[0] ^ i[1]; }},
+              {l:"UND Maske", f:function(i){ return (i[0] ^ i[1]) & i[2]; }}],
+     txt:function(i,d){
+       var same = d[1] === 0;
+       return "XOR setzt an jeder Stelle eine 1, an der sich die beiden unterscheiden: eine Unterschiedskarte: <span class='mono'>" +
+         oct(d[0]) + "</span>. Die Maske blendet daraus die Hostbits aus, übrig bleiben die Unterschiede im Netzanteil: <span class='mono'>" +
+         oct(d[1]) + "</span>. " +
+         (same ? "Null heißt: kein einziges Netzbit unterscheidet sich, also <b>dasselbe Netz</b>."
+               : "Nicht null heißt: mindestens ein Netzbit unterscheidet sich, also <b>verschiedene Netze</b>.") +
+         " Das ist keine neue Regel, sondern die Zeile darüber in einem Schritt statt in dreien. Deshalb rechnet der Router so und der Mensch anders."; }},
+
+    {name:"XOR: das größte gemeinsame Präfix", pre:"192.168.",
+     inputs:[{l:"Adresse 1", v:(4<<8)|0},{l:"Adresse 2", v:(5<<8)|0}],
+     derived:[{l:"1 XOR 2", f:function(i){ return i[0] ^ i[1]; }}],
+     txt:function(i,d){
+       var n = 16 + lz16(d[0]);
+       var net = i[0] & (n >= 32 ? 0xFFFF : (0xFFFF << (32 - n)) & 0xFFFF);
+       if(d[0] === 0) return "Beide Adressen sind identisch, das gemeinsame Präfix ist <b>/32</b>.";
+       return "Die ersten beiden Oktette sind bei beiden gleich, das sind schon 16 übereinstimmende Bits. " +
+         "Das XOR zeigt, wo es danach auseinandergeht: <span class='mono'>" + oct(d[0]) + "</span>. " +
+         "Davor stehen " + lz16(d[0]) + " Nullen, zusammen also <b>" + n + "</b> gemeinsame Bits, " +
+         "das kleinste Netz, das beide enthält, ist <b>192.168." + oct(net) + "/" + n + "</b>. " +
+         "Hier gewinnt XOR wirklich: mit UND und Vergleichen müsste man die Präfixlänge raten und ausprobieren. " +
+         "Genau so fasst man Routen zusammen."; }}
+  ];
+
+  var t = 0, IN = [], rowsIn = [], rowsDer = [], decIn = [], decDer = [];
+
+  function buildGrid2(){
+    var g2 = $("grid2"), w2 = $("weights2");
+    g2.innerHTML = ""; w2.innerHTML = "";
+    var task = TASKS[t];
+    $("ghostaddr").innerHTML = "gezeigt: die beiden rechten Oktette von <b>" + task.pre + "x.y</b>";
+    rowsIn = []; rowsDer = []; decIn = []; decDer = [];
+
+    function row(label, arr, editable, idx){
+      g2.appendChild(mkLab(label));
+      for(var i = 15; i >= 0; i--){
+        if(i === 7){ var dot = document.createElement("div"); dot.className = "dot"; dot.textContent = "."; g2.appendChild(dot); }
+        var d = mkBit(editable ? "click" : "");
+        if(editable){
+          d.tabIndex = 0;
+          (function(k){
+            d.onclick = function(){ IN[idx] ^= (1 << k); paint2(); };
+            d.onkeydown = function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); IN[idx] ^= (1 << k); paint2(); } };
+          })(i);
+        }
+        arr[i] = d; g2.appendChild(d);
+      }
+      var dd = mkDec(); g2.appendChild(dd); return dd;
+    }
+
+    task.inputs.forEach(function(inp, k){
+      var arr = []; rowsIn.push(arr);
+      decIn.push(row(inp.l, arr, true, k));
+    });
+    var sp = document.createElement("div"); sp.className = "rowgap"; g2.appendChild(sp);
+    task.derived.forEach(function(der){
+      var arr = []; rowsDer.push(arr);
+      decDer.push(row(der.l, arr, false));
+    });
+
+    w2.appendChild(document.createElement("div"));
+    for(var i = 15; i >= 0; i--){
+      if(i === 7) w2.appendChild(document.createElement("div"));
+      var w = document.createElement("div"); w.textContent = Math.pow(2, i % 8); w2.appendChild(w);
+    }
+    w2.appendChild(document.createElement("div"));
+  }
+
+  function paint2(){
+    var task = TASKS[t];
+    var d = task.derived.map(function(der){ return der.f(IN) & 0xFFFF; });
+    for(var r = 0; r < rowsIn.length; r++){
+      for(var i = 0; i < 16; i++){ setBit(rowsIn[r][i], bitOf(IN[r], i), "", true); rowsIn[r][i].tabIndex = 0; }
+      decIn[r].textContent = oct(IN[r]);
+    }
+    for(r = 0; r < rowsDer.length; r++){
+      for(i = 0; i < 16; i++) setBit(rowsDer[r][i], bitOf(d[r], i));
+      decDer[r].textContent = oct(d[r]);
+    }
+    $("say2").innerHTML = task.txt(IN, d);
+  }
+
+  function loadTask(){
+    IN = TASKS[t].inputs.map(function(x){ return x.v; });
+    buildGrid2(); paint2();
+  }
+
+  TASKS.forEach(function(task, i){
+    var o = document.createElement("option"); o.value = i; o.textContent = task.name;
+    $("taskSel").appendChild(o);
+  });
+  $("taskSel").onchange = function(){ t = +this.value; loadTask(); };
+  $("taskReset").onclick = loadTask;
+
+  /* ===================== Teil 5: Gatterwand ===================== */
+  var GATES = [
+    {id:"AND",  sym:"&",  neg:false, de:"UND",            f:function(a,b){ return a & b; }},
+    {id:"OR",   sym:"\u22651", neg:false, de:"ODER",      f:function(a,b){ return a | b; }},
+    {id:"XOR",  sym:"=1", neg:false, de:"Exklusiv-ODER",  f:function(a,b){ return a ^ b; }},
+    {id:"NAND", sym:"&",  neg:true,  de:"NICHT-UND",      f:function(a,b){ return (a & b) ^ 1; }},
+    {id:"NOR",  sym:"\u22651", neg:true,  de:"NICHT-ODER",f:function(a,b){ return (a | b) ^ 1; }},
+    {id:"XNOR", sym:"=1", neg:true,  de:"\u00c4quivalenz",f:function(a,b){ return (a ^ b) ^ 1; }},
+    {id:"NOT",  sym:"1",  neg:true,  de:"NICHT (nur A)",  f:function(a){ return a ^ 1; }}
+  ];
+  var wA = 0, wB = 0;
+
+  function buildWall(){
+    $("wall").innerHTML = GATES.map(function(g){
+      return '<div class="tile" data-g="' + g.id + '">' +
+        '<div class="box">' + g.sym + (g.neg ? '<span class="neg"></span>' : "") + "</div>" +
+        '<div class="nm">' + g.de + "</div>" +
+        '<div class="en">' + g.id + "</div>" +
+        '<div class="lamp">0</div></div>';
+    }).join("");
+    var head = "<th>A</th><th>B</th>" + GATES.map(function(g){ return "<th>" + g.id + "</th>"; }).join("");
+    $("matHead").innerHTML = head;
+  }
+  function paintWall(){
+    $("swA").className = "sw" + (wA ? " on" : "");
+    $("swB").className = "sw" + (wB ? " on" : "");
+    $("swA").querySelector(".st").textContent = wA;
+    $("swB").querySelector(".st").textContent = wB;
+    var tiles = $("wall").children;
+    for(var i = 0; i < GATES.length; i++){
+      var v = GATES[i].f(wA, wB);
+      var lamp = tiles[i].querySelector(".lamp");
+      lamp.textContent = v; lamp.className = "lamp" + (v ? " on" : "");
+    }
+    var rows = "";
+    [[0,0],[0,1],[1,0],[1,1]].forEach(function(ab){
+      var now = ab[0] === wA && ab[1] === wB;
+      rows += '<tr class="' + (now ? "now" : "") + '"><td class="m">' + ab[0] + '</td><td class="m">' + ab[1] + "</td>" +
+        GATES.map(function(g){
+          var v = g.f(ab[0], ab[1]);
+          return '<td class="m' + (v ? " hot" : "") + '">' + v + "</td>";
+        }).join("") + "</tr>";
+    });
+    $("matBody").innerHTML = rows;
+  }
+  $("swA").onclick = function(){ wA ^= 1; paintWall(); };
+  $("swB").onclick = function(){ wB ^= 1; paintWall(); };
+
+  /* ===================== Teil 6: Blackbox ===================== */
+  var qG = null, qA = 0, qB = 0, qProbes = {}, qSolved = false, qFailed = false;
+  var qRuled = {}, qRight = 0, qRound = 0;
+
+  function newBox(){
+    qG = GATES[Math.floor(Math.random() * GATES.length)];
+    qA = 0; qB = 0; qProbes = {}; qSolved = false; qFailed = false; qRuled = {};
+    $("qSay").className = "say";
+    $("qSay").innerHTML = "Der Kasten ist neu belegt. Probier Eingänge durch.";
+    probe(); paintQ();
+  }
+  function probe(){ qProbes[qA + "" + qB] = qG.f(qA, qB); }
+
+  function candidates(){
+    return GATES.filter(function(g){
+      for(var k in qProbes) if(g.f(+k[0], +k[1]) !== qProbes[k]) return false;
+      return true;
+    });
+  }
+
+  function paintQ(){
+    $("qA").className = "sw" + (qA ? " on" : "");
+    $("qB").className = "sw" + (qB ? " on" : "");
+    $("qA").querySelector(".st").textContent = qA;
+    $("qB").querySelector(".st").textContent = qB;
+    var v = qG.f(qA, qB);
+    var lamp = $("qLamp");
+    lamp.textContent = v; lamp.className = "lamp" + (v ? " on" : "");
+    var box = $("qBox");
+    box.textContent = qSolved ? qG.id : "?";
+    box.className = "box" + (qSolved ? " solved" : "");
+    $("qProbe").innerHTML = ["00","01","10","11"].map(function(k){
+      return '<span class="' + (k in qProbes ? "done" : "") + '">' + k[0] + " " + k[1] +
+        (k in qProbes ? " \u2192 " + qProbes[k] : "") + "</span>";
+    }).join("");
+    $("qScore").textContent = qRound ? ("Auf Anhieb richtig: " + qRight + " von " + qRound) : "";
+    var btns = $("qGuess").children;
+    for(var i = 0; i < btns.length; i++){
+      btns[i].disabled = qSolved || (btns[i].dataset.id in qRuled);
+    }
+  }
+
+  function guess(id){
+    if(qSolved) return;
+    var cands = candidates();
+    if(id === qG.id){
+      qSolved = true; qRound++;
+      if(!qFailed) qRight++;
+      var msg = "Stimmt, es ist " + qG.de + ". ";
+      if(qFailed){
+        msg += "Diese Runde zählt aber nicht als Treffer, der erste Tipp war daneben.";
+      } else if(cands.length > 1){
+        msg += "Das war allerdings Glück: mit deinen Tests kamen noch " + cands.length + " Gatter in Frage (" +
+          cands.map(function(g){ return g.id; }).join(", ") + "). Erst die Messung, die etwas ausschließt, ist eine Messung.";
+      } else {
+        msg += "Und deine Tests hatten es eindeutig eingegrenzt, das war Wissen, nicht Glück.";
+      }
+      $("qSay").className = "say right";
+      $("qSay").innerHTML = msg;
+    } else {
+      if(!qFailed){ qFailed = true; qRound++; }
+      qRuled[id] = true;
+      var wrong = GATES.filter(function(g){ return g.id === id; })[0];
+      var sep = ["00","01","10","11"].filter(function(k){ return wrong.f(+k[0], +k[1]) !== qG.f(+k[0], +k[1]); });
+      $("qSay").className = "say wrong";
+      $("qSay").innerHTML = "Nein, " + id + " ist es nicht, der Knopf ist jetzt aus. " +
+        "Unterscheiden lassen sich die beiden bei " +
+        sep.map(function(k){ return "A=" + k[0] + " B=" + k[1]; }).join(" und ") +
+        ". Diese Runde zählt nicht mehr als Treffer, weitersuchen lohnt sich trotzdem.";
+    }
+    paintQ();
+  }
+
+  $("qA").onclick = function(){ qA ^= 1; probe(); paintQ(); };
+  $("qB").onclick = function(){ qB ^= 1; probe(); paintQ(); };
+  $("qNew").onclick = newBox;
+  $("qGuess").innerHTML = GATES.map(function(g){ return "<button data-id='" + g.id + "'>" + g.id + "</button>"; }).join("");
+  Array.prototype.slice.call($("qGuess").children).forEach(function(b){
+    b.onclick = function(){ guess(b.dataset.id); };
+  });
+
+  buildWall(); paintWall(); newBox();
+
+  buildGrid(); reset(true);
+  loadTask();
+})();
+</script>
+<script src="werkstatt.js"></script>
+</body>
+</html>
