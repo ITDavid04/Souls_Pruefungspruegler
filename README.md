@@ -7,7 +7,9 @@ Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 > **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss,
 > dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss,
 > und zwischen den Karten Rätsel: Rechengegner, Botschaften, Mimic-Truhen und Restore-Notfälle.
-> Dazu die Werkstatt mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk zum Ausprobieren.
+> Dazu die Werkstatt mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk zum Ausprobieren,
+> und als Erweiterung **das Pixelparadies**: sieben schwebende Inseln in 8 Bit, AP1 und AP2 nach Themen gemischt, mit Kombos, Bomben und Goldwürfeln.
+> Das ganze Spiel lässt sich in zwei Varianten spielen: **Souls** (düster, gemalt) oder **Pixel** (alles in 8 Bit). Umschalten oben auf dem Titel.
 > **Live:** https://itdavid04.github.io/Souls_Pruefungspruegler/
 
 ## Die Reise, frei nach Dante
@@ -19,6 +21,7 @@ Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 | Der Aufstieg | AP2 | Sechs Gesimse am Läuterungsberg, eines je Prüfungsbereich, je ein Boss |
 | Der Gipfel, hinter der Feuerwand | AP1 und AP2 | **Der Prüfungsausschuss**, öffnet sich erst, wenn alle dreizehn Bosse liegen |
 | Abseits des Weges | AP1 und AP2 | **Die Katakomben der Kürzel**, jederzeit offen, am Ende **der Akronymant** |
+| Die Erweiterung | AP1 und AP2 gemischt | **Das Pixelparadies**, jederzeit offen: sieben Himmel als Inseln, je ein Wächter, ganz oben **der Große Glitch** |
 
 Die Gesimse folgen Dantes Todsünden von unten nach oben:
 
@@ -155,6 +158,78 @@ Unter „Spielstand“ liegt der Schalter „Kampfklang“ (Voreinstellung an). 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
 Damit lässt sich alles ansehen, ohne erst die AP1 durchzuspielen. Vor einer breiteren Veröffentlichung kommt er raus.
 
+
+## Das Pixelparadies (Erweiterung)
+
+Dantes dritter Teil, in 8 Bit. Über dem Lagerfeuer flackert ein buntes Quadrat in der Luft, dahinter liegt das Gegenteil von Hölle und Berg:
+heller Himmel, schwebende Inseln wie in Fez, kräftige Farben mit dunklen Umrissen, ein bisschen Leuchten wie bei Ori. Hier oben stirbt niemand,
+man fällt höchstens auf eine Wolke. Es ist vom ersten Tag an offen, auch für alle, die nur AP2 lernen.
+
+Die sieben Inseln folgen Dantes Himmeln von unten nach oben. Jede holt sich ihr Thema **aus AP1 und AP2 zugleich**, und die Themen laufen
+im Sprung reihum, abwechselnd aus beiden Prüfungen. Der Lernkasten ist derselbe wie unten: Was oben sitzt, sitzt auch in den Kreisen und Gesimsen.
+
+| **Himmel** | **Thema** | **Karten** | **Wächter** |
+|---|---|---|---|
+| Mond | Projekt, Qualität und Service | 204 | Der Neunzig-Prozent-Golem |
+| Merkur | Netze und Protokolle | 100 | Der Lag-Drache |
+| Venus | Datenbanken und Datenmodelle | 90 | Das NULL-Gespenst |
+| Sonne | Code und Modellierung | 216 | Der Spaghetticode |
+| Mars | Sicherheit und Datenschutz | 142 | Der Phishing-Hai |
+| Jupiter | Wirtschaft und Recht | 252 | Das Kleingedruckte |
+| Saturn | Hardware und Betrieb | 130 | Der Bluescreen |
+| Fixsternhimmel | alle sieben | | **Der Große Glitch**, drei Formen |
+
+Welche Karte auf welcher Insel liegt, steht in `welt.js` (`himmelVon`): Das Lernfeld gibt die Insel vor, einzelne Themen ziehen woandershin
+(zum Beispiel „Kaufvertrag“ aus LF2 nach Jupiter, „Netzsicherheit“ aus der AP2 nach Mars). So landet jede Karte irgendwo, auch neue Themen.
+
+| **Regel** | **Was passiert** |
+|---|---|
+| Sprung | 10 Karten, am Ende landest du auf einer Wolke. Statt Lebensbalken gibt es **fünf Herzen**, ein Fehler kostet eins |
+| Kombo | Richtig hintereinander zählt hoch. Ab ×5 gibt es zwei Splitter je Treffer, ab ×10 drei, und alle fünf Treffer knallt es |
+| Goldwürfel | **Acht Splitter** sind ein Goldwürfel. Er ist sofort sicher. Die Landung bringt zwei Splitter extra, ein fehlerfreier Sprung eine **Schatzkiste** mit einem Goldwürfel |
+| Bomben | Zwei Karten je Sprung kommen mit brennender **Lunte** (15 Sekunden, auch nach dem Neuladen). Richtig heißt entschärft und zwei Splitter extra, falsch oder zu langsam kostet zwei Herzen und es macht BOOM. Mit Lunte wird nie getippt |
+| Absturz | Alle Herzen weg: Du fällst auf eine Wolke. Keine Seelen verloren, kein Blutfleck, kein Tod. Nur die losen Splitter im Beutel fallen mit, ganze Goldwürfel bleiben. Die Karte, die dich runtergeschubst hat, steht mit Erklärung da |
+| Abspringen | Jederzeit auf eine Wolke abspringen: Der Sprung zählt nicht, Seelen, Splitter und Würfel nimmst du mit |
+| Würfeltor | **Drei Goldwürfel** auf einer Insel öffnen das Tor zu ihrem Wächter: acht Treffer, jede dritte Frage mit Lunte, ab Kombo ×3 trifft jeder Treffer **doppelt** |
+| Herzcontainer | Jeder Wächter gibt beim ersten Sieg ein Herz mehr für alle Sprünge, dazu 200 Seelen und einen Titel |
+| Der Große Glitch | Offen, wenn alle sieben Wächter liegen. Drei Formen (Mond bis Sonne, Mars bis Saturn, alles), zusammen 13 Treffer. Er wirft jede zweite Frage eine Bombe, in der letzten Form jede |
+
+**Startwelt:** Unter „Spielstand“ (oder auf der Inselkarte mit „Hier starten“) lässt sich das Pixelparadies als Startwelt wählen.
+Dann kommt beim Start ein bunter Titel mit drei schwebenden Inseln statt Tor und Spuk, und danach geht es direkt zur Inselkarte.
+Ein laufender Kampf geht wie immer vor.
+
+Seelen gibt es oben wie unten, Stufe und Kaffee gelten auch: Ein Flakon heilt zwei Herzen. Der Krieger hat ein Herz mehr, der Magier bekommt mehr Seelen,
+der Priester fängt den letzten Treffer bei einem Herzen ab. Im Ruhigen Modus gibt es keine Bomben und Fehler kosten keine Herzen.
+Klang: kurze 8-Bit-Töne (Münze, Würfel-Fanfare, Knall, Absturz) über denselben Schalter „Kampfklang“. Bei „Bewegung reduzieren“ bleibt
+vom Knall nur der Schriftzug, ohne Funken und Beben.
+
+Alles Bunte hängt an `body[data-welt="pixel"]` in `app.css`. Die Figuren (Bit, der kleine Prüfling mit der Kaffeetasse als Hut, die Wächter,
+Herzen, Würfel, Bombe, Schatzkiste) zeichnet `src/js/pixel.js` als Pixel-SVG mit Umriss, dazu den Knall mit eckigen Funken.
+Himmel, Inseln und die Szenen für den Spielstil Pixel malt `python3 -I tools/pixel_bilder.py` Pixel für Pixel in kleiner Auflösung (verlustfreies WebP, zusammen etwa 250 KB),
+die App vergrößert sie ohne Glätten.
+
+
+## Zwei Varianten: Souls oder Pixel
+
+Oben rechts auf dem Titel (und unter „Spielstand“) liegt der Schalter **Souls | Pixel**. Er wirkt sofort und gilt für das ganze Spiel.
+Regeln, Karten, Lernstand, Seelen und Blutfleck bleiben gleich, es wechselt nur das Aussehen:
+
+| **Was** | **Souls** | **Pixel** |
+|---|---|---|
+| Titel | Das Tor mit Augen, Flüstern und rotem Schleier | Drei schwebende Inseln, Bit, ein Logo, das hereinknallt |
+| Lagerfeuer | Gemalte Flamme mit Schwert | Pixelfeuer mit Schwert und eckigen Funken unter Sternen |
+| Kreise, Gesimse, Arenen | Die gemalten Bilder des Reinprüglers und die Silhouetten am Berg | Eigene Pixelszenen: Lastenwälzer, Blutfluss, Sturm, Cerberus im Schlamm, Stadt Dis, Styx, die sechs Gesimse, Katakomben, Kokytos, Feuerwand, Prüfungsraum |
+| Bosse | Name und Balken | Jeder Boss als Pixelfigur, im Kampf, am Nebeltor und beim Sieg (beim Zwischenprüfer und im Ausschuss je Phase eine eigene) |
+| Werkstatt | Dunkler Souls-Anstrich | Heller Originalanstrich der Werkzeuge, Kopfzeile in 8 Bit |
+
+Am Handy steht die Szene eines Ortes gerahmt oben auf der Seite, als Vollbild wäre dort nur ein schmaler Ausschnitt zu sehen;
+am breiten Bildschirm füllt sie den ganzen Hintergrund. Der Spielstil ist unabhängig von der Startwelt: Wer will, spielt düster
+und startet trotzdem im Pixelparadies, oder umgekehrt.
+
+Technik: `S.stil` ist `souls` oder `pixel`. Im Pixelstil trägt `body` immer `data-welt="pixel"`, und `app.css` malt alle Ansichten
+in 8 Bit. Jedes gemalte Bild hat ein Gegenstück (`PIXEL_BILDER` in `welt.js`), das `tools/pixel_bilder.py` zeichnet.
+Die Bossfiguren und das Pixelfeuer stehen in `src/js/pixel.js`, die Werkstatt liest den Stil in `src/werkstatt/werkstatt-stil.js`.
+
 ## Fragen
 
 | **Art** | **Wann** |
@@ -185,7 +260,7 @@ und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor 
 
 ## Technik
 
-Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Texte).
+Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Inseln, Texte), `src/js/pixel.js` (Pixelfiguren und Knall), `src/js/ton.js` (Wind und Klänge).
 Gespeichert wird nur auf dem Gerät: `spp.spiel` (Spielstand) und `spp.prog` (Lernkasten) im localStorage.
 
 ```bash
@@ -218,6 +293,10 @@ python3 -I tools/katakomben_bild.py
 ```
 
 ```bash
+python3 -I tools/pixel_bilder.py
+```
+
+```bash
 python3 -I tools/werkstatt.py "~/Desktop/Reinprügler_APP"
 ```
 
@@ -230,4 +309,4 @@ Die App-Symbole zeichnet `python3 -I tools/icons.py`.
 
 Veröffentlicht wird über GitHub Actions (`.github/workflows/pages.yml`) bei jedem Push auf `main`.
 
-Schriften: Cinzel, Atkinson Hyperlegible und Cormorant Garamond (SIL Open Font License, liegen der App bei).
+Schriften: Cinzel, Atkinson Hyperlegible, Cormorant Garamond und im Pixelparadies Pixelify Sans (SIL Open Font License, liegen der App bei).

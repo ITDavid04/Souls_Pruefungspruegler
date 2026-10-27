@@ -36,10 +36,12 @@ export function fehlerNachtragen(prog, c, t = heute()){
 
 /* ---------- Kartenwahl ---------- */
 export const GANG = 10, NEU_MAX = 7;
+/* Ein Ort ist ein Lernfeld (c.l) oder eine Insel im Pixelparadies (c.h, aus himmelVon in welt.js) */
+export const imOrt = (c, ort) => c.l === ort || c.h === ort;
 
 /* Ein Gang: zuerst der Blutfleck, dann fällige Karten, dann neue (in Themenreihenfolge), dann die wackligen */
 export function gangPlanen(karten, prog, lf, blutId, t = heute()){
-  const pool = karten.filter(c => c.l === lf);
+  const pool = karten.filter(c => imOrt(c, lf));
   const q = [];
   const add = c => { if (q.length < GANG && !q.includes(c.i)) q.push(c.i); };
   if (blutId && pool.some(c => c.i === blutId)) q.push(blutId);
@@ -62,7 +64,7 @@ export function gangPlanen(karten, prog, lf, blutId, t = heute()){
 /* Bosskarte: aus den Lernfeldern der Phase, schwache Karten öfter, nicht die letzten sechs.
    seltenheit: nur Kürzel dieser Seltenheit (die zweite Beschwörung des Akronymanten) */
 export function bossKarte(karten, prog, lfs, zuletzt, seltenheit){
-  const passt = c => lfs.includes(c.l) && (!seltenheit || c.r === seltenheit);
+  const passt = c => lfs.some(l => imOrt(c, l)) && (!seltenheit || c.r === seltenheit);
   let pool = karten.filter(c => passt(c) && !zuletzt.includes(c.i));
   if (!pool.length) pool = karten.filter(passt);
   return wpick(pool, c => { const s = stand(prog, c); return 1 + (s.w > 0 ? 3 : 0) + (s.b <= 1 ? 2 : 0); });
@@ -219,3 +221,20 @@ export const seelenFuer = (fachVorher, boss, akt = 1, ng = 0) =>
   Math.round((10 + 5 * Math.max(0, fachVorher - 1) + (boss ? 15 : 0)) * (akt === 2 ? 1.5 : 1) * ngSeelen(ng));
 export const schadenFuer = (fachVorher, boss, akt = 1, ng = 0) =>
   Math.round(((boss ? 35 : fachVorher >= 3 ? 30 : 20) + (akt === 2 ? 5 : 0)) * ngSchaden(ng));
+
+/* ---------- Das Pixelparadies ----------
+   Herzen statt Lebenspunkte, Würfelsplitter statt Lagerfeuer. Wer hintereinander richtig liegt, baut eine Kombo:
+   ab fünf gibt es zwei Splitter je Treffer, ab zehn drei, und alle fünf knallt es. Acht Splitter sind ein Goldwürfel,
+   drei Goldwürfel öffnen das Würfeltor. Im Bosskampf trifft eine Kombo ab drei doppelt. */
+export const HERZEN = 5, HERZEN_MAX = 12, HERZCONTAINER_MAX = 7, KAFFEE_HERZEN = 2;
+export const SPLITTER_JE_WUERFEL = 8, WUERFEL_ZUM_TOR = 3, LANDE_BONUS = 2;
+export const BOMBE_SEK = 15, BOMBE_HERZEN = 2, BOMBE_SPLITTER = 2, BOMBEN_JE_SPRUNG = 2;
+export const PIXEL_BOSS_LP = 8, PIXEL_BOSS_BOMBE = 3, PIXEL_SEELEN = 200;
+export const splitterFuer = kombo => 1 + (kombo >= 5 ? 1 : 0) + (kombo >= 10 ? 1 : 0);
+export const kritisch = kombo => kombo >= 3;
+export const knall = kombo => kombo > 0 && kombo % 5 === 0;
+/* Welche Fragen eines Sprungs als Bombe kommen: nie die erste, nach der Zahl der schon gestellten Fragen gezählt,
+   damit nachgeholte Karten nichts verschieben */
+export function bombenPlan(laenge, n = BOMBEN_JE_SPRUNG){
+  return shuffle(Array.from({ length: Math.max(0, laenge - 1) }, (_, i) => i + 1)).slice(0, n).sort((a, b) => a - b);
+}

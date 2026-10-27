@@ -206,7 +206,8 @@ export const RAST = [
   'Irgendwo weiter unten fällt ein Broadcast in eine Schleife. Hier oben ist es still.',
   'Das Feuer brennt ein bisschen heller, wenn du dich hinsetzt.',
   'Wer rastet, rostet nicht. Wer nie rastet, vergisst.',
-  'Neben dem Feuer führt eine Treppe hinab. Von unten murmelt es in Großbuchstaben.'
+  'Neben dem Feuer führt eine Treppe hinab. Von unten murmelt es in Großbuchstaben.',
+  'Über dem Feuer flackert ein buntes Quadrat in der Luft. Es passt hier überhaupt nicht hin. Gerade deshalb.'
 ];
 export const RAST_BERG = [
   'Von hier oben sieht die Hölle klein aus. Sie war es nicht.',
@@ -263,4 +264,176 @@ export const KLASSEN = [
   { id: 'krieger', name: 'Krieger', titel: 'Mainframe', klang: 'stahl', gabe: 'Mehr Leben. Du hältst mehr aus.' },
   { id: 'magier', name: 'Magier', titel: 'Rootmancer', klang: 'feuer', gabe: 'Mehr Seelen für jede richtige Antwort.' },
   { id: 'priester', name: 'Priester', titel: 'Recoveron', klang: 'heilig', gabe: 'SafeMode: einmal je Gang überlebst du den tödlichen Treffer bei 1 Leben.' }
+];
+
+/* ---------- Die Erweiterung: das Pixelparadies ----------
+   Dantes dritter Teil, in 8 Bit: sieben Himmel als schwebende Inseln, ganz oben der Große Glitch.
+   Die Inseln mischen AP1 und AP2 nach Themen (Ort 21 bis 27). Welche Karte auf welcher Insel liegt, sagt himmelVon:
+   erst die Ausnahmen nach Lernfeld und Thema, sonst das Lernfeld. So landet jede Karte irgendwo, auch neue Themen.
+   Hier oben stirbt niemand: Wer alle Herzen verliert, fällt auf eine Wolke. Es zählen Goldwürfel, Kombos und Bomben. */
+export const HIMMEL_BILD = 'himmel-karte';
+/* Spielstil Pixel: das ganze Spiel in 8 Bit. Jedes gemalte Bild hat ein Gegenstück in Pixeln (aus tools/pixel_bilder.py),
+   das Lagerfeuer bekommt einen Nachthimmel. Regeln und Karten bleiben gleich, nur das Aussehen wechselt. */
+export const PIXEL_BILDER = {
+  'kreis-04': 'px-lastenwaelzer', 'kreis-08': 'px-blutfluss', 'kreis-03': 'px-sturm', 'kreis-06': 'px-schlamm', 'kreis-09': 'px-dis', 'kreis-05': 'px-styx',
+  'gesims-stolz': 'px-stolz', 'gesims-neid': 'px-neid', 'gesims-zorn': 'px-zorn', 'gesims-traegheit': 'px-traegheit', 'gesims-geiz': 'px-geiz', 'gesims-voellerei': 'px-voellerei',
+  'katakomben': 'px-katakomben', 'kreis-02': 'px-akronymant', 'kokytos': 'px-kokytos', 'feuerwand': 'px-feuerwand', 'ausschuss': 'px-ausschuss',
+  'berg': 'px-berg', 'kreis-01': 'himmel-karte', 'kreis-00': 'himmel-karte'
+};
+export const PIXEL_LAGER = 'px-lager';
+/* Der bunte Titel: kommt, wenn die Startwelt das Pixelparadies ist oder alles im Pixelstil läuft */
+export const PIXEL_TITEL = {
+  reise: 'Hinab durch die Kreise, durch das Eis, hinauf auf den Berg und darüber in die Wolken. Diesmal in 8 Bit. Die Karten sind dieselben, die Farben nicht.',
+  zitat: 'Über dem Gipfel schweben sieben Inseln aus Pixeln. Spring rein, sammle Goldwürfel, und wenn du fällst, fängt dich eine Wolke.',
+  lauf: 'Du hängst noch mitten im Sprung. Die Karte schwebt und wartet auf dich.',
+  sonst: ['Die Inseln haben auf dich gewartet. Eine hat sogar gewunken.', 'Bit ist schon wach. Bit war nie weg.', 'Die Wolken sind frisch aufgeschüttelt.', 'Irgendwo oben tickt eine Lunte. Nur zur Info.'],
+  regeln: [
+    '<b>Richtig</b> bringt Seelen und Würfelsplitter, <b>falsch</b> kostet ein Herz.',
+    'Wer hintereinander richtig liegt, baut eine <b>Kombo</b>. Alle fünf Treffer knallt es.',
+    'Manche Karten kommen mit <b>Lunte</b>: schnell antworten, sonst BOOM.',
+    'Unten am Lagerfeuer liegt das düstere Spiel. Beide teilen sich den Lernstand.'
+  ],
+  regelnReise: [
+    '<b>Richtig</b> bringt Seelen, <b>falsch</b> kostet Leben.',
+    '<b>Stirbst du</b>, bleiben deine Seelen bei der Karte, die dich erledigt hat. Hol sie dir im nächsten Gang zurück.',
+    '<b>Drei Lagerfeuer</b> in einem Kreis öffnen das Nebeltor zum Boss.',
+    'Oben auf dem Titel lässt sich jederzeit zurück auf <b>Souls</b> schalten. Der Lernstand bleibt.'
+  ]
+};
+export const PIXEL = {
+  name: 'Das Pixelparadies', zusatz: 'Sieben Himmel in 8 Bit',
+  riss: 'Neben dem Lagerfeuer flackert ein Quadrat in der Luft. Es ist bunter als alles hier unten.',
+  zitat: 'Über dem Gipfel, wo Dante das Paradies vermutete, hat jemand den Himmel in 8 Bit nachgebaut. Die Sonne ist eckig, die Wolken auch, und alles leuchtet ein bisschen zu sehr. Hier oben stirbt niemand. Man fällt höchstens auf eine Wolke.',
+  regeln: [
+    '<b>Richtig</b> bringt Seelen und Würfelsplitter. <b>Acht Splitter</b> ergeben einen Goldwürfel.',
+    '<b>Kombo:</b> Wer hintereinander richtig liegt, bekommt mehr Splitter. Alle fünf Treffer knallt es.',
+    '<b>Bomben:</b> Manche Karten kommen mit brennender Lunte. Schnell richtig heißt entschärft, zu langsam oder falsch kostet zwei Herzen.',
+    '<b>Fünf Herzen</b> je Sprung. Wer fällt, landet auf einer Wolke: ganze Würfel bleiben, lose Splitter fallen mit.',
+    '<b>Drei Goldwürfel</b> öffnen das Würfeltor zum Wächter der Insel. Wer alle sieben besiegt, darf zum Großen Glitch.',
+    'Hier oben wird gemischt: Jede Insel holt sich ihr Thema aus AP1 und AP2. Was du hier lernst, zählt auch unten.'
+  ]
+};
+export const INSELN = [
+  {
+    lf: 21, akt: 3, nr: 'Erster Himmel', planet: 'Mond', name: 'Die Mondinsel', bild: 'himmel-mond', sprite: 'insel-mond', lfName: 'Projekt, Qualität und Service', kurz: 'Mond',
+    zitat: 'Im Mondhimmel wohnen bei Dante die Wankelmütigen, die ihre Gelübde brachen. Hier oben sind es Lastenhefte, Abnahmen und SLAs. Auf der Insel steht eine Baustelle. Sie ist zu 90 Prozent fertig. Seit Monaten.',
+    boss: 'Der Neunzig-Prozent-Golem', bossZusatz: 'seit Monaten fast fertig', titel: 'Bezwinger der letzten zehn Prozent',
+    auftritt: 'Der Golem stemmt sich aus der Baustelle: „Ich bin fast fertig. Nur noch kurz testen.“',
+    treffer_: ['Der Fortschrittsbalken springt auf 91 Prozent. Dann auf 89.', '„Das stand so nicht im Lastenheft!“', 'Ein Ziegel fällt ab. Ein Meilenstein auch.'],
+    fehler: ['„Das machen wir im nächsten Sprint.“', 'Der Golem schiebt die Deadline. Auf dich.', '„Läuft bei mir.“']
+  },
+  {
+    lf: 22, akt: 3, nr: 'Zweiter Himmel', planet: 'Merkur', name: 'Die Merkurinsel', bild: 'himmel-merkur', sprite: 'insel-merkur', lfName: 'Netze und Protokolle', kurz: 'Merkur',
+    zitat: 'Merkur war der Götterbote. Auf seiner Insel fliegen Pakete von Mast zu Mast, und jedes will wissen, wohin. Ab und zu kommt eins an. Meistens etwas später.',
+    boss: 'Der Lag-Drache', bossZusatz: 'kommt immer etwas später an', titel: 'Herr über Ping und Paket',
+    auftritt: 'Ein Drache gähnt. Drei Sekunden später hörst du es.',
+    treffer_: ['Der Drache zuckt. Mit Verzögerung.', 'Paket angekommen. Bestätigung folgt.', '„Time to live abgelaufen“, murmelt er.'],
+    fehler: ['Der Drache schickt einen Broadcast. An alle. Auch an dich.', 'Paket verloren. Kein Wunder, war UDP.', '„Bei mir ist der Ping grün.“']
+  },
+  {
+    lf: 23, akt: 3, nr: 'Dritter Himmel', planet: 'Venus', name: 'Die Venusinsel', bild: 'himmel-venus', sprite: 'insel-venus', lfName: 'Datenbanken und Datenmodelle', kurz: 'Venus',
+    zitat: 'Im Venushimmel finden sich bei Dante die Liebenden. Hier oben finden sich Tabellen, und zwar über Fremdschlüssel. Wer zu niemandem gehört, ist NULL. Das ist nicht dasselbe wie nichts.',
+    boss: 'Das NULL-Gespenst', bossZusatz: 'weder wahr noch falsch', titel: 'Bändiger der NULL',
+    auftritt: 'Etwas schwebt herein. Es ist nicht da. Es ist aber auch nicht nicht da.',
+    treffer_: ['Das Gespenst wird durchsichtiger. Noch durchsichtiger als vorher.', '„IS NULL? IS NOT NULL? Ich weiß es selbst nicht.“', 'Ein Fremdschlüssel rastet ein.'],
+    fehler: ['„NULL gleich NULL? Unbekannt.“', 'Das Gespenst kichert dreiwertig.', 'Eine Zeile verschwindet im JOIN.']
+  },
+  {
+    lf: 24, akt: 3, nr: 'Vierter Himmel', planet: 'Sonne', name: 'Die Sonneninsel', bild: 'himmel-sonne', sprite: 'insel-sonne', lfName: 'Code und Modellierung', kurz: 'Sonne',
+    zitat: 'Im Sonnenhimmel leuchten bei Dante die Weisen. Hier oben leuchten Klammern, Klassen und Diagramme. Ganz oben auf dem Turm glüht eine goldene Kugel. Sie ist sauber gekapselt.',
+    boss: 'Der Spaghetticode', bossZusatz: 'ein Gericht ohne Struktur', titel: 'Koch des sauberen Codes',
+    auftritt: 'Aus dem Turm quillt etwas Gelbes. Es hat keinen Anfang, kein Ende und vierzehn GOTOs.',
+    treffer_: ['Eine Nudel wird refaktoriert.', '„Wer hat hier Kommentare geschrieben?“', 'Die Kopplung lockert sich.'],
+    fehler: ['Die Nudeln verknoten sich neu. Jetzt mit Seiteneffekt.', '„Funktioniert doch. Frag nicht, warum.“', 'Irgendwo fliegt eine Exception. Niemand fängt sie.']
+  },
+  {
+    lf: 25, akt: 3, nr: 'Fünfter Himmel', planet: 'Mars', name: 'Die Marsinsel', bild: 'himmel-mars', sprite: 'insel-mars', lfName: 'Sicherheit und Datenschutz', kurz: 'Mars',
+    zitat: 'Im Marshimmel stehen bei Dante die Streiter. Hier oben steht eine Burg mit drei Mauern: Vertraulichkeit, Integrität, Verfügbarkeit. Davor kreist etwas im Wasser und schickt dringende Mails.',
+    boss: 'Der Phishing-Hai', bossZusatz: '„Ihr Konto wurde gesperrt“', titel: 'Schrecken der Phisher',
+    auftritt: 'Ein Hai taucht auf und hält dir einen Link hin: „Bitte bestätigen Sie hier Ihr Passwort. Dringend.“',
+    treffer_: ['Der Hai beißt auf Granit. Auf zwei Faktoren Granit.', 'Die Mail landet im Spam.', '„Woher wusstest du das?“'],
+    fehler: ['Du hast auf den Link geklickt. Der Hai grinst.', '„Ihr Passwort lautete Passwort123.“', 'Der Hai schreibt dir als Chef. Mit Tippfehlern.']
+  },
+  {
+    lf: 26, akt: 3, nr: 'Sechster Himmel', planet: 'Jupiter', name: 'Die Jupiterinsel', bild: 'himmel-jupiter', sprite: 'insel-jupiter', lfName: 'Wirtschaft und Recht', kurz: 'Jupiter',
+    zitat: 'Im Jupiterhimmel sitzen bei Dante die Gerechten. Hier oben steht ein Tempel mit einem Paragrafen im Giebel, daneben glänzen Münzen. Unter allem steht etwas sehr klein geschrieben.',
+    boss: 'Das Kleingedruckte', bossZusatz: 'liest sich selbst nie', titel: 'Leser des Kleingedruckten',
+    auftritt: 'Eine Schriftrolle entrollt sich, und entrollt sich, und entrollt sich: „Es gelten unsere AGB.“',
+    treffer_: ['Ein Absatz wird unwirksam.', '„Das steht da doch gar nicht!“ Doch.', 'Die Rolle verliert eine Fußnote.'],
+    fehler: ['„Siehe Paragraf 14, Absatz 3, Satz 2.“', 'Die Frist ist gerade abgelaufen. Natürlich.', 'Das Kleingedruckte wird noch kleiner.']
+  },
+  {
+    lf: 27, akt: 3, nr: 'Siebter Himmel', planet: 'Saturn', name: 'Die Saturninsel', bild: 'himmel-saturn', sprite: 'insel-saturn', lfName: 'Hardware und Betrieb', kurz: 'Saturn',
+    zitat: 'Im Saturnhimmel schweigen bei Dante die Stillen. Hier oben summen nur die Lüfter. Der Planet am Himmel sieht von der Seite aus wie eine Festplatte. Hoffentlich gibt es ein Backup.',
+    boss: 'Der Bluescreen', bossZusatz: 'ist auf ein Problem gestoßen', titel: 'Neustarter der Welten',
+    auftritt: 'Alles wird blau. Ein Bildschirm stapft heran: „Wir sammeln nur ein paar Fehlerinformationen.“',
+    treffer_: ['Der Bluescreen startet neu. Wieder.', 'Ein Lüfter dreht hoch. Er klingt erleichtert.', '„0 Prozent abgeschlossen.“ Dann 20.'],
+    fehler: ['„Ein Treiber hat sich verabschiedet.“', 'Der RAID-Verbund schaut weg.', 'Irgendwo piept eine USV.']
+  }
+];
+GEBIETE.push(...INSELN);
+/* Wohin eine Karte gehört: das Lernfeld gibt die Insel vor, einzelne Themen ziehen woandershin */
+const HIMMEL_LF = { 1: 26, 2: 27, 3: 22, 4: 25, 5: 24, 6: 21, 7: 24, 8: 24, 9: 23, 10: 21, 11: 27, 12: 26 };
+const HIMMEL_THEMA = {
+  21: { 1: ['Geschäftsprozesse', 'Teamphasen', 'Kommunikation und Präsentation'], 2: ['Kundenanforderungen', 'Übergabe und Abnahme'], 5: ['Fehler und Testverfahren', 'Teststufen und Anforderungen'], 8: ['EPK', 'BPMN', 'Geschäftsprozesse'] },
+  22: { 8: ['REST & HTTP', 'Schnittstellen & Formate'], 11: ['Netzgrundlagen', 'IP-Adressierung', 'Protokolle & Dienste', 'VLAN & VPN'] },
+  23: { 5: ['Datenbanken', 'Datenmodellierung'] },
+  24: { 10: ['Werkzeuge und Sprachen', 'Versionsverwaltung und CI/CD'] },
+  25: { 3: ['Zugangskontrolle', 'Sicherheit & Verschlüsselung'], 9: ['SQL-Sicherheit'], 11: ['Netzsicherheit', 'Schutzziele & Angriffe', 'Kryptografie', 'Zugriffsschutz', 'Datenschutz', 'Betroffenenrechte', 'ISMS & Prüfung'] },
+  26: { 2: ['Softwarelizenzen', 'Bewertungsverfahren', 'Kalkulation', 'Kaufvertrag', 'Kaufvertragsarten', 'Kaufvertragsstörungen', 'Beschaffung und Lager', 'Rechtsvorschriften'], 6: ['IT-Verträge', 'Finanzierung'], 10: ['Kunde und Recht', 'Wirtschaftlichkeit'] },
+  27: { 3: ['Datensicherung & Speicher', 'Betrieb & Verfügbarkeit'], 10: ['Automatisierung und CPS'] }
+};
+const HIMMEL_KARTE = new Map();
+for (const [insel, je] of Object.entries(HIMMEL_THEMA)) for (const [lf, themen] of Object.entries(je)) for (const t of themen) HIMMEL_KARTE.set(lf + '|' + t, Number(insel));
+export const himmelVon = c => HIMMEL_KARTE.get(c.l + '|' + c.t) || HIMMEL_LF[c.l] || null;
+export const inselVon = lf => INSELN.find(k => k.lf === lf);
+
+/* Ganz oben, über den sieben Himmeln: eine Arena mit drei Formen. Er wirft Bomben (bomben: jede n-te Frage). */
+export const PIXEL_ARENEN = {
+  glitch: {
+    id: 'glitch', akt: 3, nr: 'Über den sieben Himmeln', name: 'Der Fixsternhimmel', kurz: 'Fixsterne', bild: 'himmel-glitch', sprite: 'insel-glitch', ort: 'Der Fixsternhimmel',
+    zitat: 'Über dem siebten Himmel hört das Bild auf, sauber zu sein. Sterne flackern, Wolken haben Störstreifen, und mittendrin klafft ein Riss. Darin sitzt der, der alles verpixelt hat. Er findet es eigentlich ganz schön so.',
+    boss: 'Der Große Glitch', bossZusatz: 'Er hat den Himmel verpixelt', titel: 'Held in acht Bit',
+    voraus: [21, 22, 23, 24, 25, 26, 27], kaffee: 'ja', zeit: 0, tippfehler: 0, seelen: 500, phasenWort: 'Form',
+    schluss: 'Der Große Glitch zerfällt in Pixel. Sie bleiben hier oben. Sie sehen gut aus.',
+    regeln: [
+      'Drei Formen, zusammen <b>dreizehn Treffer</b>. Fragen von allen sieben Inseln.',
+      'Er wirft <b>Bomben</b>: jede zweite Frage, in der letzten Form jede.',
+      'Jeder Fehler kostet <b>ein Herz</b>, eine Bombe <b>zwei</b>. Ab Kombo ×3 triffst du doppelt.'
+    ],
+    phasen: [
+      { name: 'Der Große Glitch', zusatz: 'Erste Form: Mond bis Sonne', lfs: [21, 22, 23, 24], treffer: 4, bomben: 2, ende: 'Die erste Form zerfällt in Störstreifen.',
+        auftritt: 'Der Riss flackert. Etwas spricht in Störgeräuschen: „Ihr Fortschritt wurde nicht gespeichert.“ Dann lacht es. War ein Witz.',
+        treffer_: ['Ein Pixel fällt aus ihm heraus. Es ist magenta.', '„Bitte warten … Bitte warten …“', 'Der Glitch ruckelt.'],
+        fehler: ['„Fehler 418: Ich bin eine Teekanne.“', 'Das Bild springt. Du auch.', '„Schon mal aus- und wieder eingeschaltet?“'] },
+      { name: 'Der Glitch, gespiegelt', zusatz: 'Zweite Form: Mars bis Saturn', lfs: [25, 26, 27], treffer: 4, bomben: 2, ende: 'Das Spiegelbild bekommt einen Sprung.',
+        auftritt: 'Er dreht sich um. Von hinten sieht er genauso aus, nur seitenverkehrt.',
+        treffer_: ['„Das war … korrekt. Gespiegelt auch.“', 'Ein Störstreifen reißt ab.', 'Sein Spiegelbild hält sich die Stirn.'],
+        fehler: ['„Links ist das neue Rechts.“', 'Er kopiert deinen Fehler. Zweimal.', 'Die Farben vertauschen sich kurz.'] },
+      { name: 'Der Kernel-Glitch', zusatz: 'Letzte Form: alle sieben Himmel', lfs: [21, 22, 23, 24, 25, 26, 27], treffer: 5, bomben: 1, ende: 'Der Kernel-Glitch friert ein.',
+        auftritt: 'Alles wird schwarz. Dann alles gleichzeitig bunt. „Letzte Form. Ab jetzt wird nicht mehr gewartet.“',
+        treffer_: ['Ein Speicherblock wird frei.', 'Der Glitch flackert schneller. Das ist gut.', '„Das war nicht im Testplan!“'],
+        fehler: ['„Segmentation fault. Bei dir.“', 'Die Lunte war kürzer als gedacht.', 'Der Riss wird kurz breiter.'] }
+    ]
+  }
+};
+
+/* Bomben auf den Karten, Landung und Absturz: kurze Sätze, fröhlich statt düster */
+export const BOMBE = {
+  auftritt: ['Diese Karte tickt.', 'Achtung, Lunte! Antworte, bevor es knallt.', 'Jemand hat eine Bombe an die Frage gebunden. Warum auch immer.', 'Es zischt. Die Frage brennt an einem Ende.'],
+  entschaerft: 'Entschärft!',
+  knall: 'BOOM. Die Bombe ist hochgegangen.'
+};
+export const LANDUNG = [
+  'Weich gelandet. Die Wolke federt nach.',
+  'Eine Wolke fängt dich auf. Sie riecht nach Zuckerwatte und Kaffee.',
+  'Unten am Lagerfeuer hat das keiner gesehen. Schade eigentlich.',
+  'Die Insel summt zufrieden. Oder das sind die Lüfter.',
+  'Ein Vogel aus acht Pixeln setzt sich neben dich. Er sagt nichts. Er ist ein Vogel.'
+];
+export const ABSTURZ = [
+  'Plopp. Eine Wolke. Weich, aber peinlich.',
+  'Du fällst, aber nicht tief. Nur bis zur nächsten Wolke.',
+  'Die Wolke fängt dich auf und tut so, als wäre nichts gewesen.',
+  'Kurz war alles Himmel. Dann war alles Wolke.'
 ];

@@ -4,6 +4,8 @@
 @font-face { font-family: 'Atkinson Hyperlegible'; src: url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Atkinson Hyperlegible'; src: url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
 @font-face { font-family: 'Cormorant Garamond'; src: url(fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2'); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Pixelify Sans'; src: url(fonts/pixelify-sans-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Pixelify Sans'; src: url(fonts/pixelify-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
 
 :root {
   color-scheme: dark;
@@ -28,6 +30,25 @@
   --f-titel: 'Cinzel', 'Trajan Pro', Georgia, serif;
   --f-text: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --f-zitat: 'Cormorant Garamond', Georgia, serif;
+  --f-pixel: 'Pixelify Sans', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  /* Pixelparadies: kräftig, mit dunkler Tinte für Umrisse und Kontrast */
+  --px-tinte: #1c1233;
+  --px-tinte-2: #241a52;
+  --px-papier: #fff8e6;
+  --px-papier-2: #ffeec2;
+  --px-leise: #4a4070;
+  --px-gelb: #ffd23a;
+  --px-gelb-tief: #e0961a;
+  --px-orange: #ff8a1e;
+  --px-rot: #ff3b5c;
+  --px-rot-tief: #c81e44;
+  --px-gruen: #36d27a;
+  --px-gruen-tief: #1f9a50;
+  --px-blau: #33d6ff;
+  --px-lila: #8f5cff;
+  --px-lila-tief: #5a32c8;
+  --umriss: 2px 0 0 var(--px-tinte), -2px 0 0 var(--px-tinte), 0 2px 0 var(--px-tinte), 0 -2px 0 var(--px-tinte), 2px 2px 0 var(--px-tinte), -2px 2px 0 var(--px-tinte), 2px -2px 0 var(--px-tinte), -2px -2px 0 var(--px-tinte), 0 4px 0 var(--px-tinte), 2px 4px 0 var(--px-tinte), -2px 4px 0 var(--px-tinte);
+  --umriss-gross: 3px 0 0 var(--px-tinte), -3px 0 0 var(--px-tinte), 0 3px 0 var(--px-tinte), 0 -3px 0 var(--px-tinte), 3px 3px 0 var(--px-tinte), -3px 3px 0 var(--px-tinte), 3px -3px 0 var(--px-tinte), -3px -3px 0 var(--px-tinte), 0 7px 0 var(--px-tinte), 3px 7px 0 var(--px-tinte), -3px 7px 0 var(--px-tinte);
   --rand: 16px;
   --unten: env(safe-area-inset-bottom, 0px);
   --oben: env(safe-area-inset-top, 0px);
@@ -368,7 +389,7 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 
 /* Klassenwahl am Lagerfeuer: drei Karten, die gewählte leuchtet golden */
 .klassen { margin-bottom: 4px; }
-.klassen-liste { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.klassen-liste { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .klasse-karte { width: 100%; height: 100%; text-align: left; display: grid; align-content: start; gap: 3px; padding: 11px 12px; border-radius: 12px; background: var(--stein-2); border: 1px solid var(--linie); cursor: pointer; color: var(--text); font: inherit; }
 .klasse-karte .klasse-name { font: 700 16px/1.1 var(--f-titel); color: var(--gold); }
 .klasse-karte .klasse-titel { font: 600 12.5px/1.2 var(--f-text); color: var(--blass); }
@@ -621,6 +642,522 @@ body[data-wetter="staub"] .bg::after { opacity: .7; background-image: radial-gra
 .werkstatt-sprung { width: 100%; margin-top: 4px; }
 .tod .werkstatt-sprung { margin-top: 0; }
 @media (min-width: 720px) { .werkstatt-liste { grid-template-columns: repeat(3, 1fr); } }
+
+
+/* ---------- Die Erweiterung: das Pixelparadies ----------
+   Das Gegenteil von Stein und Glut: heller Himmel, kräftige Farben, harte Kanten. Alles hängt an body[data-welt="pixel"].
+   Dunkle Umrisse und harte Schatten statt Weichzeichner, damit es auch in der Sonne lesbar bleibt.
+   Bilder und Figuren werden ohne Glätten vergrößert; eine Figur ist --pw × --ph Pixel groß, je Pixel --px. */
+svg.px { display: block; flex: none; width: calc(var(--pw) * var(--px, 3px)); height: calc(var(--ph) * var(--px, 3px)); }
+.px-insel { display: block; image-rendering: pixelated; }
+@keyframes schweben { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+@keyframes hops-leise { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes hops { 0% { transform: translateY(0); } 40% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+@keyframes autsch { 0%, 100% { transform: none; } 25% { transform: translateX(-4px) rotate(-10deg); } 75% { transform: translateX(4px) rotate(10deg); } }
+@keyframes glitch-zucken { 0%, 86%, 100% { transform: none; filter: none; } 88% { transform: translateX(-4px); filter: hue-rotate(90deg); } 92% { transform: translateX(3px); } }
+
+/* Der bunte Titel: drei schwebende Inseln, Bit in der Mitte, das Logo knallt herein */
+.px-titel-seite, .px-titel-seite.erstes { padding-top: 0; justify-content: flex-start; gap: 6px; }
+.px-buehne { position: relative; display: flex; justify-content: center; align-items: flex-start; height: 262px; margin-top: 4px; }
+.px-buehne .px-insel { width: 112px; height: 124px; }
+.buehne-links, .buehne-rechts { position: relative; z-index: 0; animation: schweben 3.2s ease-in-out -1s infinite alternate; }
+.buehne-links { margin: 96px -46px 0 0; }
+.buehne-rechts { margin: 70px 0 0 -46px; animation-delay: -2.2s; }
+.buehne-mitte { position: relative; z-index: 1; animation: schweben 4s ease-in-out infinite alternate; }
+.buehne-mitte .px-insel { width: 224px; height: 248px; }
+.buehne-bit { --px: 2px; position: absolute; left: 132px; top: 78px; animation: hops-leise 1.6s steps(2) infinite; }
+.px-titel-seite .logo { font: 700 clamp(46px, 14vw, 80px)/.95 var(--f-pixel); letter-spacing: .01em; text-transform: none; color: var(--px-gelb); text-shadow: var(--umriss-gross), 0 11px 0 var(--px-tinte); animation: auftritt-boss .9s steps(9) both; }
+.px-titel-seite .titel-unten { gap: 16px; text-align: center; }
+.px-titel-seite .titel-stand { font: 700 14px/1.4 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+.px-titel-seite .titel-stand b { color: var(--px-gelb); }
+.px-titel-seite #los { animation: einblenden .8s ease .8s both; }
+.px-titel-seite .px-regeln { text-align: left; }
+.blinken { animation: blinken 1.1s steps(1) infinite; }
+@keyframes blinken { 50% { opacity: 0; } }
+.px-start { width: 100%; }
+body[data-welt="pixel"] .px-start[aria-pressed="true"] { background: #d6f9e2; box-shadow: inset -3px -4px 0 #9ad8b0, inset 3px 3px 0 #fff, 0 4px 0 var(--px-tinte); }
+
+/* Der Riss am Lagerfeuer: ein bunter Fleck mitten im Dunkel */
+.pixel-abschnitt { color: #8fd8ff; }
+.px-riss {
+  position: relative; display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: center; padding: 12px 12px 12px 8px; min-height: 150px;
+  text-decoration: none; color: #fff; isolation: isolate; overflow: hidden; image-rendering: pixelated;
+  background: var(--bild) center / cover no-repeat, #4cb0f6; border: 3px solid var(--px-tinte);
+  box-shadow: 0 0 0 2px #fff, 0 6px 0 2px var(--px-tinte), 0 0 44px -6px rgba(90, 200, 255, .75);
+}
+.px-riss::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: linear-gradient(180deg, transparent 22%, rgba(255, 42, 138, .55) 22% 26%, transparent 26% 61%, rgba(42, 240, 255, .55) 61% 64%, transparent 64%); animation: riss-flackern 6s steps(1) infinite; }
+@keyframes riss-flackern { 0%, 90%, 100% { opacity: 0; transform: none; } 91% { opacity: 1; transform: translateX(6px); } 93% { opacity: .7; transform: translateX(-4px); } 95% { opacity: 0; } }
+.riss-bild { position: relative; width: 112px; height: 124px; animation: schweben 3.4s ease-in-out infinite alternate; }
+.riss-bild .px-insel { width: 112px; height: 124px; }
+.riss-bit { --px: 2px; position: absolute; left: 62px; top: 22px; }
+.riss-text { position: relative; z-index: 1; display: grid; gap: 4px; padding: 9px 11px; background: rgba(28, 18, 51, .84); border: 3px solid var(--px-tinte); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .85); }
+.riss-nr { font: 700 11px/1.2 var(--f-pixel); letter-spacing: .1em; text-transform: uppercase; color: var(--px-gelb); }
+.riss-name { font: 700 25px/1.05 var(--f-pixel); color: #fff; text-shadow: 0 3px 0 var(--px-lila-tief); }
+.riss-lf { font-size: 14px; line-height: 1.35; color: #e8e4ff; }
+.riss-fuss { font-size: 13px; color: #c8c0e8; }
+.riss-fuss b { color: var(--px-gelb); }
+a.px-riss:active { transform: translateY(2px); }
+@media (hover: hover) { a.px-riss:hover { box-shadow: 0 0 0 2px var(--px-gelb), 0 6px 0 2px var(--px-tinte), 0 0 54px -4px rgba(90, 200, 255, .9); } }
+
+/* Grundton im Paradies */
+body[data-welt="pixel"] { background: #4cb0f6; }
+body[data-welt="pixel"] .bg-bild { image-rendering: pixelated; }
+body[data-welt="pixel"] .bg-schleier { background: linear-gradient(180deg, rgba(28, 18, 51, 0) 50%, rgba(28, 18, 51, .28)); }
+body[data-welt="pixel"] :focus-visible { outline: 3px dashed #fff; outline-offset: 4px; }
+body[data-wetter="funken"] .bg::after { opacity: .95; background-image: radial-gradient(2px 2px at 30px 200px, #fff, transparent 60%), radial-gradient(2px 2px at 140px 60px, #fff6b0, transparent 60%), radial-gradient(2px 2px at 200px 150px, #b8f0ff, transparent 60%), radial-gradient(1.5px 1.5px at 90px 110px, #ffd0f0, transparent 60%); background-size: 240px 240px; animation: funken 20s linear infinite; }
+@keyframes funken { from { transform: translateY(0); } to { transform: translateY(-240px); } }
+.px-seite { display: flex; flex-direction: column; gap: 18px; }
+body[data-welt="pixel"] .zurueck { font: 700 16px/1 var(--f-pixel); color: #fff; text-shadow: var(--umriss); padding: 10px 2px 12px; }
+.px-kopf { display: grid; gap: 8px; justify-items: center; text-align: center; margin-top: 4px; }
+body[data-welt="pixel"] .ueber { font: 700 14px/1.2 var(--f-pixel); letter-spacing: .12em; color: var(--px-gelb); text-shadow: var(--umriss); }
+.px-titel { font: 700 clamp(36px, 11vw, 60px)/1.02 var(--f-pixel); color: #fff; text-shadow: var(--umriss-gross); overflow-wrap: anywhere; }
+.px-unter { font: 700 18px/1.25 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+/* Dialogbox wie in alten Rollenspielen: dunkel, weißer Rahmen, dunkler Rand */
+.px-dialog { margin: 3px; padding: 12px 14px; font: 400 17px/1.5 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); box-shadow: 0 7px 0 var(--px-tinte); }
+.px-dialog b { color: var(--px-gelb); }
+body[data-welt="pixel"] .regeln.px-regeln { gap: 9px; font-size: 15.5px; color: #fff; }
+body[data-welt="pixel"] .px-regeln li::before { transform: none; width: 8px; height: 8px; top: .55em; background: var(--px-gelb); box-shadow: 2px 2px 0 var(--px-tinte); }
+.px-mehr summary { cursor: pointer; font: 700 16px/1.2 var(--f-pixel); color: var(--px-gelb); }
+.px-mehr[open] summary { margin-bottom: 10px; }
+.px-panel { display: grid; gap: 10px; padding: 12px 14px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte), inset 0 3px 0 #fff, inset 0 -4px 0 var(--px-papier-2); }
+.px-panel b { color: var(--px-tinte); }
+.px-marke { font: 700 11px/1 var(--f-pixel); letter-spacing: .06em; text-transform: uppercase; padding: 4px 6px; border: 2px solid var(--px-tinte); color: var(--px-tinte); }
+.px-marke.gold { background: var(--px-gelb); }
+.px-marke.lila { background: var(--px-lila); color: #fff; }
+
+/* Knöpfe: dick umrandet, harter Schatten, beim Drücken sinken sie ein */
+body[data-welt="pixel"] .knopf { font: 700 18px/1.15 var(--f-pixel); letter-spacing: .02em; color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: inset -3px -4px 0 #d8d4ea, inset 3px 3px 0 #fff, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf small { font: 400 13.5px/1.3 var(--f-text); color: var(--px-leise); }
+body[data-welt="pixel"] .knopf:active:not(:disabled) { transform: translateY(3px); box-shadow: inset -3px -4px 0 #d8d4ea, inset 3px 3px 0 #fff, 0 1px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.haupt { background: var(--px-gelb); box-shadow: inset -3px -4px 0 var(--px-gelb-tief), inset 3px 3px 0 #fff0a0, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.haupt small { color: #5a3a00; }
+body[data-welt="pixel"] .knopf.haupt:active:not(:disabled) { box-shadow: inset -3px -4px 0 var(--px-gelb-tief), inset 3px 3px 0 #fff0a0, 0 1px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.leise { font: 700 15px/1.2 var(--f-pixel); }
+body[data-welt="pixel"] .knopf.px-tor { position: relative; overflow: hidden; color: #fff; background: var(--px-lila); box-shadow: inset -3px -4px 0 var(--px-lila-tief), inset 3px 3px 0 #b49aff, 0 4px 0 var(--px-tinte); text-shadow: 0 2px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.px-tor small { color: #f0eaff; text-shadow: none; }
+.knopf.px-tor::before { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: rgba(255, 255, 255, .28); transform: skewX(-20deg); animation: glanz 2.6s steps(12) infinite; pointer-events: none; }
+@keyframes glanz { from { left: -40%; } 60%, to { left: 120%; } }
+body[data-welt="pixel"] .tor-zu, body[data-welt="pixel"] .bezwungen { font-size: 15px; color: #fff; background: rgba(36, 26, 82, .88); border: 3px solid var(--px-tinte); padding: 10px 12px; }
+body[data-welt="pixel"] .bezwungen b { color: var(--px-gelb); }
+
+/* Die Inselkarte: ein Turm aus Inseln, im Zickzack, gepunkteter Weg in der Mitte */
+.px-werte { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.px-werte div { display: grid; justify-items: center; align-content: start; gap: 3px; padding: 8px 4px 7px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte); }
+.px-werte .wert-figur { width: auto; height: 26px; }
+.px-werte b { font: 700 22px/1 var(--f-pixel); }
+.px-werte span { font: 700 11px/1.2 var(--f-text); letter-spacing: .04em; text-transform: uppercase; text-align: center; color: var(--px-leise); }
+.turm { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; position: relative; }
+.turm::before { content: ""; position: absolute; left: 50%; top: 80px; bottom: 90px; width: 4px; margin-left: -2px; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .85) 0 8px, transparent 8px 16px); }
+.stock { position: relative; }
+.stock + .stock { margin-top: -40px; }
+.stock-link { display: flex; align-items: center; text-decoration: none; color: var(--px-tinte); }
+.stock.rechts .stock-link { flex-direction: row-reverse; }
+.stock-bild { position: relative; flex: none; width: 224px; height: 248px; margin-left: -18px; animation: schweben 3.6s ease-in-out var(--verzug, 0s) infinite alternate; }
+.stock.rechts .stock-bild { margin: 0 -18px 0 0; }
+.stock-bild .px-insel { width: 224px; height: 248px; }
+.stock-schild { position: relative; z-index: 1; flex: 1; min-width: 0; display: grid; gap: 4px; margin-left: -14px; padding: 9px 10px 10px; background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte), inset 0 3px 0 #fff; transition: transform .1s; }
+.stock.rechts .stock-schild { margin: 0 -14px 0 0; }
+.stock-schild .riss-nr { color: var(--px-lila-tief); }
+.stock-name { font: 700 19px/1.05 var(--f-pixel); overflow-wrap: anywhere; }
+.stock-thema { font-size: 13px; line-height: 1.3; color: var(--px-leise); }
+.stock-wuerfel { display: flex; gap: 3px; margin-top: 2px; }
+.wuerfel-zelle { --px: 2px; }
+.wuerfel-zelle.leer { filter: grayscale(1) brightness(.7); opacity: .45; }
+.stock-fuss { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: 12.5px; line-height: 1.3; color: var(--px-leise); }
+.stock-fuss b { color: var(--px-rot-tief); }
+.stock-bit { --px: 2px; position: absolute; left: 40px; top: 78px; animation: hops-leise 1.6s steps(2) infinite; }
+.stock-waechter { --px: 2px; position: absolute; right: 18px; top: 66px; }
+.stock-glitch { --px: 2px; position: absolute; left: 50%; top: 34px; margin-left: -24px; animation: glitch-zucken 3s steps(1) infinite; }
+.besiegt { filter: grayscale(.9) brightness(1.15); opacity: .8; transform: rotate(90deg); }
+.stock.zu .stock-bild { filter: grayscale(.7) brightness(.85); }
+.stock.hier .stock-schild { box-shadow: 0 4px 0 var(--px-tinte), inset 0 3px 0 #fff, 0 0 0 3px var(--px-gelb); }
+@media (hover: hover) { .stock-link:hover .stock-schild { transform: translateY(-3px); } }
+
+/* Eine Insel groß, mit Bit und vielleicht dem Wächter */
+.insel-gross { position: relative; width: 336px; height: 372px; max-width: 100%; margin: -6px auto -10px; animation: schweben 4s ease-in-out infinite alternate; }
+.insel-gross .px-insel { width: 336px; height: 372px; }
+.insel-bit { --px: 3px; position: absolute; left: 40px; top: 118px; animation: hops-leise 1.6s steps(2) infinite; }
+.insel-waechter { --px: 3px; position: absolute; right: -4px; top: -4px; animation: schweben 2.2s ease-in-out infinite alternate; }
+.insel-stand { font-size: 15px; }
+.stand-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.stand-zeile span { margin-left: 4px; }
+.splitter-zelle { --px: 2px; }
+.insel-stand .zahlen { color: var(--px-leise); }
+.quellen { font-size: 13px; line-height: 1.35; color: var(--px-leise); }
+.px-voraus { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+body[data-welt="pixel"] .px-voraus li { align-items: center; color: var(--px-leise); font-size: 14px; }
+body[data-welt="pixel"] .px-voraus .erfuellt { color: var(--px-tinte); font-weight: 700; }
+.voraus-figur { --px: 2px; }
+.voraus-figur.schatten { filter: brightness(0); opacity: .3; }
+@media (max-width: 370px) {
+  .insel-gross, .insel-gross .px-insel { width: 280px; height: 310px; }
+  .insel-bit { top: 96px; left: 30px; }
+}
+
+/* Kampf im Paradies: Herzen, Kombo, Beutel */
+body[data-welt="pixel"] .hud { background: var(--px-tinte); box-shadow: 0 4px 0 rgba(28, 18, 51, .45); }
+.px-herzen { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
+.herz-zelle { --px: 3px; }
+.px-herzen:has(> :nth-child(8)) .herz-zelle { --px: 2px; }
+.px-herzen.verloren { animation: wackeln .4s ease; }
+body[data-welt="pixel"] .flakon { color: var(--px-tinte); background: #fff; border: 3px solid #fff; border-radius: 0; box-shadow: inset -3px -3px 0 #d8d4ea; font-family: var(--f-pixel); }
+body[data-welt="pixel"] .flakon .tasse { color: var(--px-orange); }
+body[data-welt="pixel"] .seelen-hud { color: #c8c0e8; }
+body[data-welt="pixel"] .seelen-hud b { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .ruhig-marke { color: #fff; font-family: var(--f-pixel); }
+body[data-welt="pixel"] .seelen-flug { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .rueckzug { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 3px 0 var(--px-tinte); font: 700 14px/1 var(--f-pixel); }
+body[data-welt="pixel"] .lauf-ort { font: 700 15px/1.2 var(--f-pixel); letter-spacing: .03em; text-transform: none; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .schritte i { transform: none; width: 8px; height: 8px; background: rgba(255, 255, 255, .45); border: 2px solid var(--px-tinte); }
+body[data-welt="pixel"] .schritte i.an { background: var(--px-gelb); }
+body[data-welt="pixel"] .schritte i.jetzt { background: #fff; box-shadow: none; }
+.kampf-bit { --px: 2px; }
+.kampf-bit.hops { animation: hops .5s steps(4) both; }
+.kampf-bit.autsch { animation: autsch .5s steps(4) both; }
+.px-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 10px; color: #fff; background: rgba(28, 18, 51, .86); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 rgba(28, 18, 51, .45); }
+.kombo { display: inline-flex; align-items: baseline; gap: 6px; font: 700 15px/1 var(--f-pixel); letter-spacing: .04em; color: #c8c0e8; }
+.kombo b { font-size: 22px; color: #fff; }
+.kombo.heiss b { color: var(--px-gelb); text-shadow: 0 0 10px rgba(255, 210, 58, .8); }
+.kombo.gluehend b { color: var(--px-orange); animation: gluehen .5s steps(2) infinite alternate; }
+@keyframes gluehen { from { opacity: 1; } to { opacity: .65; } }
+.kombo small { font: 700 11px/1 var(--f-pixel); letter-spacing: .06em; text-transform: uppercase; color: var(--px-gruen); }
+.px-beutel { display: inline-flex; gap: 1px; margin-left: auto; }
+.gw-neu { display: inline-flex; align-items: center; gap: 4px; font: 700 15px/1 var(--f-pixel); color: var(--px-gelb); }
+.gw-figur { --px: 2px; }
+body[data-welt="pixel"] .bossbalken.px-boss { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 10px 12px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 5px 0 var(--px-tinte); }
+.boss-figur { --px: 3px; animation: schweben 1.8s ease-in-out infinite alternate; }
+.boss-figur.getroffen { animation: getroffen .5s steps(5) both; }
+.boss-figur.lacht { animation: hops .6s steps(4) both; }
+@keyframes getroffen { 0% { filter: brightness(4); transform: none; } 20% { transform: translateX(6px); } 40% { filter: none; transform: translateX(-6px); } 60% { filter: brightness(3); transform: translateX(3px); } 100% { filter: none; transform: none; } }
+.px-boss-info { display: grid; gap: 6px; min-width: 0; }
+body[data-welt="pixel"] .boss-name { font: 700 18px/1.1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .boss-name small { font: 400 13.5px/1.3 var(--f-text); color: var(--px-leise); }
+body[data-welt="pixel"] .phase { color: var(--px-leise); }
+.px-lp { display: flex; gap: 3px; }
+.px-lp i { flex: 1; height: 14px; background: #e8e0f4; border: 2px solid var(--px-tinte); }
+.px-lp i.an { background: var(--px-rot); box-shadow: inset 0 3px 0 #ff9aac; }
+
+/* Die Karte im Paradies: Papier, Tinte, kräftige Rückmeldung */
+body[data-welt="pixel"] .karte { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 6px 0 var(--px-tinte), inset 0 3px 0 #fff; }
+body[data-welt="pixel"] .karte-kopf { font: 700 13px/1.2 var(--f-pixel); letter-spacing: .05em; color: var(--px-leise); }
+body[data-welt="pixel"] .karte-kopf .thema { font: 400 13px/1.3 var(--f-text); color: #6a5a98; }
+body[data-welt="pixel"] .frage.begriff-gross { font: 700 clamp(26px, 8vw, 34px)/1.1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .auftritt { font: 400 16.5px/1.45 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid var(--px-tinte); padding: 8px 10px; }
+body[data-welt="pixel"] .nach-hinweis, body[data-welt="pixel"] .karte .klein { color: #6a5a98; }
+body[data-welt="pixel"] .option { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 3px 0 var(--px-tinte); }
+body[data-welt="pixel"] .option:active:not(:disabled) { background: #fff6d0; transform: translateY(2px); box-shadow: 0 1px 0 var(--px-tinte); }
+@media (hover: hover) { body[data-welt="pixel"] .option:hover:not(:disabled) { border-color: var(--px-lila-tief); background: #fffbea; } }
+body[data-welt="pixel"] .option.ok { background: #d6f9e2; border-color: var(--px-gruen-tief); box-shadow: 0 3px 0 var(--px-gruen-tief), inset 5px 0 0 var(--px-gruen); }
+body[data-welt="pixel"] .option.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); box-shadow: 0 3px 0 var(--px-rot-tief), inset 5px 0 0 var(--px-rot); }
+body[data-welt="pixel"] .tippen input { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .tippen input:focus { border-color: var(--px-lila-tief); box-shadow: 0 0 0 3px rgba(143, 92, 255, .35); }
+body[data-welt="pixel"] .tippen input.ok { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .tippen input.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .urteil { border: 3px solid; border-radius: 0; }
+body[data-welt="pixel"] .urteil.ok { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .urteil.knapp { background: #fff1c2; border-color: var(--px-gelb-tief); }
+body[data-welt="pixel"] .urteil.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .urteil-wort { font: 700 22px/1 var(--f-pixel); letter-spacing: .04em; text-transform: none; }
+body[data-welt="pixel"] .urteil.ok .urteil-wort { color: #127a3a; }
+body[data-welt="pixel"] .urteil.knapp .urteil-wort { color: #8a5a00; }
+body[data-welt="pixel"] .urteil.falsch .urteil-wort { color: #b0123a; }
+body[data-welt="pixel"] .merke { color: #2e2458; }
+body[data-welt="pixel"] .merke b { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .seelen-zeile { color: #6a4200; }
+body[data-welt="pixel"] .urteil.falsch .seelen-zeile { color: #9a0f30; }
+body[data-welt="pixel"] .spruch { color: var(--px-leise); }
+body[data-welt="pixel"] .weiter-leiste { background: linear-gradient(0deg, rgba(28, 18, 51, .92) 55%, rgba(28, 18, 51, 0)); }
+body[data-welt="pixel"] .rueckzug-frage { color: var(--px-tinte); background: var(--px-papier); border-top: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .blitz { background: radial-gradient(ellipse at center, rgba(255, 59, 92, 0) 40%, rgba(255, 59, 92, .5) 100%); }
+
+/* Bombe: gelb-schwarzes Warnband, eine Lunte mit Funken, die von rechts nach links abbrennt */
+.bombe-kopf { display: flex; align-items: center; gap: 10px; margin: -16px -16px 0; padding: 8px 12px; background: repeating-linear-gradient(-45deg, var(--px-gelb) 0 12px, var(--px-tinte) 12px 24px); border-bottom: 3px solid var(--px-tinte); }
+.bombe-kopf p { padding: 4px 8px; font: 700 15px/1.25 var(--f-pixel); color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); }
+.bombe-figur { --px: 3px; animation: bombe-zittern .3s steps(2) infinite; }
+@keyframes bombe-zittern { from { transform: translateX(-1px); } to { transform: translateX(1px); } }
+body[data-welt="pixel"] .karte.bombe-karte { border-color: var(--px-rot-tief); box-shadow: 0 6px 0 var(--px-rot-tief), inset 0 3px 0 #fff; }
+body[data-welt="pixel"] .karte.explodiert { animation: wackeln .5s ease; }
+.uhr.lunte { height: 18px; margin-right: 10px; overflow: visible; background: #3d2f63; border: 3px solid var(--px-tinte); border-radius: 0; }
+.uhr.lunte i { background: repeating-linear-gradient(90deg, #e8c080 0 6px, #b8884a 6px 12px); }
+.uhr.lunte i::after { content: ""; position: absolute; right: -9px; top: 50%; width: 18px; height: 18px; margin-top: -9px; background: radial-gradient(circle, #fff 0 22%, var(--px-gelb) 28% 46%, var(--px-orange) 50% 62%, transparent 66%); animation: funkeln .25s steps(2) infinite; }
+@keyframes funkeln { from { transform: scale(1); } to { transform: scale(1.35) rotate(45deg); } }
+.uhr.lunte span { font: 700 12px/12px var(--f-pixel); color: #fff; text-shadow: 0 2px 0 var(--px-tinte); }
+.uhr.lunte.knapp { border-color: var(--px-rot); }
+.uhr.lunte.knapp i { background: repeating-linear-gradient(90deg, #ff9aac 0 6px, var(--px-rot) 6px 12px); animation: none; }
+
+/* Der Knall: großer Schriftzug, eckige Funken, kurzes Beben */
+.px-funken { position: fixed; inset: 0; z-index: 24; width: 100vw; height: 100vh; pointer-events: none; }
+.px-knall { position: fixed; z-index: 25; left: 50%; top: 38%; display: grid; justify-items: center; gap: 6px; text-align: center; white-space: nowrap; pointer-events: none; animation: knall 1.4s steps(14) both; }
+.px-knall b { font: 700 clamp(52px, 17vw, 104px)/1 var(--f-pixel); color: var(--px-gelb); text-shadow: var(--umriss-gross), 0 10px 0 var(--px-tinte); }
+.px-knall small { font: 700 clamp(18px, 5vw, 26px)/1 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+.px-knall b:empty { display: none; }
+.px-knall.knall-bombe b { color: var(--px-rot); }
+.px-knall.knall-gold b { color: #fff0a0; }
+.px-knall.knall-klein b { font-size: clamp(34px, 10vw, 60px); color: var(--px-gruen); }
+@keyframes knall { 0% { transform: translate(-50%, -50%) scale(.2) rotate(-12deg); opacity: 0; } 12% { transform: translate(-50%, -50%) scale(1.25) rotate(-4deg); opacity: 1; } 24% { transform: translate(-50%, -50%) scale(1) rotate(-6deg); } 75% { opacity: 1; } 100% { transform: translate(-50%, -62%) scale(1) rotate(-6deg); opacity: 0; } }
+.app.beben { animation: beben .42s steps(7) both; }
+@keyframes beben { 0%, 100% { transform: none; } 15% { transform: translate(-6px, 3px); } 30% { transform: translate(5px, -4px); } 45% { transform: translate(-4px, -2px); } 60% { transform: translate(4px, 3px); } 75% { transform: translate(-2px, 1px); } }
+
+/* Große Bildschirme im Paradies: Würfeltor, Landung, Absturz, Sieg */
+.px-gross { gap: 16px; }
+.px-band { margin: 0 calc(-1 * var(--rand)); padding: 16px var(--rand); background: var(--px-lila); border-top: 4px solid var(--px-tinte); border-bottom: 4px solid var(--px-tinte); box-shadow: inset 0 4px 0 #b49aff, inset 0 -4px 0 var(--px-lila-tief); }
+.px-band.rot { background: var(--px-rot); box-shadow: inset 0 4px 0 #ff9aac, inset 0 -4px 0 var(--px-rot-tief); }
+.px-band.gold { background: var(--px-gelb); box-shadow: inset 0 4px 0 #fff0a0, inset 0 -4px 0 var(--px-gelb-tief); }
+.px-band .px-titel { animation: auftritt-boss .6s steps(6) both; }
+.px-szene { position: relative; height: 128px; display: grid; place-items: center; }
+.szene-bit { --px: 4px; position: relative; z-index: 1; }
+.szene-bit.hops { animation: hops-leise 1.2s steps(2) infinite; }
+.szene-bit.faellt { animation: faellt 1.4s steps(12) both; }
+.szene-bit.jubel { animation: hops .6s steps(4) infinite; }
+@keyframes faellt { from { transform: translateY(-150px) rotate(0deg); } 70% { transform: translateY(8px) rotate(300deg); } to { transform: none; } }
+.px-wolke { position: absolute; bottom: 0; left: 50%; width: 176px; height: 40px; margin-left: -88px; background: linear-gradient(180deg, #fff 72%, #cfe6f7 72%); clip-path: polygon(0 100%, 0 55%, 9% 55%, 9% 35%, 22% 35%, 22% 15%, 40% 15%, 40% 0, 62% 0, 62% 20%, 78% 20%, 78% 40%, 91% 40%, 91% 62%, 100% 62%, 100% 100%); }
+.sieg-szene { display: flex; justify-content: center; align-items: flex-end; gap: 28px; }
+.szene-waechter { --px: 4px; }
+.px-satz { max-width: 30ch; margin: 0 auto; font: 700 18px/1.35 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+.px-bilanz { text-align: left; font-size: 15.5px; }
+.neu-wuerfel, .schatz, .neu-herz { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bilanz-wuerfel { --px: 2px; }
+.schatz-kiste, .bilanz-herz { --px: 3px; }
+.tor-auf { padding: 8px 10px; color: #fff; background: var(--px-lila); border: 3px solid var(--px-tinte); }
+.px-panel .tor-auf b { color: #fff; }
+.px-gold { color: #9a5a00 !important; }
+.px-hinweis { padding: 10px 12px; font-size: 15px; text-align: left; color: #fff; background: rgba(36, 26, 82, .9); border: 3px solid var(--px-tinte); }
+.px-hinweis b { color: var(--px-gelb); }
+.px-absturz-karte { text-align: left; }
+.px-absturz-karte .tod-von { color: #6a5a98; font-family: var(--f-pixel); }
+.px-absturz-karte .tod-begriff { font-family: var(--f-pixel); color: var(--px-tinte); }
+.px-absturz-karte .tod-def { color: #2e2458; }
+.px-tor-gross { justify-content: center; }
+.px-tor-gross .regeln { text-align: left; }
+.waechter-auftritt { display: grid; place-items: center; padding: 6px 0; }
+.waechter-gross { --px: 8px; animation: auftritt-boss .8s steps(8) both; }
+.px-boss-titel small { display: block; margin-top: 10px; font: 700 19px/1.2 var(--f-pixel); color: var(--px-gelb); }
+@keyframes auftritt-boss { from { transform: scale(.1) translateY(60px); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } to { transform: none; opacity: 1; } }
+@media (max-width: 380px) { .waechter-gross { --px: 6px; } .px-werte span { font-size: 10px; } }
+@media (min-width: 720px) { .stock-bild, .stock-bild .px-insel { width: 224px; height: 248px; } .px-riss { grid-template-columns: 112px 1fr; padding-left: 16px; } }
+
+
+/* ---------- Spielstil Pixel: das ganze Spiel in 8 Bit ----------
+   Gleiche Ansichten, gleiche Regeln, nur der Anstrich wechselt: Texte, die direkt auf dem Bild stehen, bekommen Umriss oder eine Tafel,
+   alles Übrige wird Papier mit Tinte. Der Schalter liegt oben auf dem Titel und im Spielstand. */
+:root { --umriss-fein: 1px 1px 0 var(--px-tinte), -1px 1px 0 var(--px-tinte), 1px -1px 0 var(--px-tinte), -1px -1px 0 var(--px-tinte), 0 2px 0 var(--px-tinte); }
+.stil-wahl { position: absolute; z-index: 3; top: 0; right: 0; display: flex; border: 1px solid var(--linie-hell); border-radius: 4px; overflow: hidden; background: rgba(11, 9, 8, .6); }
+.stil-knopf { min-height: 36px; padding: 6px 12px; font: 600 13px/1 var(--f-titel); letter-spacing: .08em; color: var(--blass); background: none; border: 0; cursor: pointer; }
+.stil-knopf[data-stil="pixel"] { font-family: var(--f-pixel); letter-spacing: .02em; }
+.stil-knopf[aria-pressed="true"] { color: #1b1206; background: var(--gold); }
+.titel { position: relative; }
+body[data-welt="pixel"] .stil-wahl { border: 3px solid var(--px-tinte); border-radius: 0; background: #fff; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .stil-knopf { font: 700 14px/1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .stil-knopf[data-stil="souls"] { font-family: var(--f-titel); }
+body[data-welt="pixel"] .stil-knopf[aria-pressed="true"] { background: var(--px-gelb); }
+
+/* Das Lagerfeuer in Pixeln: zwei Flammenbilder im Wechsel, eckige Funken */
+.px-feuer { position: relative; width: 96px; height: 120px; }
+.px-feuer svg.px { --px: 4px; position: absolute; left: 0; top: 0; }
+.px-feuer .px-lager-flammeB { opacity: 0; }
+.px-feuer .px-lager-flammeA { animation: flamme-a .5s steps(1) infinite; }
+.px-feuer .px-lager-flammeB { animation: flamme-b .5s steps(1) infinite; }
+@keyframes flamme-a { 50% { opacity: 0; } }
+@keyframes flamme-b { 50% { opacity: 1; } }
+.px-feuer b { position: absolute; left: 50%; bottom: 46px; width: 4px; height: 4px; background: var(--px-gelb); opacity: 0; animation: px-funke 2.2s steps(11) infinite; }
+.px-feuer b:nth-of-type(1) { margin-left: -14px; animation-delay: .3s; }
+.px-feuer b:nth-of-type(2) { margin-left: 8px; animation-delay: 1s; }
+.px-feuer b:nth-of-type(3) { margin-left: -4px; animation-delay: 1.6s; background: #fff4c0; }
+.px-feuer b:nth-of-type(4) { margin-left: 16px; animation-delay: 1.9s; }
+@keyframes px-funke { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(6px, -90px); opacity: 0; } }
+.px-feuer.gross-feuer { width: 120px; height: 150px; }
+.px-feuer.gross-feuer svg.px { --px: 5px; }
+
+/* Lagerfeuer */
+body[data-welt="pixel"] .gold-titel { font: 700 36px/1 var(--f-pixel); letter-spacing: .02em; text-transform: none; color: var(--px-gelb); text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .rast { font: 700 17px/1.35 var(--f-pixel); font-style: normal; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .ng-marke { font-family: var(--f-pixel); color: #fff; background: var(--px-rot); border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .werte { gap: 8px; background: none; border: 0; border-radius: 0; overflow: visible; }
+body[data-welt="pixel"] .werte div { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .werte span, body[data-welt="pixel"] .werte small { font-weight: 700; color: var(--px-leise); }
+body[data-welt="pixel"] .werte b { font-family: var(--f-pixel); }
+body[data-welt="pixel"] .werte .seelen-zahl { color: #9a5a00; }
+body[data-welt="pixel"] .werte.aufgestiegen div { animation: aufstieg-px .9s steps(6); }
+@keyframes aufstieg-px { 0% { background: var(--px-gelb); } 100% { background: var(--px-papier); } }
+body[data-welt="pixel"] .abschnitt { font: 700 16px/1 var(--f-pixel); letter-spacing: .06em; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .abschnitt::after { height: 4px; background: repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 16px); }
+body[data-welt="pixel"] .abschnitt small { font: 700 13px/1.35 var(--f-text); letter-spacing: 0; color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .klasse-karte { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .klasse-karte .klasse-name { font-family: var(--f-pixel); color: var(--px-lila-tief); }
+body[data-welt="pixel"] .klasse-karte .klasse-titel, body[data-welt="pixel"] .klasse-karte .klasse-gabe { color: var(--px-leise); }
+body[data-welt="pixel"] .klasse-karte.gewaehlt { background: #fff1c2; box-shadow: 0 4px 0 var(--px-tinte), 0 0 0 3px var(--px-gelb); }
+body[data-welt="pixel"] .blut-hinweis { color: #fff; background: var(--px-rot-tief); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .blut-hinweis b { color: #fff0a0; }
+body[data-welt="pixel"] .hinweis { color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .kachel { border: 3px solid var(--px-tinte); border-radius: 0; image-rendering: pixelated; box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 2px rgba(255, 255, 255, .6);
+  background: linear-gradient(180deg, rgba(28, 18, 51, 0) 30%, rgba(28, 18, 51, .55) 55%, rgba(28, 18, 51, .92) 85%), var(--bild) center / cover no-repeat, var(--px-tinte-2); }
+body[data-welt="pixel"] .kachel-nr { font: 700 12px/1.2 var(--f-pixel); color: var(--px-gelb); text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .kachel-name { font: 700 24px/1.05 var(--f-pixel); letter-spacing: .01em; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .kachel-lf { color: #fff; }
+body[data-welt="pixel"] .kachel-zahlen { color: #e0dcf4; }
+body[data-welt="pixel"] .kachel-zahlen b { color: var(--px-gelb); }
+body[data-welt="pixel"] .kachel.zu { filter: grayscale(.6) brightness(.85); border-style: dashed; }
+@media (hover: hover) { body[data-welt="pixel"] a.kachel:hover { border-color: var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 3px var(--px-gelb); } }
+body[data-welt="pixel"] .marke { font-family: var(--f-pixel); color: var(--px-tinte); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .marke.gold { background: var(--px-gelb); }
+body[data-welt="pixel"] .marke.nebel { background: #fff; }
+body[data-welt="pixel"] .marke.blut { color: #fff; background: var(--px-rot); }
+body[data-welt="pixel"] .feuer-punkte i { width: 12px; height: 14px; border: 0; border-radius: 0; background: #b8b0d8; clip-path: polygon(33% 0, 66% 0, 66% 25%, 100% 25%, 100% 100%, 0 100%, 0 25%, 33% 25%); }
+body[data-welt="pixel"] .feuer-punkte i.an { background: linear-gradient(180deg, var(--px-gelb) 0 40%, var(--px-orange) 40% 75%, var(--px-rot-tief) 75%); box-shadow: none; }
+body[data-welt="pixel"] .spielstand { padding: 4px 14px 12px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .spielstand summary { font-family: var(--f-pixel); }
+body[data-welt="pixel"] .probe { color: var(--px-tinte); }
+body[data-welt="pixel"] .probe small { color: var(--px-leise); }
+body[data-welt="pixel"] .probe input { accent-color: var(--px-lila); }
+body[data-welt="pixel"] .titel-liste b { color: #9a5a00; }
+body[data-welt="pixel"] .knopf.gefahr { color: var(--px-rot-tief); }
+body[data-welt="pixel"] .werkstatt-liste a { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .werkstatt-liste b { font-family: var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .werkstatt-liste span { color: var(--px-leise); }
+body[data-welt="pixel"] .toast { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; }
+
+/* Kreise, Gesimse, Arenen */
+body[data-welt="pixel"] .kreis-kopf { margin-top: 18vh; }
+body[data-welt="pixel"] .kreis-name { font: 700 clamp(34px, 10.5vw, 56px)/1.02 var(--f-pixel); letter-spacing: .01em; color: #fff; text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .kreis-lf { font: 700 17px/1.3 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .zitat { margin: 3px; padding: 12px 14px; font: 400 17px/1.5 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); box-shadow: 0 7px 0 var(--px-tinte); }
+body[data-welt="pixel"] .kreis-stand { padding: 12px 14px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte); }
+body[data-welt="pixel"] .kreis-stand .zahlen b { color: var(--px-tinte); }
+body[data-welt="pixel"] .raetsel-hinweis { color: var(--px-leise); }
+body[data-welt="pixel"] .voraus li { color: var(--px-leise); }
+body[data-welt="pixel"] .voraus .erfuellt { color: var(--px-tinte); font-weight: 700; }
+body[data-welt="pixel"] .voraus .haken { border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .voraus .erfuellt .haken { color: var(--px-tinte); background: var(--px-gelb); border-color: var(--px-tinte); }
+body[data-welt="pixel"] .knopf.nebeltor { background: #eef2fa; }
+body[data-welt="pixel"] .knopf.eistor { background: #bfe8ff; box-shadow: inset -3px -4px 0 #7ab8e0, inset 3px 3px 0 #fff, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.feuertor { color: #fff; background: var(--px-orange); text-shadow: 0 2px 0 var(--px-tinte); box-shadow: inset -3px -4px 0 #c84a10, inset 3px 3px 0 #ffc080, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.feuertor small { color: #fff4e0; text-shadow: none; }
+
+/* Kampf im Hauptspiel: Lebensbalken in Stufen, Bossbalken auf Papier, die Prüfungsuhr */
+body[data-welt="pixel"] .balken { height: 16px; background: #3d2f63; border: 3px solid #fff; border-radius: 0; }
+body[data-welt="pixel"] .leben .wert { background: linear-gradient(180deg, #ff9aac 0 25%, var(--px-rot) 25% 70%, var(--px-rot-tief) 70%); }
+body[data-welt="pixel"] .leben .spur { background: #fff0a0; }
+body[data-welt="pixel"] .leben-zahl { font-family: var(--f-pixel); color: #fff; }
+body[data-welt="pixel"] .bossbalken { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 5px 0 var(--px-tinte); }
+body[data-welt="pixel"] .bossbalken .balken { background: #e8e0f4; border-color: var(--px-tinte); }
+body[data-welt="pixel"] .bossbalken.mit-figur { grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+body[data-welt="pixel"] .bossbalken.mit-figur .phase { display: block; }
+body[data-welt="pixel"] .bossbalken .balken i { background: linear-gradient(180deg, #ff9aac 0 25%, var(--px-rot) 25% 70%, var(--px-rot-tief) 70%); }
+body[data-welt="pixel"] .uhr { height: 24px; background: #3d2f63; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .uhr i { background: repeating-linear-gradient(90deg, var(--px-orange) 0 8px, var(--px-gelb) 8px 16px); }
+body[data-welt="pixel"] .uhr span { font: 700 13px/18px var(--f-pixel); color: #fff; text-shadow: 0 2px 0 var(--px-tinte); }
+body[data-welt="pixel"] .uhr.knapp i { background: repeating-linear-gradient(90deg, var(--px-rot) 0 8px, #ff9aac 8px 16px); }
+body[data-welt="pixel"] .flakon.gefroren { color: var(--px-tinte); background: #bfe8ff; border-color: #bfe8ff; }
+body[data-welt="pixel"] .phantom, body[data-welt="pixel"] .raetsel-auftritt { padding: 8px 10px; font: 400 16.5px/1.45 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .phantom { background: var(--px-rot-tief); }
+body[data-welt="pixel"] .karte.phantom-karte { box-shadow: 0 6px 0 var(--px-rot-tief), 0 0 26px -4px rgba(255, 59, 92, .7); }
+body[data-welt="pixel"] .raetsel-karte { border-color: var(--px-tinte); }
+body[data-welt="pixel"] .kuerzel-gross { color: var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .frage.langform-gross { color: var(--px-tinte); }
+body[data-welt="pixel"] .rang { border-width: 2px; border-radius: 0; }
+body[data-welt="pixel"] .rang.r1 { color: #6a5a98; }
+body[data-welt="pixel"] .rang.r2 { color: #1f5aa8; }
+body[data-welt="pixel"] .rang.r3 { color: #fff; background: var(--px-rot); border-color: var(--px-tinte); }
+body[data-welt="pixel"] .loesung mark, body[data-welt="pixel"] .tod-lang mark, body[data-welt="pixel"] .nb-innen mark { color: var(--px-lila-tief); background: #fff1c2; }
+body[data-welt="pixel"] .kuerzel-name { color: #9a5a00; }
+body[data-welt="pixel"] .raetsel-frage code, body[data-welt="pixel"] .botschaft code, body[data-welt="pixel"] .tod-def code, body[data-welt="pixel"] .routen td:nth-child(2) { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .raetsel-loesung b { color: var(--px-tinte); }
+body[data-welt="pixel"] .feld { color: var(--px-leise); }
+body[data-welt="pixel"] .feld input { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .feld input:focus { border-color: var(--px-lila-tief); box-shadow: 0 0 0 3px rgba(143, 92, 255, .35); }
+body[data-welt="pixel"] .feld input.ok { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .feld input.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .feld-meldung { color: #b0123a; }
+body[data-welt="pixel"] .option.gewaehlt { background: #fff1c2; border-color: var(--px-tinte); box-shadow: 0 3px 0 var(--px-tinte), inset 5px 0 0 var(--px-gelb); }
+body[data-welt="pixel"] .routen caption, body[data-welt="pixel"] .routen th { color: var(--px-leise); }
+body[data-welt="pixel"] .routen th, body[data-welt="pixel"] .routen td { border-bottom-color: #d8d4ea; }
+body[data-welt="pixel"] .switch { background: #fff; border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .pc { border-radius: 0; }
+body[data-welt="pixel"] .pc.v10 { color: #1f5a98; background: #d8ecff; border-color: #1f5a98; }
+body[data-welt="pixel"] .pc.v20 { color: #8a5a00; background: #fff1c2; border-color: #8a5a00; }
+body[data-welt="pixel"] .pc.v30 { color: var(--px-lila-tief); background: #ece4ff; border-color: var(--px-lila-tief); }
+body[data-welt="pixel"] .trunk { color: var(--px-leise); border-left-color: var(--px-leise); }
+body[data-welt="pixel"] .botschaft { background: #3d2f63; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: none; }
+body[data-welt="pixel"] .zeile-knopf { color: #fff; border-radius: 0; }
+body[data-welt="pixel"] .zeile-knopf .nr { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .zeile-knopf.luegt { color: var(--px-tinte); background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .botschaft-ruf { color: var(--px-leise); }
+body[data-welt="pixel"] .schalter { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 3px 0 var(--px-tinte); }
+body[data-welt="pixel"] .schalter[aria-pressed="true"] { background: var(--px-gelb); }
+body[data-welt="pixel"] .schalter[aria-pressed="true"] b { color: var(--px-tinte); }
+body[data-welt="pixel"] .lampe { color: var(--px-leise); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .lampe.an { color: var(--px-tinte); background: var(--px-gelb); }
+body[data-welt="pixel"] .proben th { color: var(--px-leise); }
+body[data-welt="pixel"] .proben td { color: var(--px-tinte); }
+body[data-welt="pixel"] .proben tr.jetzt td { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .medium { color: var(--px-tinte); background: #fff; border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .medium span { color: var(--px-leise); }
+body[data-welt="pixel"] .medium small { color: #6a5a98; }
+body[data-welt="pixel"] .medium.voll span { color: #9a5a00; }
+body[data-welt="pixel"] .medium.diff span { color: #1f5aa8; }
+body[data-welt="pixel"] .medium.inkr span { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .medium.gewaehlt { background: var(--px-gelb); box-shadow: none; }
+body[data-welt="pixel"] .medium.brand { color: #fff; background: var(--px-rot-tief); }
+body[data-welt="pixel"] .medium.brand span { color: #fff; }
+body[data-welt="pixel"] .medium.soll { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .medium.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .medium i { color: var(--px-tinte); background: var(--px-gelb); border: 2px solid var(--px-tinte); border-radius: 0; line-height: 16px; }
+body[data-welt="pixel"] .folge { color: var(--px-tinte); }
+
+/* Große Bildschirme im Hauptspiel: Bänder in Farbe, der Inhalt auf Papier */
+body[data-welt="pixel"] .band { background: var(--px-lila); border-top: 4px solid var(--px-tinte); border-bottom: 4px solid var(--px-tinte); box-shadow: inset 0 4px 0 #b49aff, inset 0 -4px 0 var(--px-lila-tief); }
+body[data-welt="pixel"] .band h1 { font: 700 clamp(30px, 9vw, 52px)/1.05 var(--f-pixel); letter-spacing: .02em; text-transform: none; color: #fff; text-shadow: var(--umriss-gross); animation: auftritt-boss .6s steps(6) both; }
+body[data-welt="pixel"] .tod .band { background: var(--px-rot); box-shadow: inset 0 4px 0 #ff9aac, inset 0 -4px 0 var(--px-rot-tief); }
+body[data-welt="pixel"] .band.gold { background: var(--px-gelb); box-shadow: inset 0 4px 0 #fff0a0, inset 0 -4px 0 var(--px-gelb-tief); }
+body[data-welt="pixel"] .erfroren .band { background: #6ac8ff; box-shadow: inset 0 4px 0 #c8f0ff, inset 0 -4px 0 #2a8ad8; }
+body[data-welt="pixel"] .durchgefallen .band h1 { color: #fff; border: 4px solid #fff; border-radius: 0; animation: stempel .5s steps(5) .3s both; }
+body[data-welt="pixel"][data-bg="tod"] .bg-schleier, body[data-welt="pixel"][data-bg="tod-pruefung"] .bg-schleier { background: var(--px-tinte); }
+body[data-welt="pixel"] .gross-inhalt { padding: 14px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 6px 0 var(--px-tinte), inset 0 3px 0 #fff; }
+body[data-welt="pixel"] .tod-von { font-family: var(--f-pixel); color: var(--px-leise); }
+body[data-welt="pixel"] .tod-begriff { font: 700 clamp(26px, 8vw, 34px)/1.1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .tod-def, body[data-welt="pixel"] .tod-lang { color: #2e2458; }
+body[data-welt="pixel"] .tod-seelen { color: #b0123a; border-top: 3px dashed #e8c0c8; }
+body[data-welt="pixel"] .bilanz b { color: #9a5a00; font-family: var(--f-pixel); }
+body[data-welt="pixel"] .gross-inhalt .boss-gross { color: var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .gold-text { color: #9a5a00; }
+body[data-welt="pixel"] .boss-gross { font: 700 clamp(28px, 8vw, 46px)/1.08 var(--f-pixel); color: #fff; text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .boss-gross small { font: 700 19px/1.2 var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .nebel .regeln, body[data-welt="pixel"] .durchgang .hinweis { margin: 3px; padding: 12px 14px; color: #fff; background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .nebel .regeln li::before { transform: none; background: var(--px-gelb); }
+body[data-welt="pixel"] .nebel .regeln b { color: var(--px-gelb); }
+body[data-welt="pixel"] .rolle { background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .rolle h2 { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .rolle p { color: #fff; }
+body[data-welt="pixel"] .rolle-gross { font-family: var(--f-pixel); }
+.szene-bit.tot { transform: rotate(90deg); filter: grayscale(1) brightness(1.1); }
+
+/* Am Handy steht die Szene gerahmt oben, der Vollbild-Hintergrund tritt zurück; am breiten Bildschirm ist sie ganz zu sehen */
+.px-buehnenbild { display: none; }
+@media (max-aspect-ratio: 1/1) {
+  body[data-welt="pixel"] .px-buehnenbild { display: block; margin: 0; aspect-ratio: 16 / 9; image-rendering: pixelated; background: var(--szene) center / cover no-repeat; border: 3px solid var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 2px rgba(255, 255, 255, .6); }
+  body[data-welt="pixel"] .kreis-kopf { margin-top: 2px; }
+  body[data-welt="pixel"][data-bg="kreis"] .bg-schleier, body[data-welt="pixel"][data-bg^="arena-"] .bg-schleier, body[data-welt="pixel"][data-bg="gebeinhaus"] .bg-schleier,
+  body[data-welt="pixel"][data-bg="kampf"] .bg-schleier, body[data-welt="pixel"][data-bg="boss"] .bg-schleier, body[data-welt="pixel"][data-bg="tor"] .bg-schleier,
+  body[data-welt="pixel"][data-bg="sieg"] .bg-schleier, body[data-welt="pixel"][data-bg="durchgang"] .bg-schleier { background: rgba(28, 18, 51, .66); }
+}
+body[data-welt="pixel"] .medium b { font-family: var(--f-pixel); }
+
+/* Gebeinhaus */
+body[data-welt="pixel"] .chip { font-family: var(--f-pixel); color: var(--px-tinte); background: var(--px-papier); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .chip small { color: var(--px-leise); }
+body[data-welt="pixel"] .chip[aria-pressed="true"] { color: var(--px-tinte); background: var(--px-gelb); }
+body[data-welt="pixel"] .chip[aria-pressed="true"] small { color: var(--px-tinte); }
+body[data-welt="pixel"] .gb-suche { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .nische { background: #3d2f63; border: 2px solid var(--px-tinte); box-shadow: inset 0 6px 0 #2a2048; }
+body[data-welt="pixel"] .nische .ni-k { color: #fff; }
+body[data-welt="pixel"] .nische .ni-l { color: #d8d0f4; }
+body[data-welt="pixel"] .nische.leer .ni-k { color: #8a7ab8; }
+body[data-welt="pixel"] .nische.leer .ni-l { color: #6a5a98; }
+body[data-welt="pixel"] .nische.r3 { border-color: var(--px-rot); }
+body[data-welt="pixel"] .nische.kerze::after { border-radius: 0; background: linear-gradient(180deg, #fff4c0 0 30%, var(--px-gelb) 30% 60%, var(--px-orange) 60%); box-shadow: 0 0 8px rgba(255, 210, 58, .8); }
+body[data-welt="pixel"] .nichts { color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .nische-blatt { color: var(--px-tinte); background: var(--px-papier); border-top: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .nb-innen .kuerzel-gross { color: var(--px-tinte); }
 
 /* ---------- Hinweis bei neuer Fassung ---------- */
 .toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }

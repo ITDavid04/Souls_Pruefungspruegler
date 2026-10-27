@@ -31,13 +31,14 @@ def ersetze(text, paare, datei):
 
 
 def kopf(text, datei, titel):
-    """Schriften raus, Werkstatt-Stil und Kopfzeile rein, dunkles Schema fest"""
+    """Schriften raus, Werkstatt-Stil und Kopfzeile rein, dunkles Schema fest (im Spielstil Pixel hell, siehe werkstatt-stil.js)"""
     text = re.sub(r'<link rel="preconnect"[^>]*>\n?', '', text)
     text = re.sub(r'<link href="https://fonts\.googleapis\.com[^>]*>\n?', '', text)
     text = text.replace('<html lang="de">', '<html lang="de" data-theme="dark">', 1)
     text = re.sub(r'<title>.*?</title>', f'<title>{titel} · Werkstatt · Prüfungsprügler</title>', text, count=1)
     text = text.replace('</head>', '<meta name="theme-color" content="#0b0908">\n<meta name="color-scheme" content="dark">\n'
-                        '<link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">\n<link rel="stylesheet" href="werkstatt.css">\n</head>', 1)
+                        '<link rel="icon" href="../icons/favicon.svg" type="image/svg+xml">\n<link rel="stylesheet" href="werkstatt.css">\n'
+                        '<script src="werkstatt-stil.js"></script>\n</head>', 1)
     reiter = ''.join(f'<a href="{d}"' + (' aria-current="page"' if d == datei else '') + f'>{n}</a>' for d, n in REITER)
     nav = ('<nav class="werkstatt-kopf" aria-label="Werkstatt">'
            '<a class="werkstatt-zurueck" id="werkstatt-zurueck" href="../?zurueck">Zum Lagerfeuer</a>'

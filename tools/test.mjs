@@ -6,6 +6,8 @@
    Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Tonebene (Wind), Kampfklang, Klassen, Katakomben der Kürzel mit Gebeinhaus
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
    Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
+   Pixelparadies (Inseln nach Themen, Kombo, Goldwürfel, Bomben mit Lunte, Absturz ohne Seelenverlust, Landung mit Schatzkiste,
+   Würfeltor, Wächter mit Volltreffer und Herzcontainer, der Große Glitch), Startwelt, Spielstil Pixel für das ganze Spiel,
    Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
 import puppeteer from 'puppeteer-core';
 import { mkdir } from 'node:fs/promises';
@@ -662,6 +664,149 @@ try {
   await durchTitel(page);
   await ansicht(page, 'hub');
 
+
+  /* ---------- Das Pixelparadies ---------- */
+  check('Lagerfeuer zeigt den Riss ins Pixelparadies', await page.$eval('a.px-riss', a => a.getAttribute('href') === '#/himmel' && a.textContent.includes('Pixelparadies')));
+  const inseln = await page.evaluate(async () => {
+    const W = await import('./js/welt.js'), K = await import('./js/kern.js');
+    const karten = JSON.parse(document.getElementById('karten').textContent).filter(c => !K.istKuerzel(c));
+    const je = {};
+    for (const c of karten) { const h = W.himmelVon(c); (je[h] = je[h] || []).push(c.l); }
+    return { ohne: karten.filter(c => !W.himmelVon(c)).length, je: Object.fromEntries(Object.entries(je).map(([h, l]) => [h, { n: l.length, ap1: l.some(x => x <= 6), ap2: l.some(x => x > 6) }])) };
+  });
+  check('Jede Begriffskarte liegt auf einer der sieben Inseln, jede Insel mischt AP1 und AP2', inseln.ohne === 0 && Object.keys(inseln.je).join() === '21,22,23,24,25,26,27' && Object.values(inseln.je).every(x => x.n >= 80 && x.ap1 && x.ap2), JSON.stringify(inseln.je));
+  await klick(page, 'a.px-riss');
+  await ansicht(page, 'himmel-karte');
+  check('Inselkarte: Pixelwelt, sieben Inseln und der Riss darüber, noch zu', await page.evaluate(() => document.body.dataset.welt) === 'pixel' && await page.$$eval('.turm .stock', s => s.length) === 8 && await page.$('.stock.gipfel-stock.zu') !== null && await page.$('.px-regeln') !== null);
+  await sleep(1200);
+  await foto(page, '62-pixel-karte', true);
+  await klick(page, 'a.stock-link[href="#/insel/22"]');
+  await ansicht(page, 'insel-seite');
+  check('Merkurinsel: Würfel, Beutel, Mischung aus AP1 und AP2', await page.$eval('.quellen', e => e.textContent.includes('LF3') && e.textContent.includes('IT-Systeme')) && await page.$('.tor-zu') !== null);
+  await sleep(900);
+  await foto(page, '63-pixel-insel');
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  const p0 = await spiel(page);
+  const planOk = await page.evaluate(async plan => { const W = await import('./js/welt.js'); const k = JSON.parse(document.getElementById('karten').textContent); const cs = plan.map(i => k.find(c => c.i === i)); return cs.every(c => W.himmelVon(c) === 22) && cs.some(c => c.l <= 6) && cs.some(c => c.l > 6); }, p0.lauf.plan);
+  check('Sprung: zehn Karten der Insel, schon gemischt aus AP1 und AP2, fünf Herzen, zwei Bomben', p0.lauf.plan.length === 10 && planOk && p0.lauf.leben === 5 && p0.lauf.bomben.length === 2 && await page.$$eval('.px-herzen .herz-zelle', h => h.length) === 5, p0.lauf.plan.slice(0, 3).join());
+  await setze(page, 'S.lauf.bomben = [];');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  for (let i = 0; i < 5; i++) { await antworte(page, true); if (i < 4) await weiter(page); }
+  const p1 = await spiel(page);
+  check('Fünf Treffer in Folge: Kombo ×5, es knallt, sechs Splitter im Beutel', p1.lauf.kombo === 5 && p1.lauf.frage.knall === 'kombo' && p1.lauf.beutel === 6 && await page.$('.px-knall') !== null && await page.$eval('.kombo b', e => e.textContent === '×5'), `Kombo ${p1.lauf.kombo}, Beutel ${p1.lauf.beutel}`);
+  await sleep(200);
+  await foto(page, '64-pixel-kombo');
+  await weiter(page);
+  await antworte(page, true);
+  const p2 = await spiel(page);
+  check('Ab Kombo ×5 zwei Splitter: acht im Beutel werden ein Goldwürfel', p2.lauf.beutel === 0 && p2.lauf.wuerfelNeu === 1 && p2.kreise[22].wuerfel === 1 && p2.himmel.wuerfel === 1 && p2.lauf.frage.wuerfel, `Beutel ${p2.lauf.beutel}, Würfel ${p2.kreise[22].wuerfel}`);
+  await weiter(page);
+  const typ = (await spiel(page)).lauf.frage.typ;
+  await setze(page, "S.lauf.frage.bombe = true; if (S.lauf.frage.typ === 'tippen') S.lauf.frage.bombe = false;");
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  check('Bombe: Warnband und Lunte auf der Karte', typ === 'tippen' || (await page.$('.karte.bombe-karte .bombe-kopf') !== null && await page.$('#uhr.lunte') !== null), typ);
+  await sleep(700);
+  await foto(page, '65-pixel-bombe');
+  await antworte(page, false);
+  const p3 = await spiel(page);
+  check('Bombe falsch: zwei Herzen weg, Kombo reißt, es knallt', typ === 'tippen' || (p3.lauf.leben === 3 && p3.lauf.kombo === 0 && p3.lauf.frage.knall === true && await page.$('.px-knall.knall-bombe') !== null), `Herzen ${p3.lauf.leben}`);
+  await sleep(200);
+  await foto(page, '66-pixel-boom');
+  await weiter(page);
+  const vorAbsturz = await spiel(page);
+  await setze(page, 'S.lauf.leben = 1; S.lauf.frage.bombe = true; S.lauf.frage.bis = Date.now() - 1000; if (S.lauf.frage.typ === "tippen") { S.lauf.frage.bombe = false; delete S.lauf.frage.bis; }');
+  await neuLaden(page);
+  if (!(await spiel(page)).lauf.frage.bombe) await antworte(page, false);
+  await ansicht(page, 'absturz');
+  const p4 = await spiel(page);
+  check('Abgebrannte Lunte am letzten Herz: Absturz ohne Tod, Blutfleck oder Seelenverlust', p4.zeige.art === 'absturz' && p4.tode === vorAbsturz.tode && JSON.stringify(p4.blut) === JSON.stringify(vorAbsturz.blut) && p4.seelen === vorAbsturz.seelen && p4.himmel.abstuerze === 1, `Tode ${p4.tode}, Seelen ${p4.seelen}`);
+  check('Absturz: lose Splitter fallen mit, ganze Goldwürfel bleiben', p4.kreise[22].splitter === 0 && p4.kreise[22].wuerfel === 1 && await page.$eval('.px-hinweis', e => e.textContent.includes('Seelen verlierst du hier oben keine')));
+  await sleep(1600);
+  await foto(page, '67-pixel-absturz');
+  await klick(page, '#weiter');
+  await ansicht(page, 'insel-seite');
+  await klick(page, '#gang');
+  await ansicht(page, 'kampf');
+  await setze(page, 'S.lauf.bomben = [];');
+  await neuLaden(page);
+  await ansicht(page, 'kampf');
+  await gangRichtig(page);
+  await ansicht(page, 'landung');
+  const p5 = await spiel(page);
+  check('Fehlerfreier Sprung: Landung, Schatzkiste, Würfeltor offen', p5.zeige.art === 'landung' && p5.zeige.perfekt && p5.zeige.tor && p5.kreise[22].wuerfel >= 3 && await page.$('.schatz') !== null && await page.$('.tor-auf') !== null, `Würfel ${p5.kreise[22].wuerfel}, neu ${p5.zeige.neu}`);
+  await sleep(1400);
+  await foto(page, '68-pixel-landung');
+  await klick(page, '#weiter');
+  await ansicht(page, 'insel-seite');
+  await klick(page, '#tor');
+  await ansicht(page, 'px-tor-gross');
+  await sleep(900);
+  await foto(page, '69-pixel-waechter-tor');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  check('Der Lag-Drache: Herzen, Trefferleiste, Auftritt', await page.$('.px-boss .px-drache') !== null && await page.$$eval('.px-lp i', i => i.length) === 8 && await page.$('.auftritt') !== null);
+  await foto(page, '70-pixel-waechter');
+  for (let i = 0; i < 3; i++) { await antworte(page, true); if (i < 2) await weiter(page); }
+  const p6 = await spiel(page);
+  check('Ab Kombo ×3 trifft es doppelt, jede dritte Frage hat Lunte', p6.lauf.phaseTreffer === 4 && p6.lauf.frage.volltreffer && p6.lauf.frage.bombe, `Treffer ${p6.lauf.phaseTreffer}`);
+  await sleep(300);
+  await foto(page, '71-pixel-volltreffer');
+  await bossRichtig(page);
+  await ansicht(page, 'px-sieg');
+  const p7 = await spiel(page);
+  check('Wächter besiegt: Titel und Herzcontainer, sechs Herzen je Sprung', p7.kreise[22].boss && p7.himmel.herzen === 1 && p7.zeige.herz && await page.$eval('.px-sieg', e => e.textContent.includes('Herr über Ping und Paket') && e.textContent.includes('6 Herzen')));
+  await sleep(1800);
+  await foto(page, '72-pixel-sieg');
+  await klick(page, '#weiter');
+  await ansicht(page, 'insel-seite');
+  await setze(page, 'for (const n of [21, 23, 24, 25, 26, 27]) S.kreise[n] = { feuer: 1, boss: true, splitter: 0, wuerfel: 3 };');
+  await page.goto(BASE + '#/glitch', { waitUntil: 'networkidle0' });
+  await neuLaden(page);
+  await ansicht(page, 'glitch-seite');
+  check('Alle sieben Wächter liegen: der Riss zum Großen Glitch ist offen', await page.$('#tor') !== null && await page.$$eval('.px-voraus .erfuellt', l => l.length) === 7);
+  await sleep(900);
+  await foto(page, '73-pixel-glitch');
+  await klick(page, '#tor');
+  await ansicht(page, 'px-tor-gross');
+  await klick(page, '#weiter');
+  await ansicht(page, 'ist-boss');
+  await antworte(page, true);
+  await weiter(page);
+  check('Der Große Glitch wirft jede zweite Frage eine Bombe', (await spiel(page)).lauf.frage.bombe === true && await page.$('#uhr.lunte') !== null);
+  await foto(page, '74-pixel-glitch-kampf');
+  await bossRichtig(page);
+  await ansicht(page, 'px-sieg');
+  check('Der Große Glitch zerfällt: Titel „Held in acht Bit“', (await spiel(page)).arenen.glitch.boss && await page.$eval('.px-sieg', e => e.textContent.includes('Held in acht Bit')));
+  await sleep(2200);
+  await foto(page, '75-pixel-gerettet');
+  await klick(page, '#weiter');
+  await ansicht(page, 'himmel-karte');
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(page, 'hub');
+  check('Zurück am Lagerfeuer: dunkel wie immer, die Pixeltitel stehen in der Liste', await page.evaluate(() => document.body.dataset.welt) === '' && await page.$eval('.titel-liste', e => e.textContent.includes('Held in acht Bit') && e.textContent.includes('Herr über Ping und Paket')));
+
+  /* Startwelt: im Pixelparadies starten, bunter Titel, danach direkt zur Inselkarte; auf der Karte wieder abschalten */
+  await page.$eval('.spielstand', e => { e.open = true; });
+  await klick(page, '#startwelt');
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).startwelt === 'himmel');
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ansicht(page, 'titel');
+  check('Startwelt Pixelparadies: bunter Titel mit Inseln statt Tor und Spuk', await page.$('.titel.px-titel-seite .px-buehne') !== null && await page.$('.bg .spuk') === null && await page.evaluate(() => document.body.dataset.welt) === 'pixel');
+  await sleep(1400);
+  await foto(page, '77-pixel-titel');
+  await durchTitel(page);
+  await ansicht(page, 'himmel-karte');
+  check('Nach dem bunten Titel geht es direkt zur Inselkarte', await page.evaluate(() => location.hash) === '#/himmel' && await page.$eval('#hier-starten', b => b.getAttribute('aria-pressed') === 'true'));
+  await klick(page, '#hier-starten');
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).startwelt === 'lagerfeuer');
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await neuLaden(page);
+  await ansicht(page, 'hub');
+  check('Auf der Inselkarte abgeschaltet: wieder der düstere Titel und das Lagerfeuer', await page.evaluate(() => document.body.dataset.welt) === '');
+
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
   const man = await cdp.send('Page.getAppManifest');
@@ -738,6 +883,19 @@ try {
   const sRuhig = await spiel(d);
   check('Desktop: Ruhiger Modus, falsch kostet kein Leben und kein Tod', hudRuhig && sRuhig.lauf && sRuhig.lauf.leben === vorFalsch && sRuhig.tode === 0, `Leben ${sRuhig.lauf && sRuhig.lauf.leben} von ${vorFalsch}, HUD ${hudRuhig}`);
   await foto(d, '60-desktop-ruhiger-modus');
+  await setze(d, 'S.lauf = null; S.zeige = null;');
+  await d.goto(BASE + '#/insel/24', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'insel-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  const pxRuhig = await spiel(d);
+  const pxHud = await d.$('.hud .ruhig-marke') !== null && await d.$('.px-herzen') === null;
+  await antworte(d, false);
+  const pxRuhig2 = await spiel(d);
+  check('Desktop: Ruhiger Modus im Pixelparadies, keine Bomben, falsch kostet kein Herz', pxHud && pxRuhig2.lauf.leben === pxRuhig.lauf.leben && !pxRuhig2.lauf.frage.bombe, `Herzen ${pxRuhig2.lauf.leben}`);
+  await foto(d, '76-desktop-pixel-ruhig');
+  await d.goto(BASE + '#/himmel', { waitUntil: 'networkidle0' });
   await setze(d, 'S.frieden = false; S.lauf = null; S.zeige = null;');
   await neuLaden(d);
   await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
@@ -755,8 +913,8 @@ try {
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).kampfklang === false);
   const kkNach = (await spiel(d)).kampfklang;
   check('Desktop: Kampfklang-Schalter steht im Spielstand und schaltet S.kampfklang', kkVor === true && kkNach === false, `vorher ${kkVor}, nachher ${kkNach}`);
-  const zFx = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzenFx(true); T.schlag({ gut: true, akt: 1 }); T.schlag({ gut: false, mimic: true }); T.heilen(); T.aufstieg(); return T.zustand(); });
-  check('Desktop: Kampfklang erzeugt Klänge ohne Fehler', zFx.fx >= 4 && zFx.state === 'running', JSON.stringify(zFx));
+  const zFx = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzenFx(true); T.schlag({ gut: true, akt: 1 }); T.schlag({ gut: false, mimic: true }); T.heilen(); T.aufstieg(); for (const a of ['treffer', 'splitter', 'daneben', 'wuerfel', 'kombo', 'boom', 'entschaerft', 'herz', 'absturz', 'sieg', 'tor']) T.chip(a, 2); return T.zustand(); });
+  check('Desktop: Kampfklang und 8-Bit-Klänge entstehen ohne Fehler', zFx.fx >= 15 && zFx.state === 'running', JSON.stringify(zFx));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
   await setze(d, 'S.lauf = null; S.zeige = null;');
@@ -833,6 +991,92 @@ try {
   await foto(d, '58-desktop-zahlenwerk');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
+
+  /* ---------- Spielstil Pixel: das ganze Spiel in 8 Bit, frischer Spielstand am Handy ---------- */
+  const pctx = await browser.createBrowserContext();
+  const q = await pctx.newPage();
+  await q.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const perrs = watch(q, 'Pixelstil');
+  await q.goto(BASE, { waitUntil: 'networkidle0' });
+  await ansicht(q, 'titel');
+  check('Pixelstil: Schalter Souls und Pixel oben auf dem Titel', await q.$$eval('.stil-wahl .stil-knopf', b => b.map(x => x.dataset.stil + ':' + x.getAttribute('aria-pressed')).join()) === 'souls:true,pixel:false');
+  await klick(q, '.stil-knopf[data-stil="pixel"]');
+  await ansicht(q, 'px-titel-seite');
+  check('Pixelstil: Umschalten wirkt sofort, bunter Titel ohne Spuk', (await spiel(q)).stil === 'pixel' && await q.$('.bg .spuk') === null && await q.evaluate(() => document.body.dataset.welt) === 'pixel' && await q.$eval('#los', b => b.textContent.startsWith('Hinabsteigen')));
+  await sleep(1200);
+  await foto(q, '78-pixelstil-titel');
+  await durchTitel(q);
+  await ansicht(q, 'hub');
+  const kachelBild = await q.$eval('a.kachel[href="#/kreis/1"]', k => getComputedStyle(k).backgroundImage);
+  check('Pixelstil: Lagerfeuer mit Pixelfeuer, Kacheln mit Pixelszenen', await q.$('.feuerstelle .px-feuer') !== null && await q.$('.feuerstelle .flamme') === null && kachelBild.includes('px-lastenwaelzer-klein'), kachelBild.slice(0, 80));
+  await sleep(1000);
+  await foto(q, '79-pixelstil-lagerfeuer', true);
+  await klick(q, 'a.kachel[href="#/kreis/1"]');
+  await ansicht(q, 'kreis-seite');
+  await warte(q, () => [...document.querySelectorAll('.bg-bild.an')].some(e => e.style.backgroundImage.includes('px-lastenwaelzer')));
+  check('Pixelstil: Kreis mit Bühnenbild und Pixelhintergrund', await q.$eval('.px-buehnenbild', e => e.getAttribute('style').includes('px-lastenwaelzer')));
+  await sleep(600);
+  await foto(q, '80-pixelstil-kreis');
+  await klick(q, '#gang');
+  await ansicht(q, 'kampf');
+  const pv0 = (await spiel(q)).seelen;
+  await antworte(q, true);
+  await weiter(q);
+  for (let i = 0; i < 20; i++) {
+    const S = await spiel(q);
+    if (!S.lauf || S.lauf.leben <= 0) break;
+    if (S.lauf.frage.beantwortet) await weiter(q); else await antworte(q, false);
+  }
+  await ansicht(q, 'tod');
+  const pt = await spiel(q);
+  check('Pixelstil: gleiche Regeln, Tod mit Blutfleck, Bit liegt auf der Wolke', pt.tode === 1 && pt.blut && pt.blut.seelen > pv0 && await q.$('.tod .szene-bit.tot') !== null);
+  await sleep(2400);
+  await foto(q, '81-pixelstil-tod');
+  await klick(q, '#weiter');
+  await ansicht(q, 'hub');
+  await setze(q, 'S.kreise[1] = { feuer: 3, boss: false };');
+  await q.goto(BASE + '#/kreis/1', { waitUntil: 'networkidle0' });
+  await neuLaden(q);
+  await ansicht(q, 'kreis-seite');
+  await klick(q, '#tor');
+  await ansicht(q, 'nebel');
+  check('Pixelstil: Nebeltor zeigt den Boss als Pixelfigur', await q.$('.waechter-auftritt .px-matrix') !== null);
+  await klick(q, '#weiter');
+  await ansicht(q, 'ist-boss');
+  check('Pixelstil: Bosskampf mit Figur im Bossbalken', await q.$('.bossbalken.mit-figur .px-matrix') !== null);
+  await foto(q, '82-pixelstil-boss');
+  await bossRichtig(q);
+  await ansicht(q, 'sieg');
+  check('Pixelstil: Sieg wie gewohnt, Boss liegt, Bit jubelt', (await spiel(q)).kreise[1].boss && await q.$('.sieg-szene .px-matrix') !== null);
+  await sleep(2400);
+  await foto(q, '83-pixelstil-sieg');
+  await klick(q, '#weiter');
+  await setze(q, 'for (const n of [2, 3, 4, 5, 6]) S.kreise[n] = { feuer: 3, boss: true };');
+  await q.goto(BASE + '#/kokytos', { waitUntil: 'networkidle0' });
+  await neuLaden(q);
+  await ansicht(q, 'arena-kokytos');
+  await klick(q, '#tor');
+  await klick(q, '#weiter');
+  await ansicht(q, 'ist-boss');
+  check('Pixelstil: Zwischenprüfer mit rotem Gesicht, Kaffee gefroren', await q.$('.bossbalken .px-gesichtRot') !== null && (await spiel(q)).lauf.flakons === 0);
+  await foto(q, '84-pixelstil-zwischenpruefer');
+  await klick(q, '#rueckzug');
+  await klick(q, '#rz-ja');
+  await ansicht(q, 'arena-kokytos');
+  await q.goto(BASE + 'werkstatt/rechenwerk.html', { waitUntil: 'networkidle0' });
+  await q.waitForSelector('#werkstatt-zurueck');
+  check('Pixelstil: Werkstatt hell mit Pixel-Kopfzeile, passt aufs Handy', await q.evaluate(() => document.documentElement.classList.contains('px') && document.documentElement.dataset.theme === 'light' && document.documentElement.scrollWidth <= document.documentElement.clientWidth));
+  await sleep(500);
+  await foto(q, '85-pixelstil-werkstatt');
+  await q.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await durchTitel(q);
+  await ansicht(q, 'hub');
+  await q.$eval('.spielstand', e => { e.open = true; });
+  await klick(q, '#stil');
+  await warte(q, () => JSON.parse(localStorage.getItem('spp.spiel')).stil === 'souls');
+  check('Pixelstil: im Spielstand zurück auf Souls, Lagerfeuer wieder gemalt', await q.evaluate(() => document.body.dataset.welt) === '' && await q.$('.feuerstelle .flamme') !== null);
+  check('Pixelstil: keine Fehler in der Konsole', perrs.length === 0, perrs.slice(0, 3).join(' | '));
+  await pctx.close();
 } catch (e) {
   check('Test lief ohne Abbruch', false, e.stack);
 } finally {

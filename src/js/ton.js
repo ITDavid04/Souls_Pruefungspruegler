@@ -186,6 +186,32 @@ export function aufstieg(){
   [523, 659, 784, 1046].forEach((f, i) => stimme('triangle', f, f, t0 + i * 0.09, 0.22, 0.24));
 }
 
+/* Das Pixelparadies klingt nach 8 Bit: Rechteck- und Dreieckswellen, kurze Tonfolgen, ein Knall aus Rauschen.
+   Läuft über denselben Bus und denselben Schalter wie der Kampfklang. stufe macht Kombos von Mal zu Mal höher. */
+const NOTE = { C5: 523, D5: 587, E5: 659, G5: 784, A5: 880, B5: 988, C6: 1047, E6: 1319, G6: 1568, C7: 2093 };
+export function chip(art, stufe = 0){
+  if (!fxAn || !fxBus()) return;
+  fxZahl++;
+  const t0 = ctx.currentTime, folge = (noten, abstand, dauer, typ = 'square', laut = .09) =>
+    noten.forEach((n, i) => stimme(typ, NOTE[n] || n, NOTE[n] || n, t0 + i * abstand, dauer, laut));
+  if (art === 'treffer') folge(['E5', 'B5'], .055, .09);
+  else if (art === 'splitter') { folge(['B5'], 0, .05); stimme('square', NOTE.E6, NOTE.E6, t0 + .05, .16, .08); }
+  else if (art === 'daneben') { stimme('square', 300, 90, t0, .26, .1); rauschStoss(t0, .08, .12, 'lowpass', 900); }
+  else if (art === 'wuerfel') { folge(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], .065, .12, 'square', .08); folge(['C6', 'E6', 'G6', 'C7'], .065, .2, 'triangle', .1); }
+  else if (art === 'kombo') folge(['C5', 'E5', 'G5', 'C6'].map(n => NOTE[n] * Math.pow(2, Math.min(4, stufe) / 12)), .05, .09, 'square', .08);
+  else if (art === 'boom') {
+    rauschStoss(t0, .55, .5, 'lowpass', 1100);
+    rauschStoss(t0 + .02, .3, .3, 'bandpass', 420, 1.2);
+    stimme('square', 140, 38, t0, .5, .22);
+    stimme('triangle', 90, 30, t0, .7, .3);
+  }
+  else if (art === 'entschaerft') { folge(['G6', 'C7'], .07, .12, 'triangle', .1); rauschStoss(t0, .05, .08, 'highpass', 3000); }
+  else if (art === 'herz') folge(['C5', 'G5', 'C6'], .07, .14, 'triangle', .14);
+  else if (art === 'absturz') { stimme('square', 900, 110, t0, .75, .09); stimme('triangle', 450, 55, t0 + .05, .75, .1); }
+  else if (art === 'sieg') { folge(['G5', 'G5', 'G5'], .11, .09, 'square', .09); stimme('square', NOTE.C6, NOTE.C6, t0 + .36, .45, .1); stimme('triangle', NOTE.E6, NOTE.E6, t0 + .36, .5, .1); }
+  else if (art === 'tor') folge(['C5', 'G5', 'C6', 'G5', 'C6', 'E6'], .08, .1, 'triangle', .12);
+}
+
 /* Schalter im Spielstand: Kampfklang an oder aus */
 export function setzenFx(ein){ fxAn = !!ein; }
 

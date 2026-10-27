@@ -54,21 +54,31 @@ section[id] { scroll-margin-top: 90px; }
   .werkstatt-name { margin-left: auto; }
 }
 
+/* Spielstil Pixel: die Werkzeuge im hellen Originalanstrich, Kopfzeile und Überschriften in 8 Bit */
+@font-face { font-family: 'Pixelify Sans'; src: url(../fonts/pixelify-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+html.px .werkstatt-kopf { background: #1c1233; border-bottom: 3px solid #1c1233; box-shadow: 0 4px 0 rgba(28, 18, 51, .35); }
+html.px .werkstatt-zurueck { font: 700 15px/1.2 'Pixelify Sans', sans-serif; color: #fff; }
+html.px .werkstatt-zurueck:hover { color: #ffd23a; }
+html.px .werkstatt-name { font: 700 13px/1 'Pixelify Sans', sans-serif; letter-spacing: .08em; color: #ffd23a; }
+html.px .werkstatt-reiter a { font: 700 14px/1 'Pixelify Sans', sans-serif; color: #1c1233; background: #fff; border: 3px solid #fff; border-radius: 0; box-shadow: inset -3px -3px 0 #d8d4ea; }
+html.px .werkstatt-reiter a[aria-current="page"] { background: #ffd23a; border-color: #ffd23a; box-shadow: inset -3px -3px 0 #e0961a; }
+html.px h1, html.px h2 { font-family: 'Pixelify Sans', sans-serif; letter-spacing: .01em; }
+
 /* Zahlenwerk: lange Zahlen (Yotta, Quetta) dürfen das Raster nicht aufs Doppelte strecken, die Tabellen scrollen in sich */
-html:root[data-theme="dark"] .readouts { grid-template-columns: minmax(0, 1fr); }
-html:root[data-theme="dark"] .readout table, html:root[data-theme="dark"] .allprefix table { display: block; max-width: 100%; overflow-x: auto; }
-html:root[data-theme="dark"] .calc .out { overflow-wrap: anywhere; }
+html:root[data-theme] .readouts { grid-template-columns: minmax(0, 1fr); }
+html:root[data-theme] .readout table, html:root[data-theme] .allprefix table { display: block; max-width: 100%; overflow-x: auto; }
+html:root[data-theme] .calc .out { overflow-wrap: anywhere; }
 
 /* Rechenwerk: lange Aufgabennamen und die Tabelle aller Gatter bleiben in der Bildschirmbreite */
-html:root[data-theme="dark"] #taskSel { max-width: 100%; }
-html:root[data-theme="dark"] table.matrix { display: block; max-width: 100%; overflow-x: auto; }
+html:root[data-theme] #taskSel { max-width: 100%; }
+html:root[data-theme] table.matrix { display: block; max-width: 100%; overflow-x: auto; }
 
 /* Klappuhr: vier Blätter passen auch aufs Handy */
 @media (max-width: 480px) {
-  html:root[data-theme="dark"] .clock { gap: 3px; }
-  html:root[data-theme="dark"] .flap { width: clamp(58px, 19vw, 74px); height: 66px; font-size: 2rem; }
-  html:root[data-theme="dark"] .dot { font-size: 2rem; padding-top: 30px; }
-  html:root[data-theme="dark"] .oct { width: clamp(58px, 19vw, 74px); }
-  html:root[data-theme="dark"] .role { font-size: .68rem; max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
-  html:root[data-theme="dark"] .octmask { font-size: .78rem; text-align: center; }
+  html:root[data-theme] .clock { gap: 3px; }
+  html:root[data-theme] .flap { width: clamp(58px, 19vw, 74px); height: 66px; font-size: 2rem; }
+  html:root[data-theme] .dot { font-size: 2rem; padding-top: 30px; }
+  html:root[data-theme] .oct { width: clamp(58px, 19vw, 74px); }
+  html:root[data-theme] .role { font-size: .68rem; max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
+  html:root[data-theme] .octmask { font-size: .78rem; text-align: center; }
 }
