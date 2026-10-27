@@ -73,17 +73,21 @@ for (const f of await readdir(path.join(SRC, 'werkstatt'))) {
 for (const f of await readdir(path.join(SRC, 'icons'))) await copy(path.join(SRC, 'icons', f), 'icons/' + f);
 await put('.nojekyll', '');
 
-/* Bilder: nur die, die in welt.js vorkommen (groß und klein) */
+/* Bilder: nur die, die in welt.js vorkommen (groß und klein); die Inseln des Pixelparadieses (sprite) gibt es nur in einer Größe */
 const welt = await read(path.join(SRC, 'js', 'welt.js'));
 const bilder = [...new Set([...welt.matchAll(/[bB]ild: '([a-z0-9-]+)'|_BILD = '([a-z0-9-]+)'/g)].map(m => m[1] || m[2]))];
 for (const b of bilder) for (const s of ['', '-klein']) await copy(path.join(SRC, 'img', b + s + '.webp'), 'img/' + b + s + '.webp');
+const sprites = [...new Set([...welt.matchAll(/sprite: '([a-z0-9-]+)'/g)].map(m => m[1]))];
+for (const b of sprites) await copy(path.join(SRC, 'img', b + '.webp'), 'img/' + b + '.webp');
 
 /* Schriften mit Lizenz */
 const FONTS = [
   ['@fontsource-variable/cinzel', 'cinzel-latin-wght-normal.woff2', 'cinzel-OFL.txt'],
   ['@fontsource/atkinson-hyperlegible', 'atkinson-hyperlegible-latin-400-normal.woff2', 'atkinson-hyperlegible-OFL.txt'],
   ['@fontsource/atkinson-hyperlegible', 'atkinson-hyperlegible-latin-700-normal.woff2'],
-  ['@fontsource/cormorant-garamond', 'cormorant-garamond-latin-500-italic.woff2', 'cormorant-garamond-OFL.txt']
+  ['@fontsource/cormorant-garamond', 'cormorant-garamond-latin-500-italic.woff2', 'cormorant-garamond-OFL.txt'],
+  ['@fontsource/pixelify-sans', 'pixelify-sans-latin-400-normal.woff2', 'pixelify-sans-OFL.txt'],
+  ['@fontsource/pixelify-sans', 'pixelify-sans-latin-700-normal.woff2']
 ];
 for (const [pkg, file, lic] of FONTS) {
   await copy(path.join(NM, pkg, 'files', file), 'fonts/' + file);
@@ -101,5 +105,5 @@ await put('sw.js', sw.replace("'/*VERSION*/'", `'${version}'`).replace('/*PRECAC
 
 let total = 0;
 for (const f of await walk(OUT)) total += (await readFile(path.join(OUT, f))).length;
-console.log(`docs/ gebaut: ${files.length + 1} Dateien vorgeladen, ${(total / 1024).toFixed(0)} KB gesamt, Version ${version}, ${karten.length} Karten (davon ${karten.filter(c => c.l === 13).length} Kürzel), ${bilder.length} Bilder`);
+console.log(`docs/ gebaut: ${files.length + 1} Dateien vorgeladen, ${(total / 1024).toFixed(0)} KB gesamt, Version ${version}, ${karten.length} Karten (davon ${karten.filter(c => c.l === 13).length} Kürzel), ${bilder.length} Bilder, ${sprites.length} Inseln`);
 if (mitStrich) console.log(`Hinweis: ${mitStrich} Karten enthalten Gedankenstriche (Inhalt aus dem Reinprügler, nicht verändert)`);

@@ -2,11 +2,14 @@
    Ablauf: Lagerfeuer -> Kreis wählen -> Gang (10 Karten) -> Lagerfeuer. Nach drei Lagerfeuern im Kreis öffnet das Nebeltor zum Boss.
    Sechs Bosse im Abstieg (AP1) öffnen den Kokytos mit dem Zwischenprüfer; wer ihn besiegt, steigt den Berg hinauf (AP2).
    Liegen alle dreizehn, wartet hinter der Feuerwand der Prüfungsausschuss.
+   Die Erweiterung, das Pixelparadies (#/himmel), ist jederzeit offen: sieben Inseln, Sprünge statt Gänge, Herzen, Kombos,
+   Bomben und Goldwürfel, ganz oben der Große Glitch. Dort hat body data-welt="pixel", und app.css malt alles in 8 Bit.
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
+import * as P from './pixel.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -17,6 +20,18 @@ const ruhig = () => window.matchMedia('(prefers-reduced-motion: reduce)').matche
 const KARTEN = JSON.parse($('#karten').textContent);
 const KARTE = new Map(KARTEN.map(c => [c.i, c]));
 const KUERZEL = KARTEN.filter(K.istKuerzel);
+/* Pixelparadies: jede Begriffskarte bekommt ihre Insel (c.h). Für die Sprünge dort laufen die Themen reihum,
+   abwechselnd aus AP1 und AP2, damit schon der erste Sprung gemischt ist und nicht Thema für Thema geht. */
+for (const c of KARTEN) if (!K.istKuerzel(c)) c.h = himmelVon(c);
+const HIMMEL_KARTEN = INSELN.flatMap(k => {
+  const gruppen = new Map();
+  for (const c of KARTEN) if (c.h === k.lf) { const g = c.l + '|' + c.t; if (!gruppen.has(g)) gruppen.set(g, []); gruppen.get(g).push(c); }
+  const ap1 = [...gruppen.values()].filter(g => g[0].l <= 6), ap2 = [...gruppen.values()].filter(g => g[0].l > 6), reihe = [];
+  for (let i = 0; i < Math.max(ap1.length, ap2.length); i++) { if (ap1[i]) reihe.push(ap1[i]); if (ap2[i]) reihe.push(ap2[i]); }
+  const out = [];
+  for (let i = 0; out.length < reihe.reduce((n, g) => n + g.length, 0); i++) for (const g of reihe) if (g[i]) out.push(g[i]);
+  return out;
+});
 
 const store = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
@@ -26,7 +41,8 @@ const store = {
 const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
-  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, klasse: null, lauf: null, zeige: null
+  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, klasse: null, lauf: null, zeige: null,
+  himmel: { herzen: 0, wuerfel: 0, abstuerze: 0, kombo: 0, besucht: false }
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
 let prog = store.get(PROG, {}) || {};
@@ -42,8 +58,9 @@ const az = id => S.arenen[id] || (S.arenen[id] = { boss: false, versuche: 0 });
 const besiegt = ort => typeof ort === 'number' ? kz(ort).boss : az(ort).boss;
 const aufstiegOffen = () => S.aufstieg || S.probe || S.nurAp2;
 const kreisOffen = lf => kreis(lf).akt !== 2 || aufstiegOffen();
-const arenaOffen = id => S.probe || ARENEN[id].voraus.every(besiegt);
-const fehlend = id => ARENEN[id].voraus.filter(o => !besiegt(o)).length;
+const ARENA = id => ARENEN[id] || PIXEL_ARENEN[id];
+const arenaOffen = id => S.probe || ARENA(id).voraus.every(besiegt);
+const fehlend = id => ARENA(id).voraus.filter(o => !besiegt(o)).length;
 const grundLeben = () => K.maxLeben(S.stufe);
 const istKlasse = id => S.klasse === id;
 const KLASSE = id => KLASSEN.find(k => k.id === id);
@@ -52,20 +69,26 @@ const seelenGabe = g => istKlasse('magier') ? Math.round(g * 1.15) : g;
 const maxLeben = () => istKlasse('krieger') ? Math.round(grundLeben() * 1.2) : grundLeben();
 const heilung = () => K.heilung(S.roestung);
 const friede = () => !!S.frieden;
+/* Pixelparadies: Inseln und die Glitch-Arena haben akt 3. Herzen statt Lebenspunkte; Herzcontainer gibt es von den Wächtern. */
+const istPixel = O => !!O && O.akt === 3;
+const iz = lf => { const z = kz(lf); if (z.splitter === undefined) Object.assign(z, { splitter: 0, wuerfel: 0 }); return z; };
+const herzMax = () => Math.min(K.HERZEN_MAX, K.HERZEN + (S.himmel.herzen || 0) + (istKlasse('krieger') ? 1 : 0));
+const lebenMax = O => istPixel(O) ? herzMax() : maxLeben();
+const pixelWelt = () => { document.body.dataset.welt = 'pixel'; };
 
 /* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln;
    die Katakomben bringen eigene Phasen, Seelen und Regeln mit. */
 function ortDaten(ort){
-  if (typeof ort === 'string') return ARENEN[ort];
-  const k = kreis(ort);
+  if (typeof ort === 'string') return ARENA(ort);
+  const k = kreis(ort), px = k.akt === 3;
   return Object.assign({
-    kaffee: 'ja', zeit: 0, tippfehler: 0, seelen: K.bossSeelen(k.akt), phasenWort: '',
-    phasen: [{ name: k.boss, zusatz: k.bossZusatz, lfs: [ort], treffer: K.BOSS_TREFFER }]
+    kaffee: 'ja', zeit: 0, tippfehler: 0, seelen: px ? K.PIXEL_SEELEN : K.bossSeelen(k.akt), phasenWort: '',
+    phasen: [{ name: k.boss, zusatz: k.bossZusatz, lfs: [ort], treffer: px ? K.PIXEL_BOSS_LP : K.BOSS_TREFFER, bomben: px ? K.PIXEL_BOSS_BOMBE : 0, auftritt: k.auftritt, treffer_: k.treffer_, fehler: k.fehler }]
   }, k, { id: ort, ort: k.name });
 }
 /* Wie man durch einen Ort geht, für die Sätze nach Tod und Rast */
 const gangOrt = O => O.akt === 0 ? 'durch die Katakomben' : O.akt === 2 ? 'über dieses Gesims' : 'durch diesen Kreis';
-const ortSeite = ort => typeof ort === 'number' ? '#/kreis/' + ort : '#/' + ort;
+const ortSeite = ort => typeof ort === 'number' ? (kreis(ort).akt === 3 ? '#/insel/' : '#/kreis/') + ort : '#/' + ort;
 const bossName = ort => ortDaten(ort).boss;
 
 const app = $('#app');
@@ -86,7 +109,7 @@ function hintergrund(name, art = '', wetter = ''){
   el.style.backgroundImage = 'url("' + im.src + '")';
   el.style.backgroundPosition = BILD_LAGE[name] || '';
 }
-const wetterVon = ort => ort === 'kokytos' ? 'schnee' : ort === 'gipfel' ? 'glut' : ort === K.KATAKOMBEN ? 'staub' : '';
+const wetterVon = ort => ort === 'kokytos' ? 'schnee' : ort === 'gipfel' ? 'glut' : ort === K.KATAKOMBEN ? 'staub' : istPixel(ortDaten(ort)) ? 'funken' : '';
 
 /* ---------- Kleine Bausteine ---------- */
 /* Lagerfeuer: Holz, ein Schwert im Feuer, drei Flammen, Funken */
@@ -107,7 +130,7 @@ const feuerPunkte = n => '<span class="feuer-punkte" aria-label="' + n + ' von '
   Array.from({ length: K.FEUER_ZUM_TOR }, (_, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('') + '</span>';
 const kreisMarke = k => k.nr + ' · ' + k.kurz;
 function kreisZahlen(lf){
-  const t = K.heute(), pool = KARTEN.filter(c => c.l === lf);
+  const t = K.heute(), pool = KARTEN.filter(c => K.imOrt(c, lf));
   return {
     gesamt: pool.length,
     gefunden: pool.filter(c => K.stand(prog, c).r > 0).length,
@@ -135,14 +158,17 @@ function render(){
   stoppeUhr();
   if (aufraeumen) { aufraeumen(); aufraeumen = null; }
   document.documentElement.classList.toggle('im-kampf', titelGezeigt && !!S.lauf && !S.zeige);
+  document.body.dataset.welt = '';
   if (!titelGezeigt) return titel();
   if (S.zeige) return zeige();
   if (S.lauf) return kampf();
-  let m = location.hash.match(/^#\/kreis\/(\d+)$/);
-  if (m && kreis(Number(m[1])) && kreisOffen(Number(m[1]))) return kreisSeite(Number(m[1]));
+  let m = location.hash.match(/^#\/(kreis|insel)\/(\d+)$/);
+  if (m && kreis(Number(m[2])) && kreisOffen(Number(m[2]))) return kreis(Number(m[2])).akt === 3 ? inselSeite(Number(m[2])) : kreisSeite(Number(m[2]));
   m = location.hash.match(/^#\/(kokytos|gipfel)$/);
   if (m) return arenaSeite(m[1]);
   if (location.hash === '#/gebeinhaus') return gebeinhaus();
+  if (location.hash === '#/himmel') return himmelKarte();
+  if (location.hash === '#/glitch') return glitchSeite();
   return lagerfeuer();
 }
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
@@ -310,7 +336,8 @@ function lagerfeuer(){
   const preis = K.stufenPreis(S.stufe), kann = S.seelen >= preis && grundLeben() < 200;
   const blutOrt = S.blut ? ortDaten(S.blut.ort) : null;
   const bosseIn = akt => kreiseVon(akt).filter(k => kz(k.lf).boss).length;
-  const titelListe = KREISE.concat([KATAKOMBEN]).filter(k => kz(k.lf).boss).map(k => k.titel).concat(Object.keys(ARENEN).filter(id => besiegt(id)).map(id => ARENEN[id].titel));
+  const titelListe = KREISE.concat([KATAKOMBEN], INSELN).filter(k => kz(k.lf).boss).map(k => k.titel).concat(Object.keys(ARENEN).concat(Object.keys(PIXEL_ARENEN)).filter(id => besiegt(id)).map(id => ARENA(id).titel));
+  const waechter = INSELN.filter(k => kz(k.lf).boss).length;
   app.innerHTML =
     '<main class="hub">' +
       '<section class="feuerstelle">' +
@@ -349,6 +376,13 @@ function lagerfeuer(){
       '</ul>' +
       '<h2 class="abschnitt katakomben-abschnitt"><span>' + esc(KATAKOMBEN.nr) + '</span><small>Jederzeit offen · ' + zahl(KUERZEL.length) + ' Kürzel aus AP1 und AP2</small></h2>' +
       '<ul class="kacheln">' + kachel(KATAKOMBEN) + '</ul>' +
+      '<h2 class="abschnitt pixel-abschnitt"><span>Die Erweiterung</span><small>' + esc(PIXEL.riss) + '</small></h2>' +
+      '<a class="px-riss" href="#/himmel" style="--bild:url(img/' + HIMMEL_BILD + '-klein.webp)">' +
+        '<span class="riss-bild" aria-hidden="true"><img class="px-insel" src="img/insel-sonne.webp" alt="" width="112" height="124">' + P.figur('bit', 'riss-bit') + '</span>' +
+        '<span class="riss-text"><span class="riss-nr">Jederzeit offen · ' + PIXEL.zusatz + '</span><strong class="riss-name">' + esc(PIXEL.name) + '</strong>' +
+          '<span class="riss-lf">Sieben Inseln, AP1 und AP2 nach Themen gemischt. Kombos, Bomben, Goldwürfel.</span>' +
+          '<span class="riss-fuss"><b>' + zahl(S.himmel.wuerfel || 0) + '</b> Goldwürfel · <b>' + waechter + '</b> von 7 Wächtern' + (besiegt('glitch') ? ' · Glitch besiegt' : '') + '</span></span>' +
+      '</a>' +
       '<h2 class="abschnitt werkstatt-abschnitt"><span>Die Werkstatt</span><small>' + esc(WERKSTATT_SATZ) + '</small></h2>' +
       '<ul class="werkstatt-liste">' + WERKSTATT.map(([seite, name, was]) => '<li><a href="werkstatt/' + seite + '"><b>' + esc(name) + '</b><span>' + esc(was) + '</span></a></li>').join('') + '</ul>' +
       '<details class="spielstand"><summary>Spielstand</summary>' +
@@ -456,6 +490,133 @@ function arenaSeite(id){
   if (tor) { tor.addEventListener('click', () => { S.zeige = { art: 'tor', ort: id }; sichern(); render(); }); fokus('#tor'); }
 }
 
+/* ---------- Das Pixelparadies ---------- */
+const wuerfelReihe = n => Array.from({ length: K.WUERFEL_ZUM_TOR }, (_, i) => P.figur('wuerfel', 'wuerfel-zelle' + (i < n ? '' : ' leer'))).join('');
+/* Woher die Karten einer Insel kommen: Lernfelder der AP1 als LF, Prüfungsbereiche der AP2 mit Namen */
+function inselQuellen(lf){
+  const l = [...new Set(KARTEN.filter(c => c.h === lf).map(c => c.l))].sort((a, b) => a - b);
+  return l.map(x => x <= 6 ? 'LF' + x : kreis(x).lfName).join(' · ');
+}
+
+/* Die Inselkarte: sieben Inseln übereinander wie ein Turm, ganz oben der Riss. Bit steht auf der ersten Insel ohne besiegten Wächter. */
+function himmelKarte(){
+  pixelWelt();
+  hintergrund(HIMMEL_BILD, 'pixel', 'funken');
+  const erstes = !S.himmel.besucht;
+  if (erstes) { S.himmel.besucht = true; sichern(); }
+  const waechter = INSELN.filter(k => kz(k.lf).boss).length, hier = (INSELN.find(k => !kz(k.lf).boss) || INSELN[INSELN.length - 1]).lf;
+  const G = PIXEL_ARENEN.glitch, gOffen = arenaOffen('glitch'), gFest = besiegt('glitch');
+  const stock = (k, i) => {
+    const z = iz(k.lf), zz = kreisZahlen(k.lf), fest = z.boss, tor = !fest && z.wuerfel >= K.WUERFEL_ZUM_TOR;
+    return '<li class="stock ' + (i % 2 ? 'rechts' : 'links') + (fest ? ' bezwungen' : '') + (k.lf === hier ? ' hier' : '') + '">' +
+      '<a class="stock-link" href="#/insel/' + k.lf + '">' +
+        '<span class="stock-bild" style="--verzug:' + (-i * .7).toFixed(1) + 's" aria-hidden="true"><img class="px-insel" src="img/' + k.sprite + '.webp" alt="" width="112" height="124">' +
+          (k.lf === hier ? P.figur('bit', 'stock-bit') : '') + (fest ? P.figur(P.WAECHTER[k.lf], 'stock-waechter besiegt') : '') + '</span>' +
+        '<span class="stock-schild"><span class="riss-nr">' + esc(k.nr) + ' · ' + esc(k.planet) + '</span>' +
+          '<strong class="stock-name">' + esc(k.name) + '</strong><span class="stock-thema">' + esc(k.lfName) + '</span>' +
+          '<span class="stock-wuerfel" aria-label="' + Math.min(z.wuerfel, K.WUERFEL_ZUM_TOR) + ' von ' + K.WUERFEL_ZUM_TOR + ' Goldwürfeln">' + wuerfelReihe(z.wuerfel) + '</span>' +
+          '<span class="stock-fuss">' + (fest ? '<span class="px-marke gold">Wächter besiegt</span>' : tor ? '<span class="px-marke lila">Würfeltor offen</span>' : '') +
+            '<span>' + zz.sitzen + ' von ' + zz.gesamt + ' sitzen' + (zz.faellig ? ' · <b>' + zz.faellig + ' fällig</b>' : '') + '</span></span></span>' +
+      '</a></li>';
+  };
+  app.innerHTML =
+    '<main class="himmel-karte px-seite">' +
+      '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' +
+      '<header class="px-kopf">' +
+        '<p class="ueber">Die Erweiterung</p>' +
+        '<h1 class="px-titel">' + esc(PIXEL.name) + '</h1>' +
+        '<p class="px-unter">' + esc(PIXEL.zusatz) + '</p>' +
+      '</header>' +
+      '<blockquote class="px-dialog">' + esc(PIXEL.zitat) + '</blockquote>' +
+      (erstes ? '<ul class="regeln px-regeln px-dialog">' + PIXEL.regeln.map(r => '<li>' + r + '</li>').join('') + '</ul>' : '') +
+      '<section class="px-werte" aria-label="Dein Stand im Pixelparadies">' +
+        '<div>' + P.figur('wuerfel', 'wert-figur') + '<b>' + zahl(S.himmel.wuerfel || 0) + '</b><span>Goldwürfel</span></div>' +
+        '<div>' + P.figur('herz', 'wert-figur') + '<b>' + herzMax() + '</b><span>Herzen</span></div>' +
+        '<div>' + P.figur('golem', 'wert-figur') + '<b>' + waechter + '/7</b><span>Wächter</span></div>' +
+        '<div>' + P.figur('bombe', 'wert-figur') + '<b>×' + (S.himmel.kombo || 0) + '</b><span>Beste Kombo</span></div>' +
+      '</section>' +
+      '<ol class="turm" reversed>' +
+        '<li class="stock gipfel-stock' + (gOffen || gFest ? '' : ' zu') + (gFest ? ' bezwungen' : '') + '">' +
+          '<a class="stock-link" href="#/glitch">' +
+            '<span class="stock-bild" aria-hidden="true"><img class="px-insel" src="img/' + G.sprite + '.webp" alt="" width="112" height="124">' + (gFest ? '' : P.figur('glitch', 'stock-glitch')) + '</span>' +
+            '<span class="stock-schild"><span class="riss-nr">' + esc(G.nr) + '</span><strong class="stock-name">' + esc(G.boss) + '</strong>' +
+              '<span class="stock-thema">' + (gFest ? 'Besiegt. Die Pixel sind geblieben.' : gOffen ? 'Der Riss steht offen. Er wartet.' : 'Erst wenn alle sieben Wächter liegen. Noch ' + fehlend('glitch') + '.') + '</span>' +
+              (gFest ? '<span class="stock-fuss"><span class="px-marke gold">Besiegt</span></span>' : gOffen ? '<span class="stock-fuss"><span class="px-marke lila">Offen</span></span>' : '') + '</span>' +
+          '</a></li>' +
+        INSELN.slice().reverse().map((k, i) => stock(k, i + 1)).join('') +
+      '</ol>' +
+      (erstes ? '' : '<details class="px-dialog px-mehr"><summary>Regeln im Pixelparadies</summary><ul class="regeln px-regeln">' + PIXEL.regeln.map(r => '<li>' + r + '</li>').join('') + '</ul></details>') +
+    '</main>';
+  /* Wer wiederkommt, landet bei seiner Insel; beim ersten Mal bleiben die Regeln oben im Blick */
+  if (!erstes) requestAnimationFrame(() => { const h = $('.stock.hier'); if (h && location.hash === '#/himmel') h.scrollIntoView({ block: 'center' }); });
+}
+
+/* Eine Insel: groß, schwebend, mit Bit auf dem Gras. Darunter Goldwürfel, Beutel, Lernstand, Sprung und Würfeltor. */
+function inselSeite(lf){
+  const k = kreis(lf), z = iz(lf), zz = kreisZahlen(lf), torOffen = !z.boss && (z.wuerfel >= K.WUERFEL_ZUM_TOR || S.probe);
+  pixelWelt();
+  hintergrund(k.bild, 'pixel', 'funken');
+  app.innerHTML =
+    '<main class="insel-seite px-seite">' +
+      '<a class="zurueck" href="#/himmel">Zur Inselkarte</a>' +
+      '<header class="px-kopf">' +
+        '<p class="ueber">' + esc(k.nr) + ' · ' + esc(k.planet) + '</p>' +
+        '<h1 class="px-titel">' + esc(k.name) + '</h1>' +
+        '<p class="px-unter">' + esc(k.lfName) + '</p>' +
+      '</header>' +
+      '<figure class="insel-gross" aria-hidden="true"><img class="px-insel" src="img/' + k.sprite + '.webp" alt="" width="112" height="124">' +
+        P.figur('bit', 'insel-bit') + (torOffen ? P.figur(P.WAECHTER[lf], 'insel-waechter') : '') + '</figure>' +
+      '<blockquote class="px-dialog">' + esc(k.zitat) + '</blockquote>' +
+      '<section class="px-panel insel-stand">' +
+        '<p class="stand-zeile">' + wuerfelReihe(z.wuerfel) + '<span><b>' + Math.min(z.wuerfel, K.WUERFEL_ZUM_TOR) + ' von ' + K.WUERFEL_ZUM_TOR + '</b> Goldwürfeln' + (z.wuerfel > K.WUERFEL_ZUM_TOR ? ' (' + z.wuerfel + ' gesammelt)' : '') + '</span></p>' +
+        '<p class="stand-zeile">' + P.beutel(z.splitter, K.SPLITTER_JE_WUERFEL) + '<span><b>' + z.splitter + ' von ' + K.SPLITTER_JE_WUERFEL + '</b> Splittern im Beutel</span></p>' +
+        '<p class="zahlen"><b>' + zz.sitzen + '</b> von ' + zz.gesamt + ' sitzen · <b>' + zz.faellig + '</b> fällig · <b>' + zz.neu + '</b> neu</p>' +
+        '<p class="quellen">Gemischt aus ' + esc(inselQuellen(lf)) + '</p>' +
+      '</section>' +
+      '<div class="aktionen">' +
+        '<button type="button" class="knopf haupt" id="gang">Losspringen<small>' + K.GANG + ' Karten, ' + (friede() ? 'ruhig und ohne Bomben' : K.BOMBEN_JE_SPRUNG + ' davon mit Lunte') + ', am Ende eine Wolke</small></button>' +
+        (torOffen ? '<button type="button" class="knopf px-tor" id="tor">Würfeltor öffnen<small>' + esc(k.boss) + ' wartet</small></button>'
+          : z.boss ? '<p class="bezwungen">' + esc(k.boss) + ' ist besiegt. Titel: <b>' + esc(k.titel) + '</b></p>'
+          : '<p class="tor-zu">Das Würfeltor öffnet sich mit ' + K.WUERFEL_ZUM_TOR + ' Goldwürfeln. Dahinter: ' + esc(k.boss) + '.</p>') +
+      '</div>' +
+    '</main>';
+  $('#gang').addEventListener('click', () => gangStart(lf));
+  const tor = $('#tor');
+  if (tor) tor.addEventListener('click', () => { S.zeige = { art: 'tor', ort: lf }; sichern(); render(); T.chip('tor'); });
+  fokus('#gang');
+}
+
+/* Ganz oben: der Riss mit dem Großen Glitch, offen erst, wenn alle sieben Wächter liegen */
+function glitchSeite(){
+  const G = PIXEL_ARENEN.glitch, offen = arenaOffen('glitch'), fest = besiegt('glitch');
+  pixelWelt();
+  hintergrund(G.bild, 'pixel', 'funken');
+  app.innerHTML =
+    '<main class="glitch-seite px-seite">' +
+      '<a class="zurueck" href="#/himmel">Zur Inselkarte</a>' +
+      '<header class="px-kopf">' +
+        '<p class="ueber">' + esc(G.nr) + ' · ' + esc(G.name) + '</p>' +
+        '<h1 class="px-titel">' + esc(G.boss) + '</h1>' +
+        '<p class="px-unter">' + esc(G.bossZusatz) + '</p>' +
+      '</header>' +
+      '<figure class="insel-gross" aria-hidden="true"><img class="px-insel" src="img/' + G.sprite + '.webp" alt="" width="112" height="124">' + (fest ? '' : P.figur('glitch', 'insel-waechter')) + '</figure>' +
+      '<blockquote class="px-dialog">' + esc(G.zitat) + '</blockquote>' +
+      '<section class="px-panel insel-stand">' +
+        '<p>' + (fest ? 'Besiegt. Titel: <b>' + esc(G.titel) + '</b>' : !offen ? 'Noch ' + fehlend('glitch') + ' von 7 Wächtern stehen im Weg.' : fehlend('glitch') ? 'Prototyp-Schalter: Der Riss ist offen, obwohl noch ' + fehlend('glitch') + ' Wächter stehen.' : 'Alle sieben Wächter liegen. Der Riss ist offen.') + '</p>' +
+        '<ul class="voraus px-voraus" aria-label="Diese Wächter müssen liegen">' + G.voraus.map(o => {
+          const ok = besiegt(o);
+          return '<li class="' + (ok ? 'erfuellt' : 'offen') + '">' + P.figur(P.WAECHTER[o], 'voraus-figur' + (ok ? '' : ' schatten')) + '<span>' + esc(kreis(o).boss) + '<span class="sr">' + (ok ? ' besiegt' : ' noch nicht besiegt') + '</span></span></li>';
+        }).join('') + '</ul>' +
+      '</section>' +
+      '<div class="aktionen">' +
+        (fest ? '' : offen ? '<button type="button" class="knopf px-tor" id="tor">In den Riss springen<small>' + esc(G.boss) + ' wartet</small></button>'
+          : '<p class="tor-zu">Der Riss lässt nur durch, wer alle sieben Wächter besiegt hat.</p>') +
+      '</div>' +
+    '</main>';
+  const tor = $('#tor');
+  if (tor) { tor.addEventListener('click', () => { S.zeige = { art: 'tor', ort: 'glitch' }; sichern(); render(); T.chip('tor'); }); fokus('#tor'); }
+}
+
 /* Gebeinhaus unter den Katakomben: jedes Kürzel, das einmal richtig war, bekommt seine Nische.
    Wer es dreimal hintereinander weiß (Fach 4 im Lernkasten), dem brennt davor eine Kerze. */
 let gbKategorie = '', gbSuche = '';
@@ -523,14 +684,16 @@ function gebeinhaus(){
 function laufStart(art, ort, extra){
   const O = ortDaten(ort);
   S.lauf = Object.assign({
-    art, ort, leben: maxLeben(), flakons: O.kaffee === 'ja' ? S.flakons : 0, richtig: 0, gesamt: 0, plus: 0,
+    art, ort, leben: lebenMax(O), flakons: O.kaffee === 'ja' ? S.flakons : 0, richtig: 0, gesamt: 0, plus: 0,
     blutOffen: !!(S.blut && S.blut.ort === ort), frage: null
-  }, extra);
+  }, istPixel(O) ? { kombo: 0, besteKombo: 0, wuerfelNeu: 0 } : {}, extra);
   S.lauf.frage = neueFrage();
   sichern(); letzteLeben = S.lauf.leben; render(); window.scrollTo(0, 0);
 }
 /* Ein Gang: zehn Karten, an manchen Orten zusätzlich Rätsel (gleichmäßig verteilt); ein Rätsel als Blutfleck kommt zuerst */
 function gangStart(lf){
+  /* Im Pixelparadies heißt der Gang Sprung: Karten aus HIMMEL_KARTEN (Themen reihum), zwei Bomben, der Beutel der Insel */
+  if (kreis(lf).akt === 3) return laufStart('gang', lf, { plan: K.gangPlanen(HIMMEL_KARTEN, prog, lf, null), pos: 0, nach: {}, beutel: iz(lf).splitter, bomben: K.bombenPlan(K.GANG) });
   const blut = S.blut && S.blut.ort === lf ? S.blut : null;
   const plan = K.gangPlanen(KARTEN, prog, lf, blut && !blut.raetsel ? blut.id : null), n = R.IM_GANG[lf] || 0;
   for (let k = n; k >= 1; k--) plan.splice(Math.round(plan.length * k / (n + 1)), 0, '?');
@@ -540,7 +703,8 @@ function gangStart(lf){
 /* Bosse an Rätsel-Orten werfen einmal im Kampf ein Rätsel, als zweite bis vierte Frage */
 function bossStart(ort){
   if (typeof ort === 'string') az(ort).versuche++;
-  laufStart('boss', ort, { phase: 0, phaseTreffer: 0, phaseNeu: ortDaten(ort).phasen.length > 1, zuletzt: [], raetselBei: R.IM_GANG[ort] ? 1 + K.rnd(3) : -1 });
+  const O = ortDaten(ort);
+  laufStart('boss', ort, { phase: 0, phaseTreffer: 0, phaseNeu: O.phasen.length > 1 || istPixel(O), zuletzt: [], raetselBei: R.IM_GANG[ort] ? 1 + K.rnd(3) : -1 });
 }
 /* Eine Rätsel-Frage; die Mimic-Truhe merkt sich die Hebel und was sie schon verraten hat */
 function raetselFrage(r, extra){
@@ -550,7 +714,22 @@ function raetselFrage(r, extra){
   return f;
 }
 
+/* Im Pixelparadies kommen manche Fragen mit Lunte: im Sprung nach Plan, beim Wächter jede dritte, beim Glitch nach seiner Form.
+   Eingetippt wird mit brennender Lunte nicht, die Frage wird dann zur Auswahl. */
+function mitBombe(f){
+  const L = S.lauf, O = ortDaten(L.ort);
+  if (!istPixel(O) || friede() || f.raetsel) return f;
+  const n = L.art === 'boss' ? O.phasen[L.phase].bomben : 0;
+  if (!(L.art === 'boss' ? n && L.gesamt % n === n - 1 : (L.bomben || []).includes(L.gesamt))) return f;
+  if (f.typ === 'tippen') { const c = KARTE.get(f.id); f.typ = 'begriff'; f.optionen = K.shuffle([c].concat(K.ablenker(KARTEN, c))).map(x => x.i); }
+  f.bombe = true;
+  return f;
+}
+
 function neueFrage(){
+  return mitBombe(frageWuerfeln());
+}
+function frageWuerfeln(){
   const L = S.lauf, boss = L.art === 'boss';
   let id, nachgeholt = false, auftritt = false;
   if (boss) {
@@ -594,9 +773,10 @@ function markiert(c){
 const streu = s => s.split('').reduce((h, z) => (h * 31 + z.charCodeAt(0)) >>> 0, 7);
 let letzteLeben = null;
 function kampf(){
-  const L = S.lauf, f = L.frage, r = f.raetsel, c = r ? null : KARTE.get(f.id), O = ortDaten(L.ort), boss = L.art === 'boss', mx = maxLeben();
+  const L = S.lauf, f = L.frage, r = f.raetsel, c = r ? null : KARTE.get(f.id), O = ortDaten(L.ort), boss = L.art === 'boss', px = istPixel(O), mx = lebenMax(O);
   const ph = boss ? O.phasen[L.phase] : null;
-  hintergrund(boss && O.kampfBild ? O.kampfBild : O.bild, boss ? (typeof L.ort === 'string' ? 'arena-' + L.ort : 'boss') : 'kampf', wetterVon(L.ort));
+  if (px) { pixelWelt(); hintergrund(O.bild, 'pixel', 'funken'); }
+  else hintergrund(boss && O.kampfBild ? O.kampfBild : O.bild, boss ? (typeof L.ort === 'string' ? 'arena-' + L.ort : 'boss') : 'kampf', wetterVon(L.ort));
   const pct = v => Math.max(0, Math.min(100, v / mx * 100));
   const vorher = letzteLeben === null ? L.leben : letzteLeben;
   const fertig = boss ? '' : '<span class="schritte" aria-label="Karte ' + (L.pos + 1) + ' von ' + L.plan.length + '">' +
@@ -632,28 +812,36 @@ function kampf(){
     '<main class="kampf' + (boss ? ' ist-boss' : '') + '">' +
       '<header class="hud' + (friede() ? ' ruhig' : '') + '">' +
         (friede() ? '<span class="ruhig-marke">Ruhiger Modus</span>' :
+          (px ? '<div class="leben px-herzen' + (L.leben < vorher ? ' verloren' : '') + '" role="meter" aria-label="Herzen" aria-valuemin="0" aria-valuemax="' + mx + '" aria-valuenow="' + L.leben + '">' + P.herzen(L.leben, mx) + '</div>' :
           '<div class="leben" role="meter" aria-label="Leben" aria-valuemin="0" aria-valuemax="' + mx + '" aria-valuenow="' + L.leben + '">' +
             '<div class="balken"><i class="spur" style="width:' + pct(vorher) + '%"></i><i class="wert" style="width:' + pct(L.leben) + '%"></i></div>' +
             '<span class="leben-zahl">' + L.leben + ' / ' + mx + '</span>' +
-          '</div>' +
+          '</div>') +
           '<button type="button" class="flakon' + (kaffeeVerboten ? ' verboten' : O.kaffee === 'gefroren' ? ' gefroren' : '') + '" id="flakon"' +
             (kaffeeVerboten || L.flakons <= 0 || L.leben <= 0 || L.leben >= mx ? ' disabled' : '') +
-            ' aria-label="' + (kaffeeVerboten ? 'Kein Kaffee im Prüfungsraum' : 'Kaffeeflakon trinken, plus ' + heilung() + ' Leben, noch ' + L.flakons) + '">' +
+            ' aria-label="' + (kaffeeVerboten ? 'Kein Kaffee im Prüfungsraum' : 'Kaffeeflakon trinken, plus ' + (px ? K.KAFFEE_HERZEN + ' Herzen' : heilung() + ' Leben') + ', noch ' + L.flakons) + '">' +
             TASSE + '<b>' + (kaffeeVerboten ? '0' : L.flakons) + '</b></button>') +
         '<span class="seelen-hud"><b>' + zahl(S.seelen) + '</b> Seelen</span>' +
       '</header>' +
       '<div class="lauf-kopf">' +
-        '<button type="button" class="rueckzug" id="rueckzug"' + (L.leben <= 0 ? ' disabled' : '') + '>' + (L.ort === 'gipfel' ? 'Raum verlassen' : 'Rückzug') + '</button>' +
-        '<span class="lauf-ort">' + esc(O.ort) + '</span>' + fertig +
+        '<button type="button" class="rueckzug" id="rueckzug"' + (L.leben <= 0 ? ' disabled' : '') + '>' + (L.ort === 'gipfel' ? 'Raum verlassen' : px && !boss ? 'Abspringen' : 'Rückzug') + '</button>' +
+        (px ? P.figur('bit', 'kampf-bit' + (f.beantwortet ? (f.gut ? ' hops' : ' autsch') : '')) : '') +
+        '<span class="lauf-ort">' + esc(px ? O.kurz : O.ort) + '</span>' + fertig +
       '</div>' +
-      (boss ? '<div class="bossbalken"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
+      (px ? pixelLeiste(L, boss) : '') +
+      (boss && px ? '<div class="bossbalken px-boss">' + P.figur(P.WAECHTER[L.ort], 'boss-figur' + (f.beantwortet ? (f.gut ? ' getroffen' : ' lacht') : '')) +
+          '<div class="px-boss-info"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
+          '<div class="px-lp" role="meter" aria-label="Treffer bis zum Fall" aria-valuemin="0" aria-valuemax="' + ph.treffer + '" aria-valuenow="' + (ph.treffer - L.phaseTreffer) + '">' +
+            Array.from({ length: ph.treffer }, (_, i) => '<i class="' + (i < ph.treffer - L.phaseTreffer ? 'an' : '') + '"></i>').join('') + '</div></div></div>'
+        : boss ? '<div class="bossbalken"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
         '<div class="balken"><i style="width:' + ((ph.treffer - L.phaseTreffer) / ph.treffer * 100) + '%"></i></div></div>' : '') +
-      '<section class="karte' + (phantom ? ' phantom-karte' : '') + (r ? ' raetsel-karte raetsel-' + r.art : '') + '" id="karte">' +
+      '<section class="karte' + (phantom ? ' phantom-karte' : '') + (r ? ' raetsel-karte raetsel-' + r.art : '') + (f.bombe ? ' bombe-karte' + (f.beantwortet ? (f.gut ? ' entschaerft' : ' explodiert') : '') : '') + '" id="karte">' +
+        (f.bombe && !f.beantwortet ? '<div class="bombe-kopf">' + P.figur('bombe', 'bombe-figur') + '<p>' + esc(BOMBE.auftritt[streu(f.id) % BOMBE.auftritt.length]) + '</p></div>' : '') +
         (f.auftritt && !f.beantwortet && ph.auftritt ? '<p class="auftritt">' + esc(ph.auftritt) + '</p>' : '') +
         (phantom && !f.beantwortet ? '<p class="phantom">' + esc(PHANTOM[streu(c.i) % PHANTOM.length]) + '</p>' : '') +
         (r && !f.beantwortet ? '<p class="raetsel-auftritt">' + esc(raetselSatz(f)) + '</p>' : '') +
         '<p class="karte-kopf"><span>' + (r ? R.NAMEN[r.art] : TYP_TEXT[(kurz ? 'k-' : '') + f.typ]) + '</span><span class="thema">' + esc(r ? r.thema : c.t) + (kurz ? ' <b class="rang r' + c.r + '">' + SELTENHEIT[c.r] + '</b>' : '') + '</span></p>' +
-        (O.zeit && boss && !f.beantwortet ? '<div class="uhr" id="uhr" aria-hidden="true"><i></i><span></span></div>' : '') +
+        (((O.zeit && boss) || f.bombe) && !f.beantwortet ? '<div class="uhr' + (f.bombe ? ' lunte' : '') + '" id="uhr" aria-hidden="true"><i></i><span></span></div>' : '') +
         (f.blut && !f.beantwortet ? '<p class="blut-hinweis">Dein Blutfleck. <b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen bei ' + (r ? 'diesem Rätsel' : 'dieser Karte') + '.</p>' : '') +
         (f.nachgeholt && !f.beantwortet ? '<p class="nach-hinweis">Die kennst du von eben.</p>' : '') +
         frage + antwort +
@@ -841,13 +1029,15 @@ let uhr = null;
 function stoppeUhr(){ if (uhr) { clearInterval(uhr); uhr = null; } }
 function starteUhr(){
   const L = S.lauf, f = L.frage, O = ortDaten(L.ort);
-  if (!O.zeit || L.art !== 'boss' || f.beantwortet) return;
-  if (!f.bis) { f.bis = Date.now() + O.zeit * 1000; sichern(); }
+  /* Die Prüfungsuhr läuft nur im Bosskampf mit Frist, die Lunte an jeder Bombe */
+  const sek = f.bombe ? K.BOMBE_SEK : L.art === 'boss' ? O.zeit : 0;
+  if (!sek || f.beantwortet) return;
+  if (!f.bis) { f.bis = Date.now() + sek * 1000; sichern(); }
   const tick = () => {
     if (!S.lauf || S.lauf.frage !== f || f.beantwortet) { stoppeUhr(); return; }
     const rest = Math.max(0, f.bis - Date.now()), el = $('#uhr');
     if (el) {
-      el.querySelector('i').style.width = (rest / (O.zeit * 1000) * 100) + '%';
+      el.querySelector('i').style.width = (rest / (sek * 1000) * 100) + '%';
       el.querySelector('span').textContent = Math.ceil(rest / 1000) + ' s';
       el.classList.toggle('knapp', rest < 5000);
     }
@@ -858,10 +1048,19 @@ function starteUhr(){
 }
 
 function weiterText(){
-  const L = S.lauf;
-  if (L.leben <= 0) return 'Weiter';
-  if (L.art === 'boss') return L.gefallen ? (L.ort === 'gipfel' ? 'Die Akte schließen' : 'Der Boss fällt') : 'Weiter';
-  return L.pos + 1 >= L.plan.length ? 'Zum Lagerfeuer' : 'Weiter';
+  const L = S.lauf, px = istPixel(ortDaten(L.ort));
+  if (L.leben <= 0) return px ? 'Fallen' : 'Weiter';
+  if (L.art === 'boss') return L.gefallen ? (L.ort === 'gipfel' ? 'Die Akte schließen' : L.ort === 'glitch' ? 'Der Glitch zerfällt' : px ? 'Der Wächter fällt' : 'Der Boss fällt') : 'Weiter';
+  return L.pos + 1 >= L.plan.length ? (px ? 'Landen' : 'Zum Lagerfeuer') : 'Weiter';
+}
+/* Unter dem Kopf im Pixelparadies: die Kombo, im Sprung dazu der Beutel und neue Goldwürfel */
+function pixelLeiste(L, boss){
+  const k = L.kombo || 0;
+  return '<div class="px-leiste">' +
+    '<span class="kombo' + (k >= 3 ? ' heiss' : '') + (k >= 5 ? ' gluehend' : '') + '" aria-label="Kombo ' + k + '">Kombo <b>×' + k + '</b>' + (boss && K.kritisch(k) ? '<small>Volltreffer</small>' : '') + '</span>' +
+    (L.beutel !== undefined && !boss ? '<span class="px-beutel" aria-label="' + L.beutel + ' von ' + K.SPLITTER_JE_WUERFEL + ' Splittern im Beutel">' + P.beutel(L.beutel, K.SPLITTER_JE_WUERFEL) + '</span>' +
+      (L.wuerfelNeu ? '<span class="gw-neu">+' + L.wuerfelNeu + P.figur('wuerfel', 'gw-figur') + '</span>' : '') : '') +
+  '</div>';
 }
 
 function rueckmeldung(c, f){
@@ -888,7 +1087,7 @@ function antworten(gut, info){
   const L = S.lauf;
   if (!L || L.frage.beantwortet) return;
   stoppeUhr();
-  const f = L.frage, O = ortDaten(L.ort), akt = O.akt, r = f.raetsel;
+  const f = L.frage, O = ortDaten(L.ort), akt = O.akt, r = f.raetsel, px = istPixel(O);
   const c = r ? null : KARTE.get(f.id), boss = L.art === 'boss', fachVorher = r ? 0 : K.stand(prog, c).b, kurz = !r && K.istKuerzel(c);
   const ph = boss ? O.phasen[L.phase] : null, mehrphasig = boss && O.phasen.length > 1;
   Object.assign(f, info, { beantwortet: true, gut });
@@ -910,8 +1109,12 @@ function antworten(gut, info){
     }
     if (kurz && c.r === 3 && !boss && !f.nachgeholt) zeilen.push('Rotes Phantom vertrieben');
     if (f.blut && S.blut) { S.seelen += S.blut.seelen; L.plus += S.blut.seelen; zeilen.push('Seelen zurückgeholt: +' + zahl(S.blut.seelen)); S.blut = null; L.blutOffen = false; }
+    if (px) pixelTreffer(L, f, boss, zeilen);
     if (boss) {
-      L.phaseTreffer++;
+      /* Im Pixelparadies trifft eine Kombo ab drei doppelt */
+      const schlag = px && K.kritisch(L.kombo) ? 2 : 1;
+      L.phaseTreffer = Math.min(ph.treffer, L.phaseTreffer + schlag);
+      if (schlag > 1) { f.volltreffer = true; zeilen.push('Volltreffer! Die Kombo trifft doppelt.'); }
       if (L.phaseTreffer >= ph.treffer) {
         if (L.phase + 1 < O.phasen.length) {
           zeilen.push(ph.ende || ph.name + ' fällt.');
@@ -924,14 +1127,20 @@ function antworten(gut, info){
       L.leben = Math.max(1, L.leben - O.tippfehler);
       zeilen.push('Der Vorsitz runzelt die Stirn über die Rechtschreibung: −' + O.tippfehler + ' Leben');
     }
-    if (mehrphasig && ph.treffer_) f.spruch = K.pick(ph.treffer_);
+    if (boss && ph.treffer_) f.spruch = K.pick(ph.treffer_);
     else if (Math.random() < 0.2) f.spruch = K.pick(TREFFER);
     if (r && r.art === 'mimic') f.spruch = MIMIC.auf;
   } else {
-    const d = friede() ? 0 : (r && r.art === 'mimic' ? K.schadenFuer(3, boss, akt, S.ng) : boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng));
+    const d = friede() ? 0 : px ? (f.bombe ? K.BOMBE_HERZEN : 1) : (r && r.art === 'mimic' ? K.schadenFuer(3, boss, akt, S.ng) : boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng));
     L.leben = Math.max(0, L.leben - d);
-    if (f.zeit) zeilen.push('Die Zeit ist um');
+    if (f.zeit) zeilen.push(f.bombe ? 'Die Lunte ist abgebrannt' : 'Die Zeit ist um');
+    if (px) {
+      if (f.bombe) f.knall = true;
+      if (L.kombo >= 3) zeilen.push('Die Kombo ×' + L.kombo + ' reißt.');
+      L.kombo = 0;
+    }
     if (friede()) zeilen.push('Daneben.');
+    else if (px) zeilen.push(f.bombe ? BOMBE.knall + ' −' + d + ' Herzen' : '−1 Herz');
     else {
       zeilen.push((r && r.art === 'mimic' ? 'Biss: ' : '') + '−' + d + ' Leben' + (!r && !boss && fachVorher >= 3 ? ', die Karte saß schon, das tut mehr weh' : ''));
       if (f.blut && S.blut) { zeilen.push('Deine ' + zahl(S.blut.seelen) + ' Seelen versickern im Boden.'); S.blut = null; L.blutOffen = false; }
@@ -941,12 +1150,12 @@ function antworten(gut, info){
       L.nach[c.i] = true;
       zeilen.push('Sie kommt in drei Karten wieder.');
     }
-    if (mehrphasig && ph.fehler) f.spruch = K.pick(ph.fehler);
+    if (boss && ph.fehler) f.spruch = K.pick(ph.fehler);
     else if (L.leben > 0 && Math.random() < 0.35) f.spruch = K.pick(r ? RAETSEL_DANEBEN : DANEBEN);
     if (kurz && f.typ === 'langform' && f.optionen[f.gewaehlt] === c.j) f.spruch = KUERZEL_SPASS;
     if (r && r.art === 'mimic') f.spruch = MIMIC.biss;
   }
-  if (L.leben <= 0 && istKlasse('priester') && !L.safeMode) { L.leben = 1; L.safeMode = true; zeilen.push('SafeMode fängt dich bei 1 Leben.'); }
+  if (L.leben <= 0 && istKlasse('priester') && !L.safeMode) { L.leben = 1; L.safeMode = true; zeilen.push('SafeMode fängt dich bei ' + (px ? 'einem Herzen.' : '1 Leben.')); }
   if (boss && f.blut) L.blutOffen = false;
   f.zeilen = zeilen;
   sichern();
@@ -955,8 +1164,46 @@ function antworten(gut, info){
   if (rm) rm.scrollIntoView({ block: 'end', behavior: ruhig() ? 'auto' : 'smooth' });
   if (gut) seelenFliegen(zeilen[0]);
   else { blitz(); vibrieren(L.leben <= 0 ? [90, 60, 240] : 70); }
-  T.schlag({ gut, akt: O.akt, klang: klassenKlang(), wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
+  if (px) pixelKnall(L, f, gut);
+  else T.schlag({ gut, akt: O.akt, klang: klassenKlang(), wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
   if (L.leben <= 0) setTimeout(() => { if (S.lauf && S.lauf.leben <= 0) sterben(); }, ruhig() ? 0 : 1300);
+}
+
+/* Ein Treffer im Pixelparadies: Kombo hoch, Bombe entschärft, im Sprung Splitter in den Beutel.
+   Acht Splitter werden sofort zu einem Goldwürfel, und der ist sicher, auch wenn man danach fällt. */
+function pixelTreffer(L, f, boss, zeilen){
+  L.kombo = (L.kombo || 0) + 1;
+  L.besteKombo = Math.max(L.besteKombo || 0, L.kombo);
+  S.himmel.kombo = Math.max(S.himmel.kombo || 0, L.kombo);
+  if (K.knall(L.kombo)) { f.knall = 'kombo'; zeilen.push('Kombo ×' + L.kombo + '!'); }
+  if (f.bombe) { f.entschaerft = true; zeilen.push(BOMBE.entschaerft + (boss || L.beutel === undefined ? '' : ' +' + K.BOMBE_SPLITTER + ' Splitter extra')); }
+  if (boss || L.beutel === undefined) return;
+  const n = K.splitterFuer(L.kombo) + (f.bombe ? K.BOMBE_SPLITTER : 0);
+  L.beutel += n;
+  zeilen.push('+' + n + ' Splitter');
+  while (L.beutel >= K.SPLITTER_JE_WUERFEL) {
+    L.beutel -= K.SPLITTER_JE_WUERFEL;
+    wuerfelDazu(L.ort); L.wuerfelNeu++; f.wuerfel = true;
+    zeilen.push('Ein Goldwürfel!');
+  }
+}
+function wuerfelDazu(ort){ iz(ort).wuerfel++; S.himmel.wuerfel = (S.himmel.wuerfel || 0) + 1; }
+
+/* Klang und Knall nach einer Antwort; immer nur der größte Effekt, damit es nicht durcheinander kracht */
+function pixelKnall(L, f, gut){
+  const k = $('#karte'), r = k ? k.getBoundingClientRect() : null, mitte = r ? { x: r.left + r.width / 2, y: Math.max(80, r.top + Math.min(r.height, window.innerHeight) / 3) } : {};
+  if (!gut) {
+    if (f.knall) { T.chip('boom'); P.boom(Object.assign({ text: 'BOOM!', klein: 'Die Bombe ist hochgegangen', art: 'knall-bombe', farben: ['#ff3b5c', '#ff8a1e', '#ffd23a', '#2e2c52', '#ffffff'], stark: 1.3 }, mitte)); }
+    else T.chip('daneben');
+    return;
+  }
+  T.chip('treffer');
+  if (L.gefallen) { T.chip('boom'); setTimeout(() => T.chip('sieg'), 250); P.boom(Object.assign({ text: 'K.O.!', klein: 'Der Wächter wankt', stark: 1.8 }, mitte)); }
+  else if (f.wuerfel) { T.chip('wuerfel'); P.boom(Object.assign({ text: 'Goldwürfel!', art: 'knall-gold', farben: ['#ffd23a', '#fff0a0', '#e0961a', '#ffffff'], stark: 1.2 }, mitte)); }
+  else if (f.knall === 'kombo') { T.chip('kombo', L.kombo / 5); T.chip('boom'); P.boom(Object.assign({ text: 'BOOM!', klein: 'Kombo ×' + L.kombo }, mitte)); }
+  else if (f.entschaerft) { T.chip('entschaerft'); P.boom(Object.assign({ text: 'Entschärft!', art: 'knall-klein', stark: .6, farben: ['#36d27a', '#33d6ff', '#ffffff'] }, mitte)); }
+  else if (f.volltreffer) { T.chip('kombo', 1); P.boom(Object.assign({ text: 'Volltreffer!', art: 'knall-klein', stark: .7 }, mitte)); }
+  else T.chip('splitter');
 }
 
 function weiter(){
@@ -970,10 +1217,10 @@ function weiter(){
 }
 
 function trinken(){
-  const L = S.lauf, mx = maxLeben();
-  if (!L || L.leben <= 0 || L.flakons <= 0 || L.leben >= mx || ortDaten(L.ort).kaffee === 'nein') return;
-  L.leben = Math.min(mx, L.leben + heilung()); L.flakons--;
-  T.heilen();
+  const L = S.lauf, O = L ? ortDaten(L.ort) : null, mx = lebenMax(O), px = istPixel(O);
+  if (!L || L.leben <= 0 || L.flakons <= 0 || L.leben >= mx || O.kaffee === 'nein') return;
+  L.leben = Math.min(mx, L.leben + (px ? K.KAFFEE_HERZEN : heilung())); L.flakons--;
+  if (px) T.chip('herz'); else T.heilen();
   sichern();
   const antwortStand = L.frage.beantwortet;
   render();
@@ -983,14 +1230,16 @@ function trinken(){
 
 function rueckzugFragen(){
   if (!S.lauf || S.lauf.leben <= 0) return;
-  const box = $('#rueckzug-frage'), L = S.lauf, boss = L.art === 'boss', pruefung = L.ort === 'gipfel';
+  const box = $('#rueckzug-frage'), L = S.lauf, boss = L.art === 'boss', pruefung = L.ort === 'gipfel', px = istPixel(ortDaten(L.ort));
   box.hidden = false;
   box.innerHTML = '<p>' + (pruefung ? (friede() ? 'Den Prüfungsraum verlassen?' : 'Den Prüfungsraum verlassen? Das zählt als durchgefallen.')
+      : px ? (boss ? 'Wegfliegen? Der Wächter erholt sich, Seelen und Würfel behältst du.' : 'Auf eine Wolke abspringen? Der Sprung zählt nicht, aber Seelen, Splitter und Goldwürfel nimmst du mit.')
       : boss ? 'Fliehen? Der Boss erholt sich, du behältst deine Seelen.'
       : 'Zum Lagerfeuer zurückziehen? Dieser Gang zählt nicht, deine Seelen behältst du.') + '</p>' +
-    '<div class="zeile"><button type="button" class="knopf leise" id="rz-ja">' + (pruefung ? 'Verlassen' : boss ? 'Fliehen' : 'Zurückziehen') + '</button><button type="button" class="knopf haupt" id="rz-nein">' + (pruefung ? 'Bleiben' : 'Weiterkämpfen') + '</button></div>';
+    '<div class="zeile"><button type="button" class="knopf leise" id="rz-ja">' + (pruefung ? 'Verlassen' : px && !boss ? 'Abspringen' : boss ? 'Fliehen' : 'Zurückziehen') + '</button><button type="button" class="knopf haupt" id="rz-nein">' + (pruefung ? 'Bleiben' : 'Weiterkämpfen') + '</button></div>';
   $('#rz-ja').addEventListener('click', () => {
     if (pruefung && !friede()) { L.leben = 0; sichern(); sterben(); return; }
+    if (px && L.beutel !== undefined) iz(L.ort).splitter = L.beutel;
     const ort = L.ort; S.lauf = null; sichern(); location.hash = ortSeite(ort); render();
   });
   $('#rz-nein').addEventListener('click', () => { box.hidden = true; box.innerHTML = ''; });
@@ -998,6 +1247,7 @@ function rueckzugFragen(){
 }
 
 function gangEnde(){
+  if (istPixel(ortDaten(S.lauf.ort))) return landung();
   const L = S.lauf, st = kz(L.ort), vorher = st.feuer;
   if (st.feuer < K.FEUER_ZUM_TOR) st.feuer++;
   S.zeige = { art: 'feuer', ort: L.ort, richtig: L.richtig, gesamt: L.gesamt, plus: L.plus, feuer: st.feuer, neu: vorher < K.FEUER_ZUM_TOR, tor: vorher < K.FEUER_ZUM_TOR && st.feuer >= K.FEUER_ZUM_TOR && !st.boss };
@@ -1007,6 +1257,7 @@ function gangEnde(){
 function sterben(){
   const L = S.lauf;
   if (!L) return render();
+  if (istPixel(ortDaten(L.ort))) return absturz();
   const id = L.frage.id, raetsel = L.frage.raetsel || null, verloren = S.blut ? S.blut.seelen : 0, fallen = S.seelen;
   S.blut = fallen > 0 ? { id, raetsel, ort: L.ort, seelen: fallen } : null;
   S.zeige = { art: 'tod', id, raetsel, fallen, verloren, ort: L.ort };
@@ -1015,6 +1266,7 @@ function sterben(){
 }
 
 function bossSieg(){
+  if (istPixel(ortDaten(S.lauf.ort))) return pixelSieg();
   const L = S.lauf, O = ortDaten(L.ort), erst = !besiegt(L.ort);
   if (typeof L.ort === 'number') kz(L.ort).boss = true; else az(L.ort).boss = true;
   const g = seelenGabe(Math.round(O.seelen * K.ngSeelen(S.ng)));
@@ -1026,6 +1278,42 @@ function bossSieg(){
   else S.zeige = { art: 'sieg', ort: L.ort, belohnung, seelen: g, durchgang: L.ort === 'kokytos' && !S.aufstieg };
   if (L.ort === 'kokytos') S.aufstieg = true;
   S.lauf = null; sichern(); render();
+}
+
+/* ---------- Pixelparadies: Landung, Absturz, Sieg ----------
+   Landung: Ende des Sprungs. Lande-Bonus in den Beutel, ein fehlerfreier Sprung öffnet eine Schatzkiste mit einem Goldwürfel.
+   Absturz: alle Herzen weg. Keine Seelen verloren, kein Blutfleck, nur die losen Splitter im Beutel fallen mit. */
+function landung(){
+  const L = S.lauf, z = iz(L.ort), perfekt = L.gesamt > 0 && L.richtig === L.gesamt;
+  L.beutel += K.LANDE_BONUS;
+  while (L.beutel >= K.SPLITTER_JE_WUERFEL) { L.beutel -= K.SPLITTER_JE_WUERFEL; wuerfelDazu(L.ort); L.wuerfelNeu++; }
+  if (perfekt) { wuerfelDazu(L.ort); L.wuerfelNeu++; }
+  z.splitter = L.beutel; z.feuer = (z.feuer || 0) + 1;
+  S.zeige = { art: 'landung', ort: L.ort, richtig: L.richtig, gesamt: L.gesamt, plus: L.plus, kombo: L.besteKombo || 0, neu: L.wuerfelNeu, splitter: z.splitter, perfekt,
+    tor: !z.boss && z.wuerfel >= K.WUERFEL_ZUM_TOR && z.wuerfel - L.wuerfelNeu < K.WUERFEL_ZUM_TOR, satz: K.pick(LANDUNG) };
+  S.lauf = null; sichern(); render();
+  if (perfekt) setTimeout(() => { T.chip('wuerfel'); P.boom({ text: 'Perfekt!', klein: 'Schatzkiste: ein Goldwürfel', art: 'knall-gold', farben: ['#ffd23a', '#fff0a0', '#e0961a', '#ffffff', '#36d27a'] }); }, ruhig() ? 0 : 500);
+  else T.chip('herz');
+}
+function absturz(){
+  const L = S.lauf, verloren = L.beutel || 0;
+  if (L.beutel !== undefined) iz(L.ort).splitter = 0;
+  S.himmel.abstuerze = (S.himmel.abstuerze || 0) + 1;
+  S.zeige = { art: 'absturz', ort: L.ort, id: L.frage.id, bombe: !!L.frage.bombe, verloren, neu: L.wuerfelNeu || 0, satz: K.pick(ABSTURZ) };
+  S.lauf = null; sichern(); render();
+  T.chip('absturz');
+}
+function pixelSieg(){
+  const L = S.lauf, O = ortDaten(L.ort), erst = !besiegt(L.ort), insel = typeof L.ort === 'number';
+  if (insel) kz(L.ort).boss = true; else az(L.ort).boss = true;
+  const g = seelenGabe(O.seelen);
+  S.seelen += g; S.verdient += g;
+  let herz = false;
+  if (erst && insel && (S.himmel.herzen || 0) < K.HERZCONTAINER_MAX) { S.himmel.herzen = (S.himmel.herzen || 0) + 1; herz = true; }
+  S.zeige = { art: 'sieg', ort: L.ort, seelen: g, herz, kombo: L.besteKombo || 0 };
+  S.lauf = null; sichern(); render();
+  const feuerwerk = n => { for (let i = 0; i < n; i++) setTimeout(() => P.boom({ text: i ? '' : (insel ? 'Sieg!' : 'Gerettet!'), stark: 1.4, x: window.innerWidth * (.25 + Math.random() * .5), y: window.innerHeight * (.2 + Math.random() * .3) }), i * 420); };
+  setTimeout(() => { T.chip('sieg'); if (!ruhig()) feuerwerk(insel ? 2 : 5); }, ruhig() ? 0 : 600);
 }
 
 /* Neues Spiel+: alle Bosse stehen wieder auf, Lernstand, Stufe, Lagerfeuer und Kaffee bleiben */
@@ -1041,6 +1329,7 @@ function zeige(){
   const z = S.zeige;
   const schliessen = ziel => () => { S.zeige = null; sichern(); if (ziel !== undefined) location.hash = ziel; render(); window.scrollTo(0, 0); };
   const O = z.ort !== undefined ? ortDaten(z.ort) : null;
+  if (istPixel(O)) return pixelZeige(z, O, schliessen);
   if (z.art === 'tod') {
     const r = z.raetsel, c = r ? null : KARTE.get(z.id), arena = typeof z.ort === 'string', kurz = !r && K.istKuerzel(c);
     const titel = z.ort === 'gipfel' ? 'Durchgefallen' : z.ort === 'kokytos' ? 'Du bist erfroren' : 'Du bist gestorben';
@@ -1135,6 +1424,92 @@ function zeige(){
     return;
   }
   if (z.art === 'bestanden') abspann(z);
+}
+
+/* Die großen Bildschirme im Pixelparadies: Würfeltor, Landung, Absturz, Sieg */
+function pixelZeige(z, O, schliessen){
+  pixelWelt();
+  const insel = typeof z.ort === 'number', figur = P.WAECHTER[z.ort];
+  if (z.art === 'tor') {
+    hintergrund(O.bild, 'pixel', 'funken');
+    const regeln = O.regeln || [
+      '<b>' + K.PIXEL_BOSS_LP + ' Treffer</b> bringen den Wächter zu Fall. Ab Kombo ×3 triffst du <b>doppelt</b>.',
+      'Jede dritte Frage kommt mit <b>Lunte</b>. Fragen von der ganzen Insel, die wackligen öfter.',
+      'Jeder Fehler kostet <b>ein Herz</b>, eine Bombe <b>zwei</b>. Kaffee ist erlaubt.'
+    ];
+    app.innerHTML =
+      '<main class="gross px-gross px-tor-gross" role="dialog" aria-modal="true" aria-labelledby="tor-titel">' +
+        '<p class="ueber">' + (insel ? 'Hinter dem Würfeltor' : 'Im Riss') + '</p>' +
+        '<div class="waechter-auftritt">' + P.figur(figur, 'waechter-gross') + '</div>' +
+        '<h1 class="px-titel px-boss-titel" id="tor-titel">' + esc(O.boss) + '<small>' + esc(O.bossZusatz) + '</small></h1>' +
+        '<ul class="regeln px-regeln px-dialog">' + regeln.map(r => '<li>' + r + '</li>').join('') + '</ul>' +
+        '<div class="zeile"><button type="button" class="knopf haupt" id="weiter">Kämpfen</button><button type="button" class="knopf leise" id="zurueck">Noch nicht</button></div>' +
+      '</main>';
+    $('#weiter').addEventListener('click', () => { S.zeige = null; bossStart(z.ort); });
+    $('#zurueck').addEventListener('click', schliessen(ortSeite(z.ort)));
+    fokus('#weiter');
+    return;
+  }
+  if (z.art === 'landung') {
+    hintergrund(O.bild, 'pixel', 'funken');
+    app.innerHTML =
+      '<main class="gross px-gross landung" role="dialog" aria-modal="true" aria-labelledby="landung-titel">' +
+        '<div class="px-band"><h1 class="px-titel" id="landung-titel">' + (z.perfekt ? 'Perfekter Sprung!' : 'Gelandet!') + '</h1></div>' +
+        '<div class="px-szene" aria-hidden="true">' + P.figur('bit', 'szene-bit hops') + '<i class="px-wolke"></i></div>' +
+        '<p class="px-satz">' + esc(z.satz) + '</p>' +
+        '<div class="px-panel px-bilanz">' +
+          '<p><b>' + z.richtig + '</b> von ' + z.gesamt + ' richtig · beste Kombo <b>×' + z.kombo + '</b> · <b>+' + zahl(z.plus) + '</b> Seelen</p>' +
+          (z.neu ? '<p class="neu-wuerfel">' + Array.from({ length: Math.min(z.neu, 6) }, () => P.figur('wuerfel', 'bilanz-wuerfel')).join('') + '<span><b>' + z.neu + '</b> ' + (z.neu === 1 ? 'neuer Goldwürfel' : 'neue Goldwürfel') + '</span></p>'
+            : '<p>Diesmal kein ganzer Goldwürfel. Der Beutel ist trotzdem voller.</p>') +
+          '<p class="stand-zeile">' + P.beutel(z.splitter, K.SPLITTER_JE_WUERFEL) + '<span><b>' + z.splitter + ' von ' + K.SPLITTER_JE_WUERFEL + '</b> Splittern im Beutel, ' + K.LANDE_BONUS + ' davon fürs Landen</span></p>' +
+          (z.perfekt ? '<p class="schatz">' + P.figur('kiste', 'schatz-kiste') + '<span>Kein einziger Fehler: Die Schatzkiste gibt dir <b>einen Goldwürfel extra</b>.</span></p>' : '') +
+          (z.tor ? '<p class="tor-auf"><b>Das Würfeltor ist offen.</b> Dahinter wartet ' + esc(O.boss) + '.</p>' : '') +
+        '</div>' +
+        '<button type="button" class="knopf haupt" id="weiter">Weiter</button>' +
+      '</main>';
+    $('#weiter').addEventListener('click', schliessen(ortSeite(z.ort)));
+    fokus('#weiter');
+    return;
+  }
+  if (z.art === 'absturz') {
+    const c = KARTE.get(z.id);
+    hintergrund(O.bild, 'pixel', 'funken');
+    app.innerHTML =
+      '<main class="gross px-gross absturz" role="alertdialog" aria-modal="true" aria-labelledby="absturz-titel">' +
+        '<div class="px-band rot"><h1 class="px-titel" id="absturz-titel">Abgestürzt!</h1></div>' +
+        '<div class="px-szene" aria-hidden="true">' + P.figur('bit', 'szene-bit faellt') + '<i class="px-wolke"></i></div>' +
+        '<p class="px-satz">' + esc(z.satz) + '</p>' +
+        '<div class="px-panel px-absturz-karte">' +
+          '<p class="tod-von">' + (z.bombe ? 'Weggesprengt von' : 'Runtergeschubst von') + '</p>' +
+          '<p class="tod-begriff">' + esc(c.n) + '</p>' +
+          '<p class="tod-def">' + esc(c.d) + '</p>' + (c.m ? '<p class="merke"><b>Merke:</b> ' + esc(c.m) + '</p>' : '') +
+        '</div>' +
+        '<p class="px-hinweis">' + (z.verloren ? '<b>' + z.verloren + ' lose Splitter</b> sind mit dir gefallen. ' : '') +
+          (z.neu === 1 ? 'Dein neuer Goldwürfel bleibt. ' : z.neu ? 'Deine ' + z.neu + ' neuen Goldwürfel bleiben. ' : 'Ganze Goldwürfel bleiben immer. ') + 'Seelen verlierst du hier oben keine.</p>' +
+        '<button type="button" class="knopf haupt" id="weiter">' + (insel ? 'Zurück auf die Insel' : 'Zurück zum Riss') + '</button>' +
+      '</main>';
+    $('#weiter').addEventListener('click', schliessen(ortSeite(z.ort)));
+    fokus('#weiter');
+    return;
+  }
+  if (z.art === 'sieg') {
+    hintergrund(O.bild, 'pixel', 'funken');
+    app.innerHTML =
+      '<main class="gross px-gross px-sieg" role="dialog" aria-modal="true" aria-labelledby="sieg-titel">' +
+        '<div class="px-band gold"><h1 class="px-titel" id="sieg-titel">' + (insel ? 'Wächter besiegt!' : 'Der Himmel ist gerettet!') + '</h1></div>' +
+        '<div class="px-szene sieg-szene" aria-hidden="true">' + P.figur(figur, 'szene-waechter besiegt') + P.figur('bit', 'szene-bit jubel') + '</div>' +
+        '<p class="px-satz">' + esc(O.schluss || O.boss + ' zerfällt in Pixel. Die Insel atmet auf.') + '</p>' +
+        '<div class="px-panel px-bilanz">' +
+          '<p><b>+' + zahl(z.seelen) + '</b> Seelen · beste Kombo <b>×' + z.kombo + '</b></p>' +
+          (z.herz ? '<p class="neu-herz">' + P.figur('herz', 'bilanz-herz') + '<span><b>Herzcontainer!</b> Ab jetzt hast du <b>' + herzMax() + ' Herzen</b> je Sprung.</span></p>' : '') +
+          '<p>Titel errungen: <b class="px-gold">' + esc(O.titel) + '</b></p>' +
+          (!insel ? '<p>Alle sieben Himmel und der Riss darüber. Wer so weit gesprungen ist, für den ist die echte Prüfung nur noch eine Insel mehr.</p>' : '') +
+        '</div>' +
+        '<button type="button" class="knopf haupt" id="weiter">' + (insel ? 'Weiter' : 'Zur Inselkarte') + '</button>' +
+      '</main>';
+    $('#weiter').addEventListener('click', schliessen(insel ? ortSeite(z.ort) : '#/himmel'));
+    fokus('#weiter');
+  }
 }
 
 /* Abspann nach dem Ausschuss */
