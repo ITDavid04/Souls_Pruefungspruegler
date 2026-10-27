@@ -272,6 +272,18 @@ export const KLASSEN = [
    erst die Ausnahmen nach Lernfeld und Thema, sonst das Lernfeld. So landet jede Karte irgendwo, auch neue Themen.
    Hier oben stirbt niemand: Wer alle Herzen verliert, fällt auf eine Wolke. Es zählen Goldwürfel, Kombos und Bomben. */
 export const HIMMEL_BILD = 'himmel-karte';
+/* Der bunte Titel: kommt, wenn die Startwelt das Pixelparadies ist (oder alles im Pixelstil läuft) */
+export const PIXEL_TITEL = {
+  zitat: 'Über dem Gipfel schweben sieben Inseln aus Pixeln. Spring rein, sammle Goldwürfel, und wenn du fällst, fängt dich eine Wolke.',
+  lauf: 'Du hängst noch mitten im Sprung. Die Karte schwebt und wartet auf dich.',
+  sonst: ['Die Inseln haben auf dich gewartet. Eine hat sogar gewunken.', 'Bit ist schon wach. Bit war nie weg.', 'Die Wolken sind frisch aufgeschüttelt.', 'Irgendwo oben tickt eine Lunte. Nur zur Info.'],
+  regeln: [
+    '<b>Richtig</b> bringt Seelen und Würfelsplitter, <b>falsch</b> kostet ein Herz.',
+    'Wer hintereinander richtig liegt, baut eine <b>Kombo</b>. Alle fünf Treffer knallt es.',
+    'Manche Karten kommen mit <b>Lunte</b>: schnell antworten, sonst BOOM.',
+    'Unten am Lagerfeuer liegt das düstere Spiel. Beide teilen sich den Lernstand.'
+  ]
+};
 export const PIXEL = {
   name: 'Das Pixelparadies', zusatz: 'Sieben Himmel in 8 Bit',
   riss: 'Neben dem Lagerfeuer flackert ein Quadrat in der Luft. Es ist bunter als alles hier unten.',

@@ -788,6 +788,25 @@ try {
   await ansicht(page, 'hub');
   check('Zurück am Lagerfeuer: dunkel wie immer, die Pixeltitel stehen in der Liste', await page.evaluate(() => document.body.dataset.welt) === '' && await page.$eval('.titel-liste', e => e.textContent.includes('Held in acht Bit') && e.textContent.includes('Herr über Ping und Paket')));
 
+  /* Startwelt: im Pixelparadies starten, bunter Titel, danach direkt zur Inselkarte; auf der Karte wieder abschalten */
+  await page.$eval('.spielstand', e => { e.open = true; });
+  await klick(page, '#startwelt');
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).startwelt === 'himmel');
+  await page.reload({ waitUntil: 'networkidle0' });
+  await ansicht(page, 'titel');
+  check('Startwelt Pixelparadies: bunter Titel mit Inseln statt Tor und Spuk', await page.$('.titel.px-titel-seite .px-buehne') !== null && await page.$('.bg .spuk') === null && await page.evaluate(() => document.body.dataset.welt) === 'pixel');
+  await sleep(1400);
+  await foto(page, '77-pixel-titel');
+  await durchTitel(page);
+  await ansicht(page, 'himmel-karte');
+  check('Nach dem bunten Titel geht es direkt zur Inselkarte', await page.evaluate(() => location.hash) === '#/himmel' && await page.$eval('#hier-starten', b => b.getAttribute('aria-pressed') === 'true'));
+  await klick(page, '#hier-starten');
+  await warte(page, () => JSON.parse(localStorage.getItem('spp.spiel')).startwelt === 'lagerfeuer');
+  await page.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await neuLaden(page);
+  await ansicht(page, 'hub');
+  check('Auf der Inselkarte abgeschaltet: wieder der düstere Titel und das Lagerfeuer', await page.evaluate(() => document.body.dataset.welt) === '');
+
   /* App: Manifest, installierbar, Service Worker, ohne Netz */
   const cdp = await page.createCDPSession();
   const man = await cdp.send('Page.getAppManifest');

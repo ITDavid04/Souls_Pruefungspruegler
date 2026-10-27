@@ -193,6 +193,10 @@ Welche Karte auf welcher Insel liegt, steht in `welt.js` (`himmelVon`): Das Lern
 | Herzcontainer | Jeder Wächter gibt beim ersten Sieg ein Herz mehr für alle Sprünge, dazu 200 Seelen und einen Titel |
 | Der Große Glitch | Offen, wenn alle sieben Wächter liegen. Drei Formen (Mond bis Sonne, Mars bis Saturn, alles), zusammen 13 Treffer. Er wirft jede zweite Frage eine Bombe, in der letzten Form jede |
 
+**Startwelt:** Unter „Spielstand“ (oder auf der Inselkarte mit „Hier starten“) lässt sich das Pixelparadies als Startwelt wählen.
+Dann kommt beim Start ein bunter Titel mit drei schwebenden Inseln statt Tor und Spuk, und danach geht es direkt zur Inselkarte.
+Ein laufender Kampf geht wie immer vor.
+
 Seelen gibt es oben wie unten, Stufe und Kaffee gelten auch: Ein Flakon heilt zwei Herzen. Der Krieger hat ein Herz mehr, der Magier bekommt mehr Seelen,
 der Priester fängt den letzten Treffer bei einem Herzen ab. Im Ruhigen Modus gibt es keine Bomben und Fehler kosten keine Herzen.
 Klang: kurze 8-Bit-Töne (Münze, Würfel-Fanfare, Knall, Absturz) über denselben Schalter „Kampfklang“. Bei „Bewegung reduzieren“ bleibt

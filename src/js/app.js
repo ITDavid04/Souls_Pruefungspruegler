@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, PIXEL_TITEL, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -42,6 +42,7 @@ const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
   blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, klasse: null, lauf: null, zeige: null,
+  startwelt: 'lagerfeuer',
   himmel: { herzen: 0, wuerfel: 0, abstuerze: 0, kombo: 0, besucht: false }
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
@@ -174,7 +175,10 @@ function render(){
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
 
 /* Titel: bei jedem Start. Wer zum ersten Mal hier ist, bekommt die Regeln, alle anderen einen Satz, der sich erinnert. */
+/* Startwelt: Wer im Pixelparadies startet, bekommt den bunten Titel und landet danach auf der Inselkarte */
+const startHimmel = () => S.startwelt === 'himmel';
 function titel(){
+  if (startHimmel()) return pixelTitel();
   hintergrund(TITEL_BILD, 'titel', 'nebel');
   const erstes = !S.gestartet, L = S.lauf;
   const bosse = KREISE.filter(k => kz(k.lf).boss).length + Object.keys(ARENEN).filter(id => besiegt(id)).length;
@@ -216,6 +220,43 @@ function titel(){
     setTimeout(() => { weiter(); requestAnimationFrame(() => document.body.classList.remove('abstieg')); }, 700);
   });
   aufraeumen = spuk();
+  fokus('#los');
+}
+
+/* Der bunte Titel: drei schwebende Inseln, Bit in der Mitte, kein Spuk. Danach geht es zur Inselkarte, außer ein Kampf läuft noch. */
+function pixelTitel(){
+  pixelWelt();
+  hintergrund(HIMMEL_BILD, 'pixel', 'funken');
+  const erstes = !S.gestartet, L = S.lauf, mitten = L && L.leben > 0 && !S.zeige;
+  const satz = erstes ? PIXEL_TITEL.zitat : mitten ? PIXEL_TITEL.lauf : K.pick(PIXEL_TITEL.sonst);
+  const klein = mitten ? esc(ortDaten(L.ort).ort) + ' · ' + (L.art === 'boss' ? esc(ortDaten(L.ort).phasen[L.phase].name) : 'Karte ' + (L.pos + 1) + ' von ' + L.plan.length) : '';
+  const waechter = INSELN.filter(k => kz(k.lf).boss).length;
+  app.innerHTML =
+    '<main class="titel px-titel-seite' + (erstes ? ' erstes' : '') + '">' +
+      '<div class="px-buehne" aria-hidden="true">' +
+        '<img class="px-insel buehne-links" src="img/insel-merkur.webp" alt="" width="112" height="124">' +
+        '<span class="buehne-mitte"><img class="px-insel" src="img/insel-sonne.webp" alt="" width="112" height="124">' + P.figur('bit', 'buehne-bit') + '</span>' +
+        '<img class="px-insel buehne-rechts" src="img/insel-venus.webp" alt="" width="112" height="124">' +
+      '</div>' +
+      '<div class="titel-unten">' +
+        '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
+        '<h1 class="logo px-logo">Prüfungs&shy;prügler</h1>' +
+        '<p class="px-unter">' + esc(PIXEL.name) + ' · ' + esc(PIXEL.zusatz) + '</p>' +
+        '<blockquote class="px-dialog">' + esc(satz) + '</blockquote>' +
+        (erstes ? '' : '<p class="titel-stand px-stand"><b>' + zahl(S.himmel.wuerfel || 0) + '</b> Goldwürfel · <b>' + waechter + '</b> von 7 Wächtern · Stufe <b>' + S.stufe + '</b> · <b>' + zahl(S.seelen) + '</b> Seelen</p>') +
+        '<button type="button" class="knopf haupt" id="los">' + (mitten ? 'Weiterkämpfen' : erstes ? 'Losspringen' : 'Weiterspringen') + (klein ? '<small>' + klein + '</small>' : '<small class="blinken">Start drücken</small>') + '</button>' +
+        (erstes ? '<ul class="regeln px-regeln px-dialog">' + PIXEL_TITEL.regeln.map(r => '<li>' + r + '</li>').join('') + '</ul>' : '') +
+      '</div>' +
+    '</main>';
+  let los = false;
+  $('#los').addEventListener('click', () => {
+    if (los) return;
+    los = true;
+    S.gestartet = true; sichern();
+    T.chip('tor');
+    if (!S.lauf && !S.zeige && (location.hash === '' || location.hash === '#/')) history.replaceState(null, '', '#/himmel');
+    titelGezeigt = true; render(); window.scrollTo(0, 0);
+  });
   fokus('#los');
 }
 
@@ -389,6 +430,7 @@ function lagerfeuer(){
         '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen' +
           (S.raetsel && S.raetsel.versucht ? ' · ' + S.raetsel.geloest + ' von ' + S.raetsel.versucht + ' Rätseln gelöst' : '') + '</p>' +
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
+        '<label class="probe"><input type="checkbox" id="startwelt"' + (startHimmel() ? ' checked' : '') + '> Im Pixelparadies starten <small>Bunter Titel, danach direkt zur Inselkarte. Das Lagerfeuer bleibt einen Schritt entfernt.</small></label>' +
         '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
         '<label class="probe"><input type="checkbox" id="kampfklang"' + (S.kampfklang !== false ? ' checked' : '') + '> Kampfklang <small>Kurze Klänge beim Antworten im Kampf.</small></label>' +
@@ -408,6 +450,7 @@ function lagerfeuer(){
   $$('.klasse-karte').forEach(b => b.addEventListener('click', () => { S.klasse = b.dataset.klasse; sichern(); T.schlag({ gut: true, klang: klassenKlang() }); render(); fokus('.klasse-karte.gewaehlt'); }));
   const klasseAb = $('#klasse-ab'); if (klasseAb) klasseAb.addEventListener('click', () => { S.klasse = null; sichern(); render(); fokus('.klasse-karte'); });
   $('#probe').addEventListener('change', e => { S.probe = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#probe'); });
+  $('#startwelt').addEventListener('change', e => { S.startwelt = e.target.checked ? 'himmel' : 'lagerfeuer'; sichern(); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
   const windKnopf = $('#wind'); if (windKnopf) windKnopf.addEventListener('change', e => { S.wind = e.target.checked; sichern(); T.setzen(S.wind); });
@@ -535,6 +578,8 @@ function himmelKarte(){
         '<div>' + P.figur('golem', 'wert-figur') + '<b>' + waechter + '/7</b><span>Wächter</span></div>' +
         '<div>' + P.figur('bombe', 'wert-figur') + '<b>×' + (S.himmel.kombo || 0) + '</b><span>Beste Kombo</span></div>' +
       '</section>' +
+      '<button type="button" class="knopf leise px-start" id="hier-starten" aria-pressed="' + startHimmel() + '">' + (startHimmel() ? 'Startwelt: Pixelparadies' : 'Hier starten') +
+        '<small>' + (startHimmel() ? 'Die App startet bunt und landet hier. Antippen, um wieder am Lagerfeuer zu erwachen.' : 'Bunter Titel, danach direkt auf diese Karte') + '</small></button>' +
       '<ol class="turm" reversed>' +
         '<li class="stock gipfel-stock' + (gOffen || gFest ? '' : ' zu') + (gFest ? ' bezwungen' : '') + '">' +
           '<a class="stock-link" href="#/glitch">' +
@@ -547,6 +592,13 @@ function himmelKarte(){
       '</ol>' +
       (erstes ? '' : '<details class="px-dialog px-mehr"><summary>Regeln im Pixelparadies</summary><ul class="regeln px-regeln">' + PIXEL.regeln.map(r => '<li>' + r + '</li>').join('') + '</ul></details>') +
     '</main>';
+  $('#hier-starten').addEventListener('click', () => {
+    S.startwelt = startHimmel() ? 'lagerfeuer' : 'himmel'; sichern();
+    const b = $('#hier-starten');
+    b.setAttribute('aria-pressed', String(startHimmel()));
+    b.innerHTML = (startHimmel() ? 'Startwelt: Pixelparadies' : 'Hier starten') + '<small>' + (startHimmel() ? 'Die App startet bunt und landet hier. Antippen, um wieder am Lagerfeuer zu erwachen.' : 'Bunter Titel, danach direkt auf diese Karte') + '</small>';
+    T.chip(startHimmel() ? 'splitter' : 'daneben');
+  });
   /* Wer wiederkommt, landet bei seiner Insel; beim ersten Mal bleiben die Regeln oben im Blick */
   if (!erstes) requestAnimationFrame(() => { const h = $('.stock.hier'); if (h && location.hash === '#/himmel') h.scrollIntoView({ block: 'center' }); });
 }
