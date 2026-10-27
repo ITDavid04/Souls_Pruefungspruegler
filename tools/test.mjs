@@ -3,7 +3,7 @@
    CHROME=/pfad npm test   -> falls Chrome woanders liegt
    CI=1 npm test           -> wie auf GitHub (ohne Sandbox)
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
-   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Katakomben der Kürzel mit Gebeinhaus
+   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Tonebene (Wind), Katakomben der Kürzel mit Gebeinhaus
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
    Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
    Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
@@ -740,6 +740,16 @@ try {
   await foto(d, '60-desktop-ruhiger-modus');
   await setze(d, 'S.frieden = false; S.lauf = null; S.zeige = null;');
   await neuLaden(d);
+  await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'hub');
+  await d.$eval('.spielstand', e => { e.open = true; });
+  const windVor = await d.$eval('#wind', e => e.checked);
+  await klick(d, '#wind');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).wind === false);
+  const windNach = (await spiel(d)).wind;
+  check('Desktop: Wind-Schalter steht im Spielstand und schaltet S.wind', windVor === true && windNach === false, `vorher ${windVor}, nachher ${windNach}`);
+  const zTon = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzen(true); return T.zustand(); });
+  check('Desktop: Tonebene baut den Wind beim ersten Gestus auf', zTon.entsperrt === true && zTon.windAn === true, JSON.stringify(zTon));
   await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
   await ansicht(d, 'arena-gipfel');
   await sleep(1000);

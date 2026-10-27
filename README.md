@@ -132,6 +132,10 @@ Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:
 - **Ruhiger Modus** nimmt Leben und Tod heraus. Falsche Antworten kosten nichts, es gibt keinen Blutfleck und kein Sterben. Im Kampf verschwinden Lebensbalken und Kaffee, stattdessen brennt oben ein ruhiger Kerzenpunkt. Seelen und Stufen laufen weiter.
 - **Nur AP2 lernen** öffnet den Läuterungsberg sofort, auch ohne den Zwischenprüfer. Die AP1 bleibt dabei gesperrt. Der Schalter ist nur sichtbar, solange der Berg nicht ohnehin schon offen ist.
 
+### Wind
+
+Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung), weht nach dem ersten Tippen ein ruhiger, prozedural erzeugter Wind, ganz ohne Audiodateien. Er schwillt langsam an und ab, nie plötzlich, und schläft, wenn der Tab im Hintergrund liegt. Ton beginnt erst nach dem ersten Tippen, weil der Browser ihn bis dahin sperrt.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
