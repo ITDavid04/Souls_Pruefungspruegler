@@ -3,7 +3,7 @@
    CHROME=/pfad npm test   -> falls Chrome woanders liegt
    CI=1 npm test           -> wie auf GitHub (ohne Sandbox)
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
-   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Tonebene (Wind), Kampfklang, Katakomben der Kürzel mit Gebeinhaus
+   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Tonebene (Wind), Kampfklang, Klassen, Katakomben der Kürzel mit Gebeinhaus
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
    Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
    Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
@@ -757,6 +757,57 @@ try {
   check('Desktop: Kampfklang-Schalter steht im Spielstand und schaltet S.kampfklang', kkVor === true && kkNach === false, `vorher ${kkVor}, nachher ${kkNach}`);
   const zFx = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzenFx(true); T.schlag({ gut: true, akt: 1 }); T.schlag({ gut: false, mimic: true }); T.heilen(); T.aufstieg(); return T.zustand(); });
   check('Desktop: Kampfklang erzeugt Klänge ohne Fehler', zFx.fx >= 4 && zFx.state === 'running', JSON.stringify(zFx));
+  await klick(d, '.klasse-karte[data-klasse="krieger"]');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
+  await setze(d, 'S.lauf = null; S.zeige = null;');
+  await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'kreis-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  const basisLeben = await d.evaluate(async () => { const K = await import('./js/kern.js'); return K.maxLeben(JSON.parse(localStorage.getItem('spp.spiel')).stufe); });
+  const kriegerLeben = (await spiel(d)).lauf.leben;
+  check('Desktop: Krieger hat mehr Leben', kriegerLeben === Math.round(basisLeben * 1.2), `Leben ${kriegerLeben}, Basis ${basisLeben}`);
+  await foto(d, '61-desktop-klassen');
+  await setze(d, "S.klasse = 'priester'; S.lauf = null; S.zeige = null; S.frieden = false;");
+  await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'kreis-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  await setze(d, 'S.lauf.leben = 3;');
+  await neuLaden(d);
+  await ansicht(d, 'kampf');
+  await antworte(d, false);
+  const sSafe = await spiel(d);
+  check('Desktop: Priester SafeMode fängt den tödlichen Treffer bei 1 Leben', sSafe.lauf && sSafe.lauf.leben === 1 && sSafe.lauf.safeMode === true && sSafe.tode === 0, `Leben ${sSafe.lauf && sSafe.lauf.leben}, tode ${sSafe.tode}`);
+  await setze(d, "S.klasse = null; S.lauf = null; S.zeige = null;");
+  await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'kreis-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  await raetselStellen(d, 'ipv4Netz');
+  await neuLaden(d);
+  await ansicht(d, 'kampf');
+  const vorN = (await spiel(d)).seelen;
+  await antworte(d, true);
+  const deltaN = (await spiel(d)).seelen - vorN;
+  await setze(d, "S.klasse = 'magier'; S.lauf = null; S.zeige = null;");
+  await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'kreis-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  await raetselStellen(d, 'ipv4Netz');
+  await neuLaden(d);
+  await ansicht(d, 'kampf');
+  const vorM = (await spiel(d)).seelen;
+  await antworte(d, true);
+  const deltaM = (await spiel(d)).seelen - vorM;
+  check('Desktop: Magier bringt mehr Seelen', deltaN > 0 && deltaM === Math.round(deltaN * 1.15), `neutral ${deltaN}, magier ${deltaM}`);
+  await setze(d, 'S.klasse = null; S.lauf = null; S.zeige = null;');
+  await neuLaden(d);
   await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
   await ansicht(d, 'arena-gipfel');
   await sleep(1000);

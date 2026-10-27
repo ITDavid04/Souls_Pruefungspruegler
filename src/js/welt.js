@@ -257,3 +257,10 @@ export const MIMIC = { auf: 'Du nennst ihren wahren Namen. Die Truhe seufzt und 
 /* Wenn eine Antwort sitzt oder danebengeht: kurze Zeilen, selten */
 export const TREFFER = ['Sauber.', 'Sitzt.', 'Der Gegner wankt.', 'So sieht das aus.'];
 export const DANEBEN = ['Hinfallen ist erlaubt. Liegenbleiben nicht.', 'Die Karte kommt gleich wieder. Du auch.', 'Daneben. Merk dir den Merksatz.', 'Das war Aufwärmen.'];
+
+/* Die drei Klassen (leichte Variante): je ein Titel, eine Klangfarbe im Kampf und eine sanfte Gabe, ohne Nachteile. Frei am Lagerfeuer wählbar. */
+export const KLASSEN = [
+  { id: 'krieger', name: 'Krieger', titel: 'Mainframe', klang: 'stahl', gabe: 'Mehr Leben. Du hältst mehr aus.' },
+  { id: 'magier', name: 'Magier', titel: 'Rootmancer', klang: 'feuer', gabe: 'Mehr Seelen für jede richtige Antwort.' },
+  { id: 'priester', name: 'Priester', titel: 'Recoveron', klang: 'heilig', gabe: 'SafeMode: einmal je Gang überlebst du den tödlichen Treffer bei 1 Leben.' }
+];

@@ -125,6 +125,16 @@ genau diese Aufgabe gestellt (Adresse und Präfix, die Routingtabelle mit dem Zi
 nach einer Mimic-Truhe öffnet das Rechenwerk die Gatterwand. Oben führt „Zurück zum Kampf“ ohne Titel wieder in den Gang.
 Den Übungsteil der Klappuhr (Vorhersagen, Fehler finden) gibt es nur im Spiel, als Rätsel.
 
+### Klassen
+
+Am Lagerfeuer wählst du eine Klasse, jederzeit frei wechselbar. Jede gibt einen Titel, eine eigene Klangfarbe im Kampf und eine sanfte Gabe, ganz ohne Nachteile:
+
+- **Krieger (Mainframe)** hat mehr Leben und hält mehr aus. Klang: Stahl.
+- **Magier (Rootmancer)** bekommt mehr Seelen für jede richtige Antwort. Klang: Feuer.
+- **Priester (Recoveron)** hat SafeMode: einmal je Gang überlebt er den tödlichen Treffer bei 1 Leben. Klang: heiliger Schimmer.
+
+Ohne Klasse spielt sich alles wie bisher, die Klangfarbe im Kampf richtet sich dann nach dem Ort.
+
 ### Ruhiger Modus und AP2-Abkürzung
 
 Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:

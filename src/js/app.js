@@ -5,7 +5,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN } from './welt.js';
 import * as T from './ton.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -26,7 +26,7 @@ const store = {
 const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
-  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, lauf: null, zeige: null
+  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, klasse: null, lauf: null, zeige: null
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
 let prog = store.get(PROG, {}) || {};
@@ -44,7 +44,12 @@ const aufstiegOffen = () => S.aufstieg || S.probe || S.nurAp2;
 const kreisOffen = lf => kreis(lf).akt !== 2 || aufstiegOffen();
 const arenaOffen = id => S.probe || ARENEN[id].voraus.every(besiegt);
 const fehlend = id => ARENEN[id].voraus.filter(o => !besiegt(o)).length;
-const maxLeben = () => K.maxLeben(S.stufe);
+const grundLeben = () => K.maxLeben(S.stufe);
+const istKlasse = id => S.klasse === id;
+const KLASSE = id => KLASSEN.find(k => k.id === id);
+const klassenKlang = () => { const k = KLASSE(S.klasse); return k ? k.klang : null; };
+const seelenGabe = g => istKlasse('magier') ? Math.round(g * 1.15) : g;
+const maxLeben = () => istKlasse('krieger') ? Math.round(grundLeben() * 1.2) : grundLeben();
 const heilung = () => K.heilung(S.roestung);
 const friede = () => !!S.frieden;
 
@@ -302,7 +307,7 @@ function lagerfeuer(){
   const berg = aufstiegOffen();
   hintergrund(berg ? BERG_BILD : null, berg ? 'lager-berg' : 'feuer');
   if (!rastSatz) rastSatz = K.pick(berg ? RAST.concat(RAST_BERG, RAST_BERG) : RAST);
-  const preis = K.stufenPreis(S.stufe), kann = S.seelen >= preis && maxLeben() < 200;
+  const preis = K.stufenPreis(S.stufe), kann = S.seelen >= preis && grundLeben() < 200;
   const blutOrt = S.blut ? ortDaten(S.blut.ort) : null;
   const bosseIn = akt => kreiseVon(akt).filter(k => kz(k.lf).boss).length;
   const titelListe = KREISE.concat([KATAKOMBEN]).filter(k => kz(k.lf).boss).map(k => k.titel).concat(Object.keys(ARENEN).filter(id => besiegt(id)).map(id => ARENEN[id].titel));
@@ -321,9 +326,17 @@ function lagerfeuer(){
         '<div><span>Kaffee</span><b>' + S.flakons + '</b>' + (S.roestung ? '<small>je +' + heilung() + '</small>' : '') + '</div>' +
       '</section>' +
       '<button type="button" class="knopf aufstieg" id="aufstieg"' + (kann ? '' : ' disabled') + '>' +
-        (maxLeben() >= 200 ? 'Höchste Stufe erreicht' : kann ? 'Stufe aufsteigen · ' + zahl(preis) + ' Seelen' : 'Stufe ' + (S.stufe + 1) + ' für ' + zahl(preis) + ' Seelen') +
-        '<small>' + (maxLeben() >= 200 ? 'Mehr Leben gibt es nicht' : '+5 Leben je Stufe') + '</small></button>' +
+        (grundLeben() >= 200 ? 'Höchste Stufe erreicht' : kann ? 'Stufe aufsteigen · ' + zahl(preis) + ' Seelen' : 'Stufe ' + (S.stufe + 1) + ' für ' + zahl(preis) + ' Seelen') +
+        '<small>' + (grundLeben() >= 200 ? 'Mehr Leben gibt es nicht' : '+5 Leben je Stufe') + '</small></button>' +
       (blutOrt ? '<p class="hinweis blut-hinweis"><b>' + zahl(S.blut.seelen) + ' Seelen</b> liegen ' + (blutOrt.wo ? esc(blutOrt.wo) : typeof S.blut.ort === 'number' ? 'im ' + esc(blutOrt.nr) + ', ' + esc(blutOrt.name) : 'bei ' + esc(blutOrt.boss)) + '. Hol sie dir, bevor du woanders stirbst.</p>' : '') +
+      '<section class="klassen" aria-label="Deine Klasse">' +
+        '<h2 class="abschnitt"><span>Deine Klasse</span><small>' + (S.klasse ? esc(KLASSE(S.klasse).name + ' · ' + KLASSE(S.klasse).titel) : 'frei wählbar') + '</small></h2>' +
+        '<ul class="klassen-liste">' + KLASSEN.map(k =>
+          '<li><button type="button" class="klasse-karte' + (S.klasse === k.id ? ' gewaehlt' : '') + '" data-klasse="' + k.id + '" aria-pressed="' + (S.klasse === k.id) + '">' +
+            '<b class="klasse-name">' + esc(k.name) + '</b><span class="klasse-titel">' + esc(k.titel) + '</span>' +
+            '<span class="klasse-gabe">' + esc(k.gabe) + '</span></button></li>').join('') + '</ul>' +
+        (S.klasse ? '<button type="button" class="knopf leise klasse-ab" id="klasse-ab">Klasse ablegen</button>' : '') +
+      '</section>' +
       '<h2 class="abschnitt"><span>' + AKTE[0].name + '</span><small>' + AKTE[0].zusatz + ' · ' + bosseIn(1) + ' von 6 Bossen</small></h2>' +
       '<ul class="kacheln">' + kreiseVon(1).map(kachel).join('') + arenaKachel('kokytos') + '</ul>' +
       '<h2 class="abschnitt berg-abschnitt"><span>' + AKTE[1].name + '</span><small>' + AKTE[1].zusatz + (berg ? ' · ' + bosseIn(2) + ' von 6 Bossen' : '') + '</small></h2>' +
@@ -353,11 +366,13 @@ function lagerfeuer(){
     '</main>';
   $('#aufstieg').addEventListener('click', () => {
     const p = K.stufenPreis(S.stufe);
-    if (S.seelen < p || maxLeben() >= 200) return;
+    if (S.seelen < p || grundLeben() >= 200) return;
     S.seelen -= p; S.stufe++; sichern(); render(); T.aufstieg();
     const w = $('.werte'); if (w) w.classList.add('aufgestiegen');
     fokus('#aufstieg');
   });
+  $$('.klasse-karte').forEach(b => b.addEventListener('click', () => { S.klasse = b.dataset.klasse; sichern(); T.schlag({ gut: true, klang: klassenKlang() }); render(); fokus('.klasse-karte.gewaehlt'); }));
+  const klasseAb = $('#klasse-ab'); if (klasseAb) klasseAb.addEventListener('click', () => { S.klasse = null; sichern(); render(); fokus('.klasse-karte'); });
   $('#probe').addEventListener('change', e => { S.probe = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#probe'); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
@@ -885,13 +900,13 @@ function antworten(gut, info){
   const zeilen = [];
   if (gut) {
     L.richtig++;
-    const g = r ? K.raetselSeelen(boss, akt, S.ng) : f.nachgeholt ? 5 : Math.round(K.seelenFuer(fachVorher, boss, akt, S.ng) * (kurz ? K.SELTEN_SEELEN[c.r] : 1));
+    const g = seelenGabe(r ? K.raetselSeelen(boss, akt, S.ng) : f.nachgeholt ? 5 : Math.round(K.seelenFuer(fachVorher, boss, akt, S.ng) * (kurz ? K.SELTEN_SEELEN[c.r] : 1)));
     S.seelen += g; S.verdient += g; L.plus += g;
     zeilen.push('+' + g + ' Seelen');
     /* Die Mimic-Truhe öffnet sich: ein Kaffeeflakon für diesen Lauf, oder Seelen, wenn keiner mehr passt */
     if (r && r.art === 'mimic') {
       if (O.kaffee === 'ja' && L.flakons < K.FLAKON_MAX) { L.flakons++; zeilen.push('In der Truhe liegt ein Kaffeeflakon'); }
-      else { const x = Math.round(K.MIMIC_SEELEN * K.ngSeelen(S.ng)); S.seelen += x; S.verdient += x; L.plus += x; zeilen.push('In der Truhe liegen Seelen: +' + x); }
+      else { const x = seelenGabe(Math.round(K.MIMIC_SEELEN * K.ngSeelen(S.ng))); S.seelen += x; S.verdient += x; L.plus += x; zeilen.push('In der Truhe liegen Seelen: +' + x); }
     }
     if (kurz && c.r === 3 && !boss && !f.nachgeholt) zeilen.push('Rotes Phantom vertrieben');
     if (f.blut && S.blut) { S.seelen += S.blut.seelen; L.plus += S.blut.seelen; zeilen.push('Seelen zurückgeholt: +' + zahl(S.blut.seelen)); S.blut = null; L.blutOffen = false; }
@@ -931,6 +946,7 @@ function antworten(gut, info){
     if (kurz && f.typ === 'langform' && f.optionen[f.gewaehlt] === c.j) f.spruch = KUERZEL_SPASS;
     if (r && r.art === 'mimic') f.spruch = MIMIC.biss;
   }
+  if (L.leben <= 0 && istKlasse('priester') && !L.safeMode) { L.leben = 1; L.safeMode = true; zeilen.push('SafeMode fängt dich bei 1 Leben.'); }
   if (boss && f.blut) L.blutOffen = false;
   f.zeilen = zeilen;
   sichern();
@@ -939,7 +955,7 @@ function antworten(gut, info){
   if (rm) rm.scrollIntoView({ block: 'end', behavior: ruhig() ? 'auto' : 'smooth' });
   if (gut) seelenFliegen(zeilen[0]);
   else { blitz(); vibrieren(L.leben <= 0 ? [90, 60, 240] : 70); }
-  T.schlag({ gut, akt: O.akt, wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
+  T.schlag({ gut, akt: O.akt, klang: klassenKlang(), wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
   if (L.leben <= 0) setTimeout(() => { if (S.lauf && S.lauf.leben <= 0) sterben(); }, ruhig() ? 0 : 1300);
 }
 
@@ -1001,7 +1017,7 @@ function sterben(){
 function bossSieg(){
   const L = S.lauf, O = ortDaten(L.ort), erst = !besiegt(L.ort);
   if (typeof L.ort === 'number') kz(L.ort).boss = true; else az(L.ort).boss = true;
-  const g = Math.round(O.seelen * K.ngSeelen(S.ng));
+  const g = seelenGabe(Math.round(O.seelen * K.ngSeelen(S.ng)));
   S.seelen += g; S.verdient += g;
   let belohnung = '';
   if (erst && S.flakons < K.FLAKON_MAX) { S.flakons++; belohnung = 'splitter'; }

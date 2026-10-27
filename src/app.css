@@ -366,6 +366,17 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 .probe input { width: 20px; height: 20px; accent-color: var(--gold); }
 .probe small { grid-column: 2; font-size: 13px; color: var(--blass); }
 
+/* Klassenwahl am Lagerfeuer: drei Karten, die gewählte leuchtet golden */
+.klassen { margin-bottom: 4px; }
+.klassen-liste { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.klasse-karte { width: 100%; height: 100%; text-align: left; display: grid; align-content: start; gap: 3px; padding: 11px 12px; border-radius: 12px; background: var(--stein-2); border: 1px solid var(--linie); cursor: pointer; color: var(--text); font: inherit; }
+.klasse-karte .klasse-name { font: 700 16px/1.1 var(--f-titel); color: var(--gold); }
+.klasse-karte .klasse-titel { font: 600 12.5px/1.2 var(--f-text); color: var(--blass); }
+.klasse-karte .klasse-gabe { font-size: 12px; line-height: 1.35; color: var(--blass); margin-top: 2px; }
+.klasse-karte.gewaehlt { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 16px -5px rgba(224, 184, 102, .55); }
+.klasse-ab { margin-top: 8px; }
+@media (max-width: 560px) { .klassen-liste { grid-template-columns: 1fr; } }
+
 /* ---------- Arenen: Kokytos und Gipfel ---------- */
 .voraus { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 14px; }
 .voraus li { display: flex; gap: 8px; align-items: baseline; color: var(--blass); min-width: 0; }

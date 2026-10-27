@@ -141,12 +141,14 @@ function rauschStoss(t0, dauer, spitze, filterTyp, f, Q){
 }
 
 /* Jeder Ort klingt anders: die Hölle knistert, die Katakomben raunen tief, der Berg schimmert hell, der Gipfel klingt nach Stahl */
-function faerbung(akt, t0){
-  if (akt === 1) { for (let i = 0; i < 4; i++) rauschStoss(t0 + 0.02 + i * 0.03, 0.05, 0.1, 'bandpass', 1700 + Math.random() * 1300, 3); }
-  else if (akt === 0) { stimme('sine', 92, 60, t0, 0.5, 0.11); stimme('sine', 138, 104, t0, 0.5, 0.05); }
-  else if (akt === 2) { stimme('sine', 1320, 1320, t0, 0.5, 0.07); stimme('sine', 1980, 1980, t0, 0.42, 0.035); }
+function faerbung(art, t0){
+  if (art === 'feuer') { for (let i = 0; i < 4; i++) rauschStoss(t0 + 0.02 + i * 0.03, 0.05, 0.1, 'bandpass', 1700 + Math.random() * 1300, 3); }
+  else if (art === 'schatten') { stimme('sine', 92, 60, t0, 0.5, 0.11); stimme('sine', 138, 104, t0, 0.5, 0.05); }
+  else if (art === 'heilig') { stimme('sine', 1320, 1320, t0, 0.5, 0.07); stimme('sine', 1980, 1980, t0, 0.42, 0.035); }
   else { stimme('triangle', 2100, 1900, t0, 0.28, 0.06); }
 }
+/* Ohne Klasse richtet sich die Klangfarbe nach dem Ort: Hölle Feuer, Katakomben Schatten, Berg heilig, sonst Stahl */
+const ORT_KLANG = { 0: 'schatten', 1: 'feuer', 2: 'heilig' };
 
 /* Treffer oder daneben: der Hauptklang beim Antworten im Kampf */
 export function schlag(info){
@@ -156,7 +158,7 @@ export function schlag(info){
   if (info && info.gut) {
     rauschStoss(t0, 0.09, 0.2, 'highpass', 900);
     stimme('triangle', 320, 90, t0 + 0.045, 0.18, 0.4);
-    faerbung(akt, t0 + 0.045);
+    faerbung((info && info.klang) || ORT_KLANG[akt] || 'stahl', t0 + 0.045);
     if (info.wucht) { stimme('sine', 72, 44, t0 + 0.045, 0.6, 0.45); rauschStoss(t0 + 0.045, 0.28, 0.22, 'lowpass', 380); }
   } else if (info && info.mimic) {
     rauschStoss(t0, 0.07, 0.32, 'bandpass', 720, 2);
