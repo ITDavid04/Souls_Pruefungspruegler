@@ -136,6 +136,10 @@ Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:
 
 Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung), weht nach dem ersten Tippen ein ruhiger, prozedural erzeugter Wind, ganz ohne Audiodateien. Er schwillt langsam an und ab, nie plötzlich, und schläft, wenn der Tab im Hintergrund liegt. Ton beginnt erst nach dem ersten Tippen, weil der Browser ihn bis dahin sperrt.
 
+### Kampfklang
+
+Unter „Spielstand“ liegt der Schalter „Kampfklang“ (Voreinstellung an). Beim Antworten im Kampf klingt ein kurzer, prozedural erzeugter Ton: ein Treffer bei richtig, ein dumpfer Schlag bei falsch, ein Biss an der Mimic-Truhe. Jeder Ort klingt etwas anders (die Hölle knistert, die Katakomben raunen, der Berg schimmert, der Gipfel klingt nach Stahl). Auch der Kaffeeschluck und der Stufenaufstieg haben ihren Klang. Alles läuft auf derselben Tonebene wie der Wind.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.

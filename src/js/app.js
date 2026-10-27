@@ -26,7 +26,7 @@ const store = {
 const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
-  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, lauf: null, zeige: null
+  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, lauf: null, zeige: null
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
 let prog = store.get(PROG, {}) || {};
@@ -344,6 +344,7 @@ function lagerfeuer(){
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
         '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
+        '<label class="probe"><input type="checkbox" id="kampfklang"' + (S.kampfklang !== false ? ' checked' : '') + '> Kampfklang <small>Kurze Klänge beim Antworten im Kampf.</small></label>' +
         (!S.aufstieg ? '<label class="probe"><input type="checkbox" id="nurAp2"' + (S.nurAp2 ? ' checked' : '') + '> Nur AP2 lernen <small>Öffnet den Läuterungsberg sofort, ohne den Zwischenprüfer.</small></label>' : '') +
         '<label class="probe"><input type="checkbox" id="probe"' + (S.probe ? ' checked' : '') + '> Prototyp: alle Tore offen <small>Zum Ansehen. Bosse zählen erst, wenn du sie besiegst.</small></label>' +
         '<button type="button" class="knopf leise" id="installieren" hidden>App installieren</button>' +
@@ -353,7 +354,7 @@ function lagerfeuer(){
   $('#aufstieg').addEventListener('click', () => {
     const p = K.stufenPreis(S.stufe);
     if (S.seelen < p || maxLeben() >= 200) return;
-    S.seelen -= p; S.stufe++; sichern(); render();
+    S.seelen -= p; S.stufe++; sichern(); render(); T.aufstieg();
     const w = $('.werte'); if (w) w.classList.add('aufgestiegen');
     fokus('#aufstieg');
   });
@@ -361,6 +362,7 @@ function lagerfeuer(){
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
   const windKnopf = $('#wind'); if (windKnopf) windKnopf.addEventListener('change', e => { S.wind = e.target.checked; sichern(); T.setzen(S.wind); });
+  const kkKnopf = $('#kampfklang'); if (kkKnopf) kkKnopf.addEventListener('change', e => { S.kampfklang = e.target.checked; sichern(); T.setzenFx(S.kampfklang); });
   $('#loeschen-frage').addEventListener('click', () => {
     $('#loeschen').innerHTML = '<span>Alles löschen, auch den Lernstand?</span><button type="button" class="knopf leise gefahr" id="loeschen-ja">Ja, löschen</button><button type="button" class="knopf leise" id="loeschen-nein">Abbrechen</button>';
     $('#loeschen-ja').addEventListener('click', () => { store.del(SPIEL); store.del(PROG); S = neuesSpiel(); prog = {}; location.hash = ''; render(); });
@@ -937,6 +939,7 @@ function antworten(gut, info){
   if (rm) rm.scrollIntoView({ block: 'end', behavior: ruhig() ? 'auto' : 'smooth' });
   if (gut) seelenFliegen(zeilen[0]);
   else { blitz(); vibrieren(L.leben <= 0 ? [90, 60, 240] : 70); }
+  T.schlag({ gut, akt: O.akt, wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
   if (L.leben <= 0) setTimeout(() => { if (S.lauf && S.lauf.leben <= 0) sterben(); }, ruhig() ? 0 : 1300);
 }
 
@@ -954,6 +957,7 @@ function trinken(){
   const L = S.lauf, mx = maxLeben();
   if (!L || L.leben <= 0 || L.flakons <= 0 || L.leben >= mx || ortDaten(L.ort).kaffee === 'nein') return;
   L.leben = Math.min(mx, L.leben + heilung()); L.flakons--;
+  T.heilen();
   sichern();
   const antwortStand = L.frage.beantwortet;
   render();
@@ -1200,5 +1204,6 @@ document.documentElement.classList.add('bereit');
 
 /* Die Tonebene: der Wunsch aus dem Spielstand, der erste Gestus weckt den Wind, versteckte Tabs schlafen */
 T.setzen(S.wind !== false);
+T.setzenFx(S.kampfklang !== false);
 ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => T.wecken(), { once: true }));
 document.addEventListener('visibilitychange', () => T.sichtbar(!document.hidden));
