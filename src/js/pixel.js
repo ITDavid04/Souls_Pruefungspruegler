@@ -170,6 +170,132 @@ const FIGUREN = {
     p(5, 5, 'L'); p(6, 4, 'L');
   }), { K: '#2a1250', L: '#5a3a9a', C: '#2af0ff', M: '#ff2a8a', Y: '#ffe14a', W: '#ffffff', k: '#05030f', o: '#05030f' }]
 };
+/* Das Lagerfeuer im Pixelstil: Steinkreis, Scheite, ein Schwert in der Glut. Die Flammen gibt es in zwei Bildern,
+   die sich abwechseln; sie haben keinen Umriss, damit sie weich wirken. */
+const LAGER = {
+  holz: [malen(24, 30, (r, p) => {
+    r(11, 0, 12, 0, 'P'); r(11, 1, 12, 4, 'G'); p(11, 2, 'g'); r(7, 5, 16, 6, 'Q'); r(7, 5, 16, 5, 'q');
+    r(11, 7, 12, 23, 'B'); r(11, 7, 11, 23, 'b');
+    r(3, 22, 9, 23, 'H'); r(14, 22, 20, 23, 'H'); r(5, 24, 18, 25, 'h'); r(9, 21, 14, 22, 'H');
+    for (const x of [1, 5, 9, 13, 17, 21]) { r(x, 26, x + 2, 28, 'S'); r(x, 26, x + 2, 26, 's'); }
+  }), { P: '#ffd23a', G: '#7a4a22', g: '#b0703a', Q: '#c8ccdc', q: '#ffffff', B: '#e8ecf8', b: '#ffffff', H: '#8a4a1e', h: '#5a2e12', S: '#8a90a8', s: '#c8ccdc' }],
+  flammeA: [malen(24, 30, (r) => {
+    r(7, 14, 16, 25, 'O'); r(5, 18, 18, 25, 'O'); r(9, 9, 13, 13, 'O'); r(14, 11, 15, 13, 'O'); r(6, 15, 6, 17, 'O');
+    r(8, 16, 15, 25, 'Y'); r(10, 12, 12, 15, 'Y'); r(9, 20, 14, 25, 'W');
+  }, false), { O: '#ff6a1e', Y: '#ffd23a', W: '#fff4c0' }],
+  flammeB: [malen(24, 30, (r) => {
+    r(6, 15, 17, 25, 'O'); r(4, 19, 19, 25, 'O'); r(10, 8, 14, 14, 'O'); r(7, 12, 8, 14, 'O'); r(17, 16, 17, 18, 'O');
+    r(8, 17, 16, 25, 'Y'); r(11, 11, 13, 16, 'Y'); r(9, 21, 15, 25, 'W');
+  }, false), { O: '#ff7a2a', Y: '#ffe14a', W: '#fffbe0' }]
+};
+export function lagerfeuer(klasse = ''){
+  const bild = n => svg(LAGER[n][0], Object.assign({ o: UMRISS }, LAGER[n][1]), 'px-lager-' + n);
+  return '<div class="px-feuer' + (klasse ? ' ' + klasse : '') + '" aria-hidden="true">' + bild('flammeA') + bild('flammeB') + bild('holz') + '<b></b><b></b><b></b><b></b></div>';
+}
+
+/* ---------- Die Bosse des Hauptspiels, für den Spielstil Pixel ---------- */
+const GESICHT = (haut, schatten) => [malen(24, 24, (r, p) => {
+  r(4, 2, 19, 20, 'H'); r(16, 2, 19, 20, 'h'); r(6, 21, 17, 22, 'h');
+  r(2, 8, 3, 13, 'H'); r(20, 8, 21, 13, 'h');
+  r(6, 7, 9, 8, 'k'); r(14, 7, 17, 8, 'k'); r(7, 9, 9, 10, 'E'); r(14, 9, 16, 10, 'E'); p(8, 9, 'k'); p(15, 9, 'k');
+  r(10, 11, 13, 14, 'h'); r(7, 16, 16, 18, 'k'); p(8, 16, 'W'); p(10, 16, 'W'); p(13, 16, 'W'); p(15, 16, 'W');
+  r(4, 0, 19, 2, 'I'); r(2, 1, 3, 4, 'I'); r(20, 1, 21, 4, 'I'); p(6, 3, 'W'); p(12, 3, 'W');
+}), { H: haut, h: schatten, k: UMRISS, E: '#ffe14a', W: '#ffffff', I: '#bfe8ff' }];
+const PRUEFER = (haar, hemd, hemdSchatten, extra) => [malen(24, 24, (r, p) => {
+  r(7, 1, 16, 4, 'A'); r(6, 3, 7, 8, 'A'); r(16, 3, 17, 8, 'A');
+  r(7, 4, 16, 12, 'S'); r(15, 4, 16, 12, 's');
+  r(9, 7, 10, 7, 'k'); r(13, 7, 14, 7, 'k'); r(10, 10, 13, 10, 'm');
+  if (extra === 'brille') { r(8, 6, 11, 8, 'G'); r(12, 6, 15, 8, 'G'); r(9, 7, 10, 7, 'k'); r(13, 7, 14, 7, 'k'); }
+  r(4, 13, 19, 23, 'C'); r(17, 13, 19, 23, 'c'); r(10, 13, 13, 16, 'W'); p(11, 14, 'R'); p(12, 14, 'R'); r(11, 15, 12, 18, 'R');
+  r(1, 18, 22, 20, 'T'); r(1, 18, 22, 18, 't'); r(3, 16, 8, 17, 'W');
+  if (extra === 'stift') { r(18, 12, 18, 17, 'Y'); p(18, 11, 'k'); }
+  if (extra === 'buch') { r(15, 14, 21, 17, 'B'); r(18, 14, 18, 17, 'W'); }
+}), { A: haar, S: '#f0c8a0', s: '#d8a880', k: UMRISS, m: '#a0503a', G: '#ffffff', C: hemd, c: hemdSchatten, W: '#ffffff', R: '#c81e44', T: '#8a4a1e', t: '#b0703a', Y: '#ffd23a', B: '#2a6ad8' }];
+Object.assign(FIGUREN, {
+  matrix: [malen(24, 24, (r, p) => {
+    r(4, 8, 19, 22, 'B'); for (let x = 4; x <= 19; x += 5) r(x, 8, x, 22, 'b'); for (let y = 8; y <= 22; y += 5) r(4, y, 19, y, 'b');
+    r(3, 2, 9, 7, 'S'); r(14, 2, 20, 7, 'S'); r(3, 0, 9, 1, 'R'); r(14, 0, 20, 1, 'G');
+    p(4, 4, 'k'); p(6, 4, 'k'); p(17, 4, 'k'); p(19, 4, 'k'); r(5, 6, 7, 6, 'k'); r(16, 6, 18, 6, 'k');
+    r(0, 12, 3, 13, 'S'); r(20, 12, 23, 13, 'S'); r(0, 14, 1, 16, 'S'); r(22, 14, 23, 16, 'S');
+  }), { B: '#5a8ae8', b: '#2a4aa8', S: '#f0c8a0', R: '#ff3b5c', G: '#36d27a', k: UMRISS }],
+  lieferverzug: [malen(24, 24, (r, p) => {
+    r(3, 7, 20, 22, 'K'); r(17, 7, 20, 22, 'k'); r(3, 4, 20, 7, 'L'); r(10, 4, 13, 22, 'T');
+    r(6, 11, 8, 13, 'W'); r(15, 11, 17, 13, 'W'); p(7, 12, 'x'); p(16, 12, 'x'); r(5, 10, 8, 10, 'x'); r(15, 10, 18, 10, 'x');
+    r(7, 17, 16, 18, 'x'); r(19, 0, 23, 4, 'W'); p(21, 1, 'x'); p(21, 2, 'x'); p(22, 2, 'x');
+  }), { K: '#d8a060', k: '#b8844a', L: '#e8b878', T: '#f4e2a0', W: '#ffffff', x: UMRISS }],
+  broadcast: [malen(24, 24, (r, p) => {
+    r(4, 6, 19, 8, 'C'); r(6, 9, 17, 11, 'c'); r(7, 12, 16, 14, 'C'); r(9, 15, 14, 17, 'c'); r(10, 18, 13, 20, 'C'); r(11, 21, 12, 23, 'c');
+    r(11, 0, 12, 5, 'A'); p(11, 0, 'R'); p(12, 0, 'R');
+    p(8, 1, 'W'); p(7, 2, 'W'); p(15, 1, 'W'); p(16, 2, 'W'); p(5, 2, 'W'); p(4, 3, 'W'); p(18, 2, 'W'); p(19, 3, 'W');
+    r(8, 7, 9, 7, 'k'); r(14, 7, 15, 7, 'k'); r(9, 10, 14, 10, 'k');
+  }), { C: '#7ad0ff', c: '#3a8ac8', A: '#c8ccdc', R: '#ff3b5c', W: '#ffe14a', k: UMRISS }],
+  kumulation: [malen(24, 24, (r, p) => {
+    r(2, 14, 21, 22, 'R'); r(4, 7, 19, 13, 'Y'); r(7, 1, 16, 6, 'G');
+    r(9, 3, 9, 3, 'k'); r(14, 3, 14, 3, 'k'); r(7, 9, 8, 10, 'k'); r(15, 9, 16, 10, 'k'); r(5, 16, 7, 18, 'k'); r(16, 16, 18, 18, 'k');
+    r(10, 11, 13, 11, 'k'); r(8, 20, 15, 20, 'k'); p(10, 5, 'k'); p(13, 5, 'k');
+  }), { R: '#ff3b5c', Y: '#ffd23a', G: '#36d27a', k: UMRISS }],
+  schleife: [malen(24, 24, (r, p) => {
+    for (let i = 0; i < 64; i++) { const a = i / 64 * Math.PI * 2, x = Math.round(12 + Math.cos(a) * 8), y = Math.round(12 + Math.sin(a) * 8); r(x - 1, y - 1, x + 1, y + 1, i % 8 < 4 ? 'G' : 'g'); }
+    r(15, 1, 21, 6, 'G'); p(19, 2, 'k'); r(20, 5, 22, 5, 'R'); p(22, 6, 'R'); r(13, 3, 14, 4, 'g');
+    r(10, 10, 13, 13, 'W'); p(11, 11, 'k');
+  }), { G: '#5cc23a', g: '#2f8a2a', R: '#ff3b5c', W: '#ffffff', k: UMRISS }],
+  kunde: [malen(24, 24, (r, p) => {
+    r(6, 4, 17, 15, 'R'); r(15, 4, 17, 15, 'r'); r(5, 2, 18, 4, 'A');
+    r(7, 7, 10, 7, 'k'); r(13, 7, 16, 7, 'k'); r(8, 8, 9, 9, 'W'); r(14, 8, 15, 9, 'W'); p(9, 9, 'k'); p(14, 9, 'k');
+    r(9, 12, 14, 13, 'k'); r(10, 12, 13, 12, 'W');
+    r(4, 16, 19, 23, 'C'); r(18, 10, 21, 16, 'P'); r(19, 11, 20, 12, 'S');
+    p(3, 0, 'D'); p(4, 1, 'D'); p(20, 0, 'D'); p(19, 1, 'D'); p(11, 0, 'D');
+  }), { R: '#ff7a6a', r: '#e04a3a', A: '#5a3a1a', W: '#ffffff', k: UMRISS, C: '#2a6ad8', P: '#3a3f55', S: '#7ad0ff', D: '#e8ecf8' }],
+  rekursion: [malen(24, 24, (r, p) => {
+    r(0, 0, 23, 23, 'A'); r(3, 3, 20, 20, 'B'); r(6, 6, 17, 17, 'A'); r(8, 8, 15, 15, 'B'); r(10, 10, 13, 13, 'A');
+    p(11, 11, 'k'); p(12, 11, 'k'); r(11, 13, 12, 13, 'k');
+    r(4, 4, 6, 5, 'E'); r(17, 4, 19, 5, 'E');
+  }, false), { A: '#8f5cff', B: '#ffd23a', k: UMRISS, E: '#ffffff' }],
+  gottobjekt: [malen(24, 24, (r, p) => {
+    r(4, 3, 19, 20, 'W'); r(4, 3, 19, 7, 'H'); r(4, 12, 19, 12, 'L'); r(6, 14, 15, 14, 'L'); r(6, 16, 13, 16, 'L'); r(6, 18, 16, 18, 'L'); r(6, 9, 14, 9, 'L');
+    r(9, 4, 14, 6, 'W'); r(11, 4, 12, 6, 'E'); p(11, 5, 'k');
+    for (const [x, y] of [[0, 6], [0, 11], [0, 16], [20, 6], [20, 11], [20, 16]]) r(x, y, x + 3, y + 1, 'W');
+    r(6, 21, 7, 23, 'W'); r(16, 21, 17, 23, 'W'); r(1, 0, 3, 2, 'Y'); r(20, 0, 22, 2, 'Y');
+  }), { W: '#fff8e6', H: '#ffd23a', L: '#b8b0d8', E: '#8f5cff', k: UMRISS, Y: '#ffd23a' }],
+  join: [malen(24, 24, (r, p) => {
+    r(1, 3, 22, 21, 'W'); for (let x = 1; x <= 22; x += 4) r(x, 3, x, 21, 'L'); for (let y = 3; y <= 21; y += 3) r(1, y, 22, y, 'L');
+    r(1, 3, 22, 5, 'H');
+    for (let i = 0; i < 9; i++) { p(7 + i, 8 + i, 'R'); p(8 + i, 8 + i, 'R'); p(16 - i, 8 + i, 'R'); p(15 - i, 8 + i, 'R'); }
+    r(5, 0, 6, 2, 'H'); r(17, 0, 18, 2, 'H');
+  }), { W: '#ffffff', L: '#c8cce0', H: '#36c8e8', R: '#ff3b5c' }],
+  scopecreep: [malen(24, 24, (r, p) => {
+    r(3, 8, 20, 22, 'G'); r(5, 5, 18, 8, 'G'); r(8, 3, 15, 5, 'G'); r(18, 8, 20, 22, 'g');
+    r(8, 10, 9, 12, 'k'); r(14, 10, 15, 12, 'k'); r(9, 16, 14, 17, 'k');
+    for (const [x, y] of [[4, 6], [16, 4], [1, 14], [19, 17], [6, 19], [12, 1]]) { r(x, y, x + 3, y + 3, 'Y'); p(x, y, 'y'); }
+  }), { G: '#8be04a', g: '#5cc23a', k: UMRISS, Y: '#ffe14a', y: '#e0a830' }],
+  spof: [malen(24, 24, (r, p) => {
+    r(5, 2, 18, 23, 'S'); r(16, 2, 18, 23, 's'); for (let y = 12; y < 22; y += 3) { r(7, y, 15, y + 1, 's'); p(14, y, 'L'); }
+    r(7, 4, 16, 10, 'W'); r(9, 5, 14, 9, 'R'); r(11, 6, 12, 8, 'k'); p(10, 5, 'W');
+    r(0, 18, 4, 19, 'K'); r(19, 15, 23, 16, 'K');
+  }), { S: '#3a3f5a', s: '#2a2e44', W: '#ffffff', R: '#ff3b5c', k: UMRISS, L: '#5aff8a', K: '#1c1233' }],
+  probezeit: [malen(24, 24, (r, p) => {
+    r(5, 1, 18, 2, 'H'); r(5, 21, 18, 22, 'H'); r(6, 3, 17, 5, 'G'); r(8, 6, 15, 8, 'G'); r(10, 9, 13, 13, 'G'); r(8, 14, 15, 16, 'G'); r(6, 17, 17, 20, 'G');
+    r(8, 4, 15, 5, 'S'); r(11, 10, 12, 14, 'S'); r(7, 18, 16, 20, 'S');
+    r(8, 7, 9, 7, 'k'); r(14, 7, 15, 7, 'k'); r(0, 9, 5, 16, 'P'); r(1, 11, 4, 11, 'L'); r(1, 13, 4, 13, 'L'); p(3, 15, 'R');
+  }), { H: '#8a4a1e', G: '#d8f4ff', S: '#ffd23a', k: UMRISS, P: '#ffffff', L: '#8a90a8', R: '#ff3b5c' }],
+  akronymant: [malen(24, 24, (r, p) => {
+    r(5, 2, 18, 9, 'M'); r(7, 0, 16, 2, 'M'); r(3, 10, 20, 23, 'M'); r(16, 10, 20, 23, 'm');
+    r(8, 4, 15, 9, 'B'); r(9, 5, 10, 6, 'E'); r(13, 5, 14, 6, 'E'); r(10, 8, 13, 8, 'k');
+    r(0, 13, 3, 15, 'B'); r(21, 9, 23, 11, 'B'); r(22, 3, 22, 8, 'S'); p(22, 2, 'E');
+    r(8, 14, 9, 18, 'Y'); r(12, 14, 14, 14, 'Y'); r(13, 15, 13, 18, 'Y');
+  }), { M: '#2a1a4a', m: '#1a1036', B: '#e8dcc0', E: '#ff4a2a', k: UMRISS, S: '#8a90a8', Y: '#ffd23a' }],
+  gesichtRot: GESICHT('#ff6a5a', '#d04a3a'),
+  gesichtBleich: GESICHT('#f4ecd8', '#d0c8b0'),
+  gesichtSchwarz: GESICHT('#4a3a5a', '#2e2440'),
+  prueferin: PRUEFER('#3a2a1a', '#2a6ad8', '#1f4ea8', 'stift'),
+  pruefer: PRUEFER('#c8c8d0', '#5a5a6a', '#44444f', 'brille'),
+  lehrkraft: PRUEFER('#d0702a', '#36a870', '#24804f', 'buch')
+});
+const BOSS_FIGUR = { 1: 'matrix', 2: 'lieferverzug', 3: 'broadcast', 4: 'kumulation', 5: 'schleife', 6: 'kunde', 7: 'rekursion', 8: 'gottobjekt', 9: 'join', 10: 'scopecreep', 11: 'spof', 12: 'probezeit', 13: 'akronymant',
+  kokytos: ['gesichtRot', 'gesichtBleich', 'gesichtSchwarz'], gipfel: ['prueferin', 'pruefer', 'lehrkraft'] };
+/* Welche Figur ein Boss im Pixelstil hat, je Ort und Phase */
+export const bossFigur = (ort, phase = 0) => { const f = BOSS_FIGUR[ort]; return Array.isArray(f) ? f[Math.min(phase, f.length - 1)] : f; };
+
 /* Welche Figur zu welchem Wächter gehört */
 export const WAECHTER = { 21: 'golem', 22: 'drache', 23: 'gespenst', 24: 'spaghetti', 25: 'hai', 26: 'rolle', 27: 'bluescreen', glitch: 'glitch' };
 

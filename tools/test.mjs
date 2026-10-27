@@ -7,7 +7,7 @@
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
    Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
    Pixelparadies (Inseln nach Themen, Kombo, Goldwürfel, Bomben mit Lunte, Absturz ohne Seelenverlust, Landung mit Schatzkiste,
-   Würfeltor, Wächter mit Volltreffer und Herzcontainer, der Große Glitch),
+   Würfeltor, Wächter mit Volltreffer und Herzcontainer, der Große Glitch), Startwelt, Spielstil Pixel für das ganze Spiel,
    Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
 import puppeteer from 'puppeteer-core';
 import { mkdir } from 'node:fs/promises';
@@ -991,6 +991,92 @@ try {
   await foto(d, '58-desktop-zahlenwerk');
   check('Desktop: keine Fehler in der Konsole', derrs.length === 0, derrs.slice(0, 3).join(' | '));
   await dctx.close();
+
+  /* ---------- Spielstil Pixel: das ganze Spiel in 8 Bit, frischer Spielstand am Handy ---------- */
+  const pctx = await browser.createBrowserContext();
+  const q = await pctx.newPage();
+  await q.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const perrs = watch(q, 'Pixelstil');
+  await q.goto(BASE, { waitUntil: 'networkidle0' });
+  await ansicht(q, 'titel');
+  check('Pixelstil: Schalter Souls und Pixel oben auf dem Titel', await q.$$eval('.stil-wahl .stil-knopf', b => b.map(x => x.dataset.stil + ':' + x.getAttribute('aria-pressed')).join()) === 'souls:true,pixel:false');
+  await klick(q, '.stil-knopf[data-stil="pixel"]');
+  await ansicht(q, 'px-titel-seite');
+  check('Pixelstil: Umschalten wirkt sofort, bunter Titel ohne Spuk', (await spiel(q)).stil === 'pixel' && await q.$('.bg .spuk') === null && await q.evaluate(() => document.body.dataset.welt) === 'pixel' && await q.$eval('#los', b => b.textContent.startsWith('Hinabsteigen')));
+  await sleep(1200);
+  await foto(q, '78-pixelstil-titel');
+  await durchTitel(q);
+  await ansicht(q, 'hub');
+  const kachelBild = await q.$eval('a.kachel[href="#/kreis/1"]', k => getComputedStyle(k).backgroundImage);
+  check('Pixelstil: Lagerfeuer mit Pixelfeuer, Kacheln mit Pixelszenen', await q.$('.feuerstelle .px-feuer') !== null && await q.$('.feuerstelle .flamme') === null && kachelBild.includes('px-lastenwaelzer-klein'), kachelBild.slice(0, 80));
+  await sleep(1000);
+  await foto(q, '79-pixelstil-lagerfeuer', true);
+  await klick(q, 'a.kachel[href="#/kreis/1"]');
+  await ansicht(q, 'kreis-seite');
+  await warte(q, () => [...document.querySelectorAll('.bg-bild.an')].some(e => e.style.backgroundImage.includes('px-lastenwaelzer')));
+  check('Pixelstil: Kreis mit Bühnenbild und Pixelhintergrund', await q.$eval('.px-buehnenbild', e => e.getAttribute('style').includes('px-lastenwaelzer')));
+  await sleep(600);
+  await foto(q, '80-pixelstil-kreis');
+  await klick(q, '#gang');
+  await ansicht(q, 'kampf');
+  const pv0 = (await spiel(q)).seelen;
+  await antworte(q, true);
+  await weiter(q);
+  for (let i = 0; i < 20; i++) {
+    const S = await spiel(q);
+    if (!S.lauf || S.lauf.leben <= 0) break;
+    if (S.lauf.frage.beantwortet) await weiter(q); else await antworte(q, false);
+  }
+  await ansicht(q, 'tod');
+  const pt = await spiel(q);
+  check('Pixelstil: gleiche Regeln, Tod mit Blutfleck, Bit liegt auf der Wolke', pt.tode === 1 && pt.blut && pt.blut.seelen > pv0 && await q.$('.tod .szene-bit.tot') !== null);
+  await sleep(2400);
+  await foto(q, '81-pixelstil-tod');
+  await klick(q, '#weiter');
+  await ansicht(q, 'hub');
+  await setze(q, 'S.kreise[1] = { feuer: 3, boss: false };');
+  await q.goto(BASE + '#/kreis/1', { waitUntil: 'networkidle0' });
+  await neuLaden(q);
+  await ansicht(q, 'kreis-seite');
+  await klick(q, '#tor');
+  await ansicht(q, 'nebel');
+  check('Pixelstil: Nebeltor zeigt den Boss als Pixelfigur', await q.$('.waechter-auftritt .px-matrix') !== null);
+  await klick(q, '#weiter');
+  await ansicht(q, 'ist-boss');
+  check('Pixelstil: Bosskampf mit Figur im Bossbalken', await q.$('.bossbalken.mit-figur .px-matrix') !== null);
+  await foto(q, '82-pixelstil-boss');
+  await bossRichtig(q);
+  await ansicht(q, 'sieg');
+  check('Pixelstil: Sieg wie gewohnt, Boss liegt, Bit jubelt', (await spiel(q)).kreise[1].boss && await q.$('.sieg-szene .px-matrix') !== null);
+  await sleep(2400);
+  await foto(q, '83-pixelstil-sieg');
+  await klick(q, '#weiter');
+  await setze(q, 'for (const n of [2, 3, 4, 5, 6]) S.kreise[n] = { feuer: 3, boss: true };');
+  await q.goto(BASE + '#/kokytos', { waitUntil: 'networkidle0' });
+  await neuLaden(q);
+  await ansicht(q, 'arena-kokytos');
+  await klick(q, '#tor');
+  await klick(q, '#weiter');
+  await ansicht(q, 'ist-boss');
+  check('Pixelstil: Zwischenprüfer mit rotem Gesicht, Kaffee gefroren', await q.$('.bossbalken .px-gesichtRot') !== null && (await spiel(q)).lauf.flakons === 0);
+  await foto(q, '84-pixelstil-zwischenpruefer');
+  await klick(q, '#rueckzug');
+  await klick(q, '#rz-ja');
+  await ansicht(q, 'arena-kokytos');
+  await q.goto(BASE + 'werkstatt/rechenwerk.html', { waitUntil: 'networkidle0' });
+  await q.waitForSelector('#werkstatt-zurueck');
+  check('Pixelstil: Werkstatt hell mit Pixel-Kopfzeile, passt aufs Handy', await q.evaluate(() => document.documentElement.classList.contains('px') && document.documentElement.dataset.theme === 'light' && document.documentElement.scrollWidth <= document.documentElement.clientWidth));
+  await sleep(500);
+  await foto(q, '85-pixelstil-werkstatt');
+  await q.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await durchTitel(q);
+  await ansicht(q, 'hub');
+  await q.$eval('.spielstand', e => { e.open = true; });
+  await klick(q, '#stil');
+  await warte(q, () => JSON.parse(localStorage.getItem('spp.spiel')).stil === 'souls');
+  check('Pixelstil: im Spielstand zurück auf Souls, Lagerfeuer wieder gemalt', await q.evaluate(() => document.body.dataset.welt) === '' && await q.$('.feuerstelle .flamme') !== null);
+  check('Pixelstil: keine Fehler in der Konsole', perrs.length === 0, perrs.slice(0, 3).join(' | '));
+  await pctx.close();
 } catch (e) {
   check('Test lief ohne Abbruch', false, e.stack);
 } finally {

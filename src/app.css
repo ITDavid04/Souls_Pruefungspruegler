@@ -389,7 +389,7 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 
 /* Klassenwahl am Lagerfeuer: drei Karten, die gewählte leuchtet golden */
 .klassen { margin-bottom: 4px; }
-.klassen-liste { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.klassen-liste { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .klasse-karte { width: 100%; height: 100%; text-align: left; display: grid; align-content: start; gap: 3px; padding: 11px 12px; border-radius: 12px; background: var(--stein-2); border: 1px solid var(--linie); cursor: pointer; color: var(--text); font: inherit; }
 .klasse-karte .klasse-name { font: 700 16px/1.1 var(--f-titel); color: var(--gold); }
 .klasse-karte .klasse-titel { font: 600 12.5px/1.2 var(--f-text); color: var(--blass); }
@@ -935,6 +935,229 @@ body[data-welt="pixel"] .karte.explodiert { animation: wackeln .5s ease; }
 @keyframes auftritt-boss { from { transform: scale(.1) translateY(60px); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } to { transform: none; opacity: 1; } }
 @media (max-width: 380px) { .waechter-gross { --px: 6px; } .px-werte span { font-size: 10px; } }
 @media (min-width: 720px) { .stock-bild, .stock-bild .px-insel { width: 224px; height: 248px; } .px-riss { grid-template-columns: 112px 1fr; padding-left: 16px; } }
+
+
+/* ---------- Spielstil Pixel: das ganze Spiel in 8 Bit ----------
+   Gleiche Ansichten, gleiche Regeln, nur der Anstrich wechselt: Texte, die direkt auf dem Bild stehen, bekommen Umriss oder eine Tafel,
+   alles Übrige wird Papier mit Tinte. Der Schalter liegt oben auf dem Titel und im Spielstand. */
+:root { --umriss-fein: 1px 1px 0 var(--px-tinte), -1px 1px 0 var(--px-tinte), 1px -1px 0 var(--px-tinte), -1px -1px 0 var(--px-tinte), 0 2px 0 var(--px-tinte); }
+.stil-wahl { position: absolute; z-index: 3; top: 0; right: 0; display: flex; border: 1px solid var(--linie-hell); border-radius: 4px; overflow: hidden; background: rgba(11, 9, 8, .6); }
+.stil-knopf { min-height: 36px; padding: 6px 12px; font: 600 13px/1 var(--f-titel); letter-spacing: .08em; color: var(--blass); background: none; border: 0; cursor: pointer; }
+.stil-knopf[data-stil="pixel"] { font-family: var(--f-pixel); letter-spacing: .02em; }
+.stil-knopf[aria-pressed="true"] { color: #1b1206; background: var(--gold); }
+.titel { position: relative; }
+body[data-welt="pixel"] .stil-wahl { border: 3px solid var(--px-tinte); border-radius: 0; background: #fff; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .stil-knopf { font: 700 14px/1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .stil-knopf[data-stil="souls"] { font-family: var(--f-titel); }
+body[data-welt="pixel"] .stil-knopf[aria-pressed="true"] { background: var(--px-gelb); }
+
+/* Das Lagerfeuer in Pixeln: zwei Flammenbilder im Wechsel, eckige Funken */
+.px-feuer { position: relative; width: 96px; height: 120px; }
+.px-feuer svg.px { --px: 4px; position: absolute; left: 0; top: 0; }
+.px-feuer .px-lager-flammeB { opacity: 0; }
+.px-feuer .px-lager-flammeA { animation: flamme-a .5s steps(1) infinite; }
+.px-feuer .px-lager-flammeB { animation: flamme-b .5s steps(1) infinite; }
+@keyframes flamme-a { 50% { opacity: 0; } }
+@keyframes flamme-b { 50% { opacity: 1; } }
+.px-feuer b { position: absolute; left: 50%; bottom: 46px; width: 4px; height: 4px; background: var(--px-gelb); opacity: 0; animation: px-funke 2.2s steps(11) infinite; }
+.px-feuer b:nth-of-type(1) { margin-left: -14px; animation-delay: .3s; }
+.px-feuer b:nth-of-type(2) { margin-left: 8px; animation-delay: 1s; }
+.px-feuer b:nth-of-type(3) { margin-left: -4px; animation-delay: 1.6s; background: #fff4c0; }
+.px-feuer b:nth-of-type(4) { margin-left: 16px; animation-delay: 1.9s; }
+@keyframes px-funke { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(6px, -90px); opacity: 0; } }
+.px-feuer.gross-feuer { width: 120px; height: 150px; }
+.px-feuer.gross-feuer svg.px { --px: 5px; }
+
+/* Lagerfeuer */
+body[data-welt="pixel"] .gold-titel { font: 700 36px/1 var(--f-pixel); letter-spacing: .02em; text-transform: none; color: var(--px-gelb); text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .rast { font: 700 17px/1.35 var(--f-pixel); font-style: normal; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .ng-marke { font-family: var(--f-pixel); color: #fff; background: var(--px-rot); border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .werte { gap: 8px; background: none; border: 0; border-radius: 0; overflow: visible; }
+body[data-welt="pixel"] .werte div { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .werte span, body[data-welt="pixel"] .werte small { font-weight: 700; color: var(--px-leise); }
+body[data-welt="pixel"] .werte b { font-family: var(--f-pixel); }
+body[data-welt="pixel"] .werte .seelen-zahl { color: #9a5a00; }
+body[data-welt="pixel"] .werte.aufgestiegen div { animation: aufstieg-px .9s steps(6); }
+@keyframes aufstieg-px { 0% { background: var(--px-gelb); } 100% { background: var(--px-papier); } }
+body[data-welt="pixel"] .abschnitt { font: 700 16px/1 var(--f-pixel); letter-spacing: .06em; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .abschnitt::after { height: 4px; background: repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 16px); }
+body[data-welt="pixel"] .abschnitt small { font: 700 13px/1.35 var(--f-text); letter-spacing: 0; color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .klasse-karte { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .klasse-karte .klasse-name { font-family: var(--f-pixel); color: var(--px-lila-tief); }
+body[data-welt="pixel"] .klasse-karte .klasse-titel, body[data-welt="pixel"] .klasse-karte .klasse-gabe { color: var(--px-leise); }
+body[data-welt="pixel"] .klasse-karte.gewaehlt { background: #fff1c2; box-shadow: 0 4px 0 var(--px-tinte), 0 0 0 3px var(--px-gelb); }
+body[data-welt="pixel"] .blut-hinweis { color: #fff; background: var(--px-rot-tief); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .blut-hinweis b { color: #fff0a0; }
+body[data-welt="pixel"] .hinweis { color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .kachel { border: 3px solid var(--px-tinte); border-radius: 0; image-rendering: pixelated; box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 2px rgba(255, 255, 255, .6);
+  background: linear-gradient(180deg, rgba(28, 18, 51, 0) 30%, rgba(28, 18, 51, .55) 55%, rgba(28, 18, 51, .92) 85%), var(--bild) center / cover no-repeat, var(--px-tinte-2); }
+body[data-welt="pixel"] .kachel-nr { font: 700 12px/1.2 var(--f-pixel); color: var(--px-gelb); text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .kachel-name { font: 700 24px/1.05 var(--f-pixel); letter-spacing: .01em; color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .kachel-lf { color: #fff; }
+body[data-welt="pixel"] .kachel-zahlen { color: #e0dcf4; }
+body[data-welt="pixel"] .kachel-zahlen b { color: var(--px-gelb); }
+body[data-welt="pixel"] .kachel.zu { filter: grayscale(.6) brightness(.85); border-style: dashed; }
+@media (hover: hover) { body[data-welt="pixel"] a.kachel:hover { border-color: var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 3px var(--px-gelb); } }
+body[data-welt="pixel"] .marke { font-family: var(--f-pixel); color: var(--px-tinte); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .marke.gold { background: var(--px-gelb); }
+body[data-welt="pixel"] .marke.nebel { background: #fff; }
+body[data-welt="pixel"] .marke.blut { color: #fff; background: var(--px-rot); }
+body[data-welt="pixel"] .feuer-punkte i { width: 12px; height: 14px; border: 0; border-radius: 0; background: #b8b0d8; clip-path: polygon(33% 0, 66% 0, 66% 25%, 100% 25%, 100% 100%, 0 100%, 0 25%, 33% 25%); }
+body[data-welt="pixel"] .feuer-punkte i.an { background: linear-gradient(180deg, var(--px-gelb) 0 40%, var(--px-orange) 40% 75%, var(--px-rot-tief) 75%); box-shadow: none; }
+body[data-welt="pixel"] .spielstand { padding: 4px 14px 12px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .spielstand summary { font-family: var(--f-pixel); }
+body[data-welt="pixel"] .probe { color: var(--px-tinte); }
+body[data-welt="pixel"] .probe small { color: var(--px-leise); }
+body[data-welt="pixel"] .probe input { accent-color: var(--px-lila); }
+body[data-welt="pixel"] .titel-liste b { color: #9a5a00; }
+body[data-welt="pixel"] .knopf.gefahr { color: var(--px-rot-tief); }
+body[data-welt="pixel"] .werkstatt-liste a { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .werkstatt-liste b { font-family: var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .werkstatt-liste span { color: var(--px-leise); }
+body[data-welt="pixel"] .toast { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; }
+
+/* Kreise, Gesimse, Arenen */
+body[data-welt="pixel"] .kreis-kopf { margin-top: 18vh; }
+body[data-welt="pixel"] .kreis-name { font: 700 clamp(34px, 10.5vw, 56px)/1.02 var(--f-pixel); letter-spacing: .01em; color: #fff; text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .kreis-lf { font: 700 17px/1.3 var(--f-pixel); color: #fff; text-shadow: var(--umriss); }
+body[data-welt="pixel"] .zitat { margin: 3px; padding: 12px 14px; font: 400 17px/1.5 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); box-shadow: 0 7px 0 var(--px-tinte); }
+body[data-welt="pixel"] .kreis-stand { padding: 12px 14px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte); }
+body[data-welt="pixel"] .kreis-stand .zahlen b { color: var(--px-tinte); }
+body[data-welt="pixel"] .raetsel-hinweis { color: var(--px-leise); }
+body[data-welt="pixel"] .voraus li { color: var(--px-leise); }
+body[data-welt="pixel"] .voraus .erfuellt { color: var(--px-tinte); font-weight: 700; }
+body[data-welt="pixel"] .voraus .haken { border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .voraus .erfuellt .haken { color: var(--px-tinte); background: var(--px-gelb); border-color: var(--px-tinte); }
+body[data-welt="pixel"] .knopf.nebeltor { background: #eef2fa; }
+body[data-welt="pixel"] .knopf.eistor { background: #bfe8ff; box-shadow: inset -3px -4px 0 #7ab8e0, inset 3px 3px 0 #fff, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.feuertor { color: #fff; background: var(--px-orange); text-shadow: 0 2px 0 var(--px-tinte); box-shadow: inset -3px -4px 0 #c84a10, inset 3px 3px 0 #ffc080, 0 4px 0 var(--px-tinte); }
+body[data-welt="pixel"] .knopf.feuertor small { color: #fff4e0; text-shadow: none; }
+
+/* Kampf im Hauptspiel: Lebensbalken in Stufen, Bossbalken auf Papier, die Prüfungsuhr */
+body[data-welt="pixel"] .balken { height: 16px; background: #3d2f63; border: 3px solid #fff; border-radius: 0; }
+body[data-welt="pixel"] .leben .wert { background: linear-gradient(180deg, #ff9aac 0 25%, var(--px-rot) 25% 70%, var(--px-rot-tief) 70%); }
+body[data-welt="pixel"] .leben .spur { background: #fff0a0; }
+body[data-welt="pixel"] .leben-zahl { font-family: var(--f-pixel); color: #fff; }
+body[data-welt="pixel"] .bossbalken { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 5px 0 var(--px-tinte); }
+body[data-welt="pixel"] .bossbalken .balken { background: #e8e0f4; border-color: var(--px-tinte); }
+body[data-welt="pixel"] .bossbalken.mit-figur { grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+body[data-welt="pixel"] .bossbalken.mit-figur .phase { display: block; }
+body[data-welt="pixel"] .bossbalken .balken i { background: linear-gradient(180deg, #ff9aac 0 25%, var(--px-rot) 25% 70%, var(--px-rot-tief) 70%); }
+body[data-welt="pixel"] .uhr { height: 24px; background: #3d2f63; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .uhr i { background: repeating-linear-gradient(90deg, var(--px-orange) 0 8px, var(--px-gelb) 8px 16px); }
+body[data-welt="pixel"] .uhr span { font: 700 13px/18px var(--f-pixel); color: #fff; text-shadow: 0 2px 0 var(--px-tinte); }
+body[data-welt="pixel"] .uhr.knapp i { background: repeating-linear-gradient(90deg, var(--px-rot) 0 8px, #ff9aac 8px 16px); }
+body[data-welt="pixel"] .flakon.gefroren { color: var(--px-tinte); background: #bfe8ff; border-color: #bfe8ff; }
+body[data-welt="pixel"] .phantom, body[data-welt="pixel"] .raetsel-auftritt { padding: 8px 10px; font: 400 16.5px/1.45 var(--f-text); color: #fff; background: var(--px-tinte-2); border: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .phantom { background: var(--px-rot-tief); }
+body[data-welt="pixel"] .karte.phantom-karte { box-shadow: 0 6px 0 var(--px-rot-tief), 0 0 26px -4px rgba(255, 59, 92, .7); }
+body[data-welt="pixel"] .raetsel-karte { border-color: var(--px-tinte); }
+body[data-welt="pixel"] .kuerzel-gross { color: var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .frage.langform-gross { color: var(--px-tinte); }
+body[data-welt="pixel"] .rang { border-width: 2px; border-radius: 0; }
+body[data-welt="pixel"] .rang.r1 { color: #6a5a98; }
+body[data-welt="pixel"] .rang.r2 { color: #1f5aa8; }
+body[data-welt="pixel"] .rang.r3 { color: #fff; background: var(--px-rot); border-color: var(--px-tinte); }
+body[data-welt="pixel"] .loesung mark, body[data-welt="pixel"] .tod-lang mark, body[data-welt="pixel"] .nb-innen mark { color: var(--px-lila-tief); background: #fff1c2; }
+body[data-welt="pixel"] .kuerzel-name { color: #9a5a00; }
+body[data-welt="pixel"] .raetsel-frage code, body[data-welt="pixel"] .botschaft code, body[data-welt="pixel"] .tod-def code, body[data-welt="pixel"] .routen td:nth-child(2) { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .raetsel-loesung b { color: var(--px-tinte); }
+body[data-welt="pixel"] .feld { color: var(--px-leise); }
+body[data-welt="pixel"] .feld input { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .feld input:focus { border-color: var(--px-lila-tief); box-shadow: 0 0 0 3px rgba(143, 92, 255, .35); }
+body[data-welt="pixel"] .feld input.ok { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .feld input.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .feld-meldung { color: #b0123a; }
+body[data-welt="pixel"] .option.gewaehlt { background: #fff1c2; border-color: var(--px-tinte); box-shadow: 0 3px 0 var(--px-tinte), inset 5px 0 0 var(--px-gelb); }
+body[data-welt="pixel"] .routen caption, body[data-welt="pixel"] .routen th { color: var(--px-leise); }
+body[data-welt="pixel"] .routen th, body[data-welt="pixel"] .routen td { border-bottom-color: #d8d4ea; }
+body[data-welt="pixel"] .switch { background: #fff; border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .pc { border-radius: 0; }
+body[data-welt="pixel"] .pc.v10 { color: #1f5a98; background: #d8ecff; border-color: #1f5a98; }
+body[data-welt="pixel"] .pc.v20 { color: #8a5a00; background: #fff1c2; border-color: #8a5a00; }
+body[data-welt="pixel"] .pc.v30 { color: var(--px-lila-tief); background: #ece4ff; border-color: var(--px-lila-tief); }
+body[data-welt="pixel"] .trunk { color: var(--px-leise); border-left-color: var(--px-leise); }
+body[data-welt="pixel"] .botschaft { background: #3d2f63; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: none; }
+body[data-welt="pixel"] .zeile-knopf { color: #fff; border-radius: 0; }
+body[data-welt="pixel"] .zeile-knopf .nr { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .zeile-knopf.luegt { color: var(--px-tinte); background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .botschaft-ruf { color: var(--px-leise); }
+body[data-welt="pixel"] .schalter { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 3px 0 var(--px-tinte); }
+body[data-welt="pixel"] .schalter[aria-pressed="true"] { background: var(--px-gelb); }
+body[data-welt="pixel"] .schalter[aria-pressed="true"] b { color: var(--px-tinte); }
+body[data-welt="pixel"] .lampe { color: var(--px-leise); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .lampe.an { color: var(--px-tinte); background: var(--px-gelb); }
+body[data-welt="pixel"] .proben th { color: var(--px-leise); }
+body[data-welt="pixel"] .proben td { color: var(--px-tinte); }
+body[data-welt="pixel"] .proben tr.jetzt td { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .medium { color: var(--px-tinte); background: #fff; border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .medium span { color: var(--px-leise); }
+body[data-welt="pixel"] .medium small { color: #6a5a98; }
+body[data-welt="pixel"] .medium.voll span { color: #9a5a00; }
+body[data-welt="pixel"] .medium.diff span { color: #1f5aa8; }
+body[data-welt="pixel"] .medium.inkr span { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .medium.gewaehlt { background: var(--px-gelb); box-shadow: none; }
+body[data-welt="pixel"] .medium.brand { color: #fff; background: var(--px-rot-tief); }
+body[data-welt="pixel"] .medium.brand span { color: #fff; }
+body[data-welt="pixel"] .medium.soll { background: #d6f9e2; border-color: var(--px-gruen-tief); }
+body[data-welt="pixel"] .medium.falsch { background: #ffe0e5; border-color: var(--px-rot-tief); }
+body[data-welt="pixel"] .medium i { color: var(--px-tinte); background: var(--px-gelb); border: 2px solid var(--px-tinte); border-radius: 0; line-height: 16px; }
+body[data-welt="pixel"] .folge { color: var(--px-tinte); }
+
+/* Große Bildschirme im Hauptspiel: Bänder in Farbe, der Inhalt auf Papier */
+body[data-welt="pixel"] .band { background: var(--px-lila); border-top: 4px solid var(--px-tinte); border-bottom: 4px solid var(--px-tinte); box-shadow: inset 0 4px 0 #b49aff, inset 0 -4px 0 var(--px-lila-tief); }
+body[data-welt="pixel"] .band h1 { font: 700 clamp(30px, 9vw, 52px)/1.05 var(--f-pixel); letter-spacing: .02em; text-transform: none; color: #fff; text-shadow: var(--umriss-gross); animation: auftritt-boss .6s steps(6) both; }
+body[data-welt="pixel"] .tod .band { background: var(--px-rot); box-shadow: inset 0 4px 0 #ff9aac, inset 0 -4px 0 var(--px-rot-tief); }
+body[data-welt="pixel"] .band.gold { background: var(--px-gelb); box-shadow: inset 0 4px 0 #fff0a0, inset 0 -4px 0 var(--px-gelb-tief); }
+body[data-welt="pixel"] .erfroren .band { background: #6ac8ff; box-shadow: inset 0 4px 0 #c8f0ff, inset 0 -4px 0 #2a8ad8; }
+body[data-welt="pixel"] .durchgefallen .band h1 { color: #fff; border: 4px solid #fff; border-radius: 0; animation: stempel .5s steps(5) .3s both; }
+body[data-welt="pixel"][data-bg="tod"] .bg-schleier, body[data-welt="pixel"][data-bg="tod-pruefung"] .bg-schleier { background: var(--px-tinte); }
+body[data-welt="pixel"] .gross-inhalt { padding: 14px; color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); box-shadow: 0 6px 0 var(--px-tinte), inset 0 3px 0 #fff; }
+body[data-welt="pixel"] .tod-von { font-family: var(--f-pixel); color: var(--px-leise); }
+body[data-welt="pixel"] .tod-begriff { font: 700 clamp(26px, 8vw, 34px)/1.1 var(--f-pixel); color: var(--px-tinte); }
+body[data-welt="pixel"] .tod-def, body[data-welt="pixel"] .tod-lang { color: #2e2458; }
+body[data-welt="pixel"] .tod-seelen { color: #b0123a; border-top: 3px dashed #e8c0c8; }
+body[data-welt="pixel"] .bilanz b { color: #9a5a00; font-family: var(--f-pixel); }
+body[data-welt="pixel"] .gross-inhalt .boss-gross { color: var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .gold-text { color: #9a5a00; }
+body[data-welt="pixel"] .boss-gross { font: 700 clamp(28px, 8vw, 46px)/1.08 var(--f-pixel); color: #fff; text-shadow: var(--umriss-gross); }
+body[data-welt="pixel"] .boss-gross small { font: 700 19px/1.2 var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .nebel .regeln, body[data-welt="pixel"] .durchgang .hinweis { margin: 3px; padding: 12px 14px; color: #fff; background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); text-shadow: none; }
+body[data-welt="pixel"] .nebel .regeln li::before { transform: none; background: var(--px-gelb); }
+body[data-welt="pixel"] .nebel .regeln b { color: var(--px-gelb); }
+body[data-welt="pixel"] .rolle { background: var(--px-tinte-2); border: 3px solid #fff; outline: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .rolle h2 { font-family: var(--f-pixel); color: var(--px-gelb); }
+body[data-welt="pixel"] .rolle p { color: #fff; }
+body[data-welt="pixel"] .rolle-gross { font-family: var(--f-pixel); }
+.szene-bit.tot { transform: rotate(90deg); filter: grayscale(1) brightness(1.1); }
+
+/* Am Handy steht die Szene gerahmt oben, der Vollbild-Hintergrund tritt zurück; am breiten Bildschirm ist sie ganz zu sehen */
+.px-buehnenbild { display: none; }
+@media (max-aspect-ratio: 1/1) {
+  body[data-welt="pixel"] .px-buehnenbild { display: block; margin: 0; aspect-ratio: 16 / 9; image-rendering: pixelated; background: var(--szene) center / cover no-repeat; border: 3px solid var(--px-tinte); box-shadow: 0 5px 0 var(--px-tinte), inset 0 0 0 2px rgba(255, 255, 255, .6); }
+  body[data-welt="pixel"] .kreis-kopf { margin-top: 2px; }
+  body[data-welt="pixel"][data-bg="kreis"] .bg-schleier, body[data-welt="pixel"][data-bg^="arena-"] .bg-schleier, body[data-welt="pixel"][data-bg="gebeinhaus"] .bg-schleier,
+  body[data-welt="pixel"][data-bg="kampf"] .bg-schleier, body[data-welt="pixel"][data-bg="boss"] .bg-schleier, body[data-welt="pixel"][data-bg="tor"] .bg-schleier,
+  body[data-welt="pixel"][data-bg="sieg"] .bg-schleier, body[data-welt="pixel"][data-bg="durchgang"] .bg-schleier { background: rgba(28, 18, 51, .66); }
+}
+body[data-welt="pixel"] .medium b { font-family: var(--f-pixel); }
+
+/* Gebeinhaus */
+body[data-welt="pixel"] .chip { font-family: var(--f-pixel); color: var(--px-tinte); background: var(--px-papier); border: 2px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .chip small { color: var(--px-leise); }
+body[data-welt="pixel"] .chip[aria-pressed="true"] { color: var(--px-tinte); background: var(--px-gelb); }
+body[data-welt="pixel"] .chip[aria-pressed="true"] small { color: var(--px-tinte); }
+body[data-welt="pixel"] .gb-suche { color: var(--px-tinte); background: #fff; border: 3px solid var(--px-tinte); border-radius: 0; }
+body[data-welt="pixel"] .nische { background: #3d2f63; border: 2px solid var(--px-tinte); box-shadow: inset 0 6px 0 #2a2048; }
+body[data-welt="pixel"] .nische .ni-k { color: #fff; }
+body[data-welt="pixel"] .nische .ni-l { color: #d8d0f4; }
+body[data-welt="pixel"] .nische.leer .ni-k { color: #8a7ab8; }
+body[data-welt="pixel"] .nische.leer .ni-l { color: #6a5a98; }
+body[data-welt="pixel"] .nische.r3 { border-color: var(--px-rot); }
+body[data-welt="pixel"] .nische.kerze::after { border-radius: 0; background: linear-gradient(180deg, #fff4c0 0 30%, var(--px-gelb) 30% 60%, var(--px-orange) 60%); box-shadow: 0 0 8px rgba(255, 210, 58, .8); }
+body[data-welt="pixel"] .nichts { color: #fff; text-shadow: var(--umriss-fein); }
+body[data-welt="pixel"] .nische-blatt { color: var(--px-tinte); background: var(--px-papier); border-top: 3px solid var(--px-tinte); }
+body[data-welt="pixel"] .nb-innen .kuerzel-gross { color: var(--px-tinte); }
 
 /* ---------- Hinweis bei neuer Fassung ---------- */
 .toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(var(--unten) + 16px); width: min(528px, calc(100% - 2 * var(--rand))); display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; background: var(--stein-2); border: 1px solid var(--gold-tief); border-radius: 8px; box-shadow: 0 10px 30px #000; font-size: 15px; }

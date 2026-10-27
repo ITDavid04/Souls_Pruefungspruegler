@@ -73,9 +73,10 @@ for (const f of await readdir(path.join(SRC, 'werkstatt'))) {
 for (const f of await readdir(path.join(SRC, 'icons'))) await copy(path.join(SRC, 'icons', f), 'icons/' + f);
 await put('.nojekyll', '');
 
-/* Bilder: nur die, die in welt.js vorkommen (groß und klein); die Inseln des Pixelparadieses (sprite) gibt es nur in einer Größe */
+/* Bilder: nur die, die in welt.js vorkommen (groß und klein), dazu die Pixel-Gegenstücke ('px-...');
+   die Inseln des Pixelparadieses (sprite) gibt es nur in einer Größe */
 const welt = await read(path.join(SRC, 'js', 'welt.js'));
-const bilder = [...new Set([...welt.matchAll(/[bB]ild: '([a-z0-9-]+)'|_BILD = '([a-z0-9-]+)'/g)].map(m => m[1] || m[2]))];
+const bilder = [...new Set([...welt.matchAll(/[bB]ild: '([a-z0-9-]+)'|_BILD = '([a-z0-9-]+)'|'(px-[a-z0-9-]+)'/g)].map(m => m[1] || m[2] || m[3]))];
 for (const b of bilder) for (const s of ['', '-klein']) await copy(path.join(SRC, 'img', b + s + '.webp'), 'img/' + b + s + '.webp');
 const sprites = [...new Set([...welt.matchAll(/sprite: '([a-z0-9-]+)'/g)].map(m => m[1]))];
 for (const b of sprites) await copy(path.join(SRC, 'img', b + '.webp'), 'img/' + b + '.webp');

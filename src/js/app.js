@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, PIXEL_TITEL, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -42,7 +42,7 @@ const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
   blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, wind: true, kampfklang: true, klasse: null, lauf: null, zeige: null,
-  startwelt: 'lagerfeuer',
+  startwelt: 'lagerfeuer', stil: 'souls',
   himmel: { herzen: 0, wuerfel: 0, abstuerze: 0, kombo: 0, besucht: false }
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
@@ -76,6 +76,9 @@ const iz = lf => { const z = kz(lf); if (z.splitter === undefined) Object.assign
 const herzMax = () => Math.min(K.HERZEN_MAX, K.HERZEN + (S.himmel.herzen || 0) + (istKlasse('krieger') ? 1 : 0));
 const lebenMax = O => istPixel(O) ? herzMax() : maxLeben();
 const pixelWelt = () => { document.body.dataset.welt = 'pixel'; };
+/* Spielstil: 'souls' (düster, gemalt) oder 'pixel' (das ganze Spiel in 8 Bit, gleiche Regeln) */
+const pixelStil = () => S.stil === 'pixel';
+const bildVon = name => pixelStil() && PIXEL_BILDER[name] || name;
 
 /* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln;
    die Katakomben bringen eigene Phasen, Seelen und Regeln mit. */
@@ -97,6 +100,8 @@ const app = $('#app');
 /* ---------- Hintergrund mit Überblendung, dazu Schnee oder Glut ---------- */
 let bgAktiv = 'a', bgName = null;
 function hintergrund(name, art = '', wetter = ''){
+  /* Im Pixelstil tauscht jedes gemalte Bild gegen sein Gegenstück in Pixeln; ohne Bild brennt das Lagerfeuer unter Sternen */
+  if (pixelStil()) name = name ? bildVon(name) : art === 'tod' || art === 'tod-pruefung' ? null : PIXEL_LAGER;
   document.body.dataset.bg = art;
   document.body.dataset.wetter = wetter;
   if (name === bgName) return;
@@ -159,7 +164,7 @@ function render(){
   stoppeUhr();
   if (aufraeumen) { aufraeumen(); aufraeumen = null; }
   document.documentElement.classList.toggle('im-kampf', titelGezeigt && !!S.lauf && !S.zeige);
-  document.body.dataset.welt = '';
+  document.body.dataset.welt = pixelStil() ? 'pixel' : '';
   if (!titelGezeigt) return titel();
   if (S.zeige) return zeige();
   if (S.lauf) return kampf();
@@ -177,8 +182,19 @@ window.addEventListener('hashchange', () => { rastSatz = null; render(); window.
 /* Titel: bei jedem Start. Wer zum ersten Mal hier ist, bekommt die Regeln, alle anderen einen Satz, der sich erinnert. */
 /* Startwelt: Wer im Pixelparadies startet, bekommt den bunten Titel und landet danach auf der Inselkarte */
 const startHimmel = () => S.startwelt === 'himmel';
+/* Der Schalter oben auf beiden Titeln: Souls oder Pixel, wirkt sofort */
+const stilWahl = () => '<div class="stil-wahl" role="group" aria-label="Spielstil">' +
+  [['souls', 'Souls'], ['pixel', 'Pixel']].map(([id, name]) => '<button type="button" class="stil-knopf" data-stil="' + id + '" aria-pressed="' + (S.stil === id) + '">' + name + '</button>').join('') + '</div>';
+function stilBinden(){
+  $$('.stil-knopf').forEach(b => b.addEventListener('click', () => {
+    if (S.stil === b.dataset.stil) return;
+    S.stil = b.dataset.stil; sichern(); render();
+    if (pixelStil()) T.chip('tor');
+    fokus('.stil-knopf[data-stil="' + S.stil + '"]');
+  }));
+}
 function titel(){
-  if (startHimmel()) return pixelTitel();
+  if (startHimmel() || pixelStil()) return pixelTitel();
   hintergrund(TITEL_BILD, 'titel', 'nebel');
   const erstes = !S.gestartet, L = S.lauf;
   const bosse = KREISE.filter(k => kz(k.lf).boss).length + Object.keys(ARENEN).filter(id => besiegt(id)).length;
@@ -193,7 +209,7 @@ function titel(){
     }
   }
   app.innerHTML =
-    '<main class="titel' + (erstes ? ' erstes' : '') + '">' +
+    '<main class="titel' + (erstes ? ' erstes' : '') + '">' + stilWahl() +
       '<div class="tor-schrift" aria-hidden="true"><p class="inschrift">' + esc(INSCHRIFT) + '</p><p class="kritzel">' + esc(INSCHRIFT_NACHTRAG) + '</p></div>' +
       '<div class="titel-unten">' +
         '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
@@ -220,6 +236,7 @@ function titel(){
     setTimeout(() => { weiter(); requestAnimationFrame(() => document.body.classList.remove('abstieg')); }, 700);
   });
   aufraeumen = spuk();
+  stilBinden();
   fokus('#los');
 }
 
@@ -228,11 +245,12 @@ function pixelTitel(){
   pixelWelt();
   hintergrund(HIMMEL_BILD, 'pixel', 'funken');
   const erstes = !S.gestartet, L = S.lauf, mitten = L && L.leben > 0 && !S.zeige;
-  const satz = erstes ? PIXEL_TITEL.zitat : mitten ? PIXEL_TITEL.lauf : K.pick(PIXEL_TITEL.sonst);
+  const himmel = startHimmel();
+  const satz = mitten ? PIXEL_TITEL.lauf : erstes || !himmel ? (himmel ? PIXEL_TITEL.zitat : PIXEL_TITEL.reise) : K.pick(PIXEL_TITEL.sonst);
   const klein = mitten ? esc(ortDaten(L.ort).ort) + ' · ' + (L.art === 'boss' ? esc(ortDaten(L.ort).phasen[L.phase].name) : 'Karte ' + (L.pos + 1) + ' von ' + L.plan.length) : '';
   const waechter = INSELN.filter(k => kz(k.lf).boss).length;
   app.innerHTML =
-    '<main class="titel px-titel-seite' + (erstes ? ' erstes' : '') + '">' +
+    '<main class="titel px-titel-seite' + (erstes ? ' erstes' : '') + '">' + stilWahl() +
       '<div class="px-buehne" aria-hidden="true">' +
         '<img class="px-insel buehne-links" src="img/insel-merkur.webp" alt="" width="112" height="124">' +
         '<span class="buehne-mitte"><img class="px-insel" src="img/insel-sonne.webp" alt="" width="112" height="124">' + P.figur('bit', 'buehne-bit') + '</span>' +
@@ -241,11 +259,11 @@ function pixelTitel(){
       '<div class="titel-unten">' +
         '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
         '<h1 class="logo px-logo">Prüfungs&shy;prügler</h1>' +
-        '<p class="px-unter">' + esc(PIXEL.name) + ' · ' + esc(PIXEL.zusatz) + '</p>' +
+        '<p class="px-unter">' + (himmel ? esc(PIXEL.name) + ' · ' + esc(PIXEL.zusatz) : 'Die ganze Reise in 8 Bit') + '</p>' +
         '<blockquote class="px-dialog">' + esc(satz) + '</blockquote>' +
-        (erstes ? '' : '<p class="titel-stand px-stand"><b>' + zahl(S.himmel.wuerfel || 0) + '</b> Goldwürfel · <b>' + waechter + '</b> von 7 Wächtern · Stufe <b>' + S.stufe + '</b> · <b>' + zahl(S.seelen) + '</b> Seelen</p>') +
-        '<button type="button" class="knopf haupt" id="los">' + (mitten ? 'Weiterkämpfen' : erstes ? 'Losspringen' : 'Weiterspringen') + (klein ? '<small>' + klein + '</small>' : '<small class="blinken">Start drücken</small>') + '</button>' +
-        (erstes ? '<ul class="regeln px-regeln px-dialog">' + PIXEL_TITEL.regeln.map(r => '<li>' + r + '</li>').join('') + '</ul>' : '') +
+        (erstes ? '' : '<p class="titel-stand px-stand">' + (himmel ? '<b>' + zahl(S.himmel.wuerfel || 0) + '</b> Goldwürfel · <b>' + waechter + '</b> von 7 Wächtern · ' : '<b>' + zahl(S.tode) + '</b> ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ') + 'Stufe <b>' + S.stufe + '</b> · <b>' + zahl(S.seelen) + '</b> Seelen</p>') +
+        '<button type="button" class="knopf haupt" id="los">' + (mitten ? 'Weiterkämpfen' : himmel ? (erstes ? 'Losspringen' : 'Weiterspringen') : erstes ? 'Hinabsteigen' : 'Zum Lagerfeuer') + (klein ? '<small>' + klein + '</small>' : '<small class="blinken">Start drücken</small>') + '</button>' +
+        (erstes ? '<ul class="regeln px-regeln px-dialog">' + (himmel ? PIXEL_TITEL.regeln : PIXEL_TITEL.regelnReise).map(r => '<li>' + r + '</li>').join('') + '</ul>' : '') +
       '</div>' +
     '</main>';
   let los = false;
@@ -254,9 +272,10 @@ function pixelTitel(){
     los = true;
     S.gestartet = true; sichern();
     T.chip('tor');
-    if (!S.lauf && !S.zeige && (location.hash === '' || location.hash === '#/')) history.replaceState(null, '', '#/himmel');
+    if (himmel && !S.lauf && !S.zeige && (location.hash === '' || location.hash === '#/')) history.replaceState(null, '', '#/himmel');
     titelGezeigt = true; render(); window.scrollTo(0, 0);
   });
+  stilBinden();
   fokus('#los');
 }
 
@@ -347,7 +366,7 @@ function spuk(){
 function kachel(k){
   const z = kreisZahlen(k.lf), st = kz(k.lf);
   const zustand = st.boss ? '<span class="marke gold">Bezwungen</span>' : st.feuer >= K.FEUER_ZUM_TOR ? '<span class="marke nebel">Nebeltor offen</span>' : '';
-  return '<li><a class="kachel' + (k.akt === 2 ? ' berg-kachel' : k.akt === 0 ? ' katakomben-kachel' : '') + '" href="#/kreis/' + k.lf + '" style="--bild:url(img/' + k.bild + '-klein.webp)">' +
+  return '<li><a class="kachel' + (k.akt === 2 ? ' berg-kachel' : k.akt === 0 ? ' katakomben-kachel' : '') + '" href="#/kreis/' + k.lf + '" style="--bild:url(img/' + bildVon(k.bild) + '-klein.webp)">' +
     '<span class="kachel-nr">' + kreisMarke(k) + '</span>' +
     '<strong class="kachel-name">' + esc(k.name) + '</strong>' +
     '<span class="kachel-lf">' + esc(k.lfName) + '</span>' +
@@ -360,7 +379,7 @@ function arenaKachel(id){
   const text = fest ? (id === 'gipfel' ? 'Bestanden. Der Stuhl ist leer.' : 'Bezwungen. Das Eis schweigt.')
     : offen ? (id === 'gipfel' ? 'Das Feuer brennt. Der Stuhl wartet.' : 'Das Eis knackt. Er wartet.')
     : 'Erst wenn alle ' + (id === 'gipfel' ? 'dreizehn Bosse' : 'sechs Bosse des Abstiegs') + ' liegen. Noch ' + rest + '.';
-  return '<li><a class="kachel arena arena-' + id + (offen || fest ? '' : ' zu') + '" href="#/' + id + '" style="--bild:url(img/' + a.bild + '-klein.webp)">' +
+  return '<li><a class="kachel arena arena-' + id + (offen || fest ? '' : ' zu') + '" href="#/' + id + '" style="--bild:url(img/' + bildVon(a.bild) + '-klein.webp)">' +
     '<span class="kachel-nr">' + esc(a.nr) + '</span>' +
     '<strong class="kachel-name">' + esc(a.boss) + '</strong>' +
     '<span class="kachel-lf">' + text + '</span>' +
@@ -382,7 +401,7 @@ function lagerfeuer(){
   app.innerHTML =
     '<main class="hub">' +
       '<section class="feuerstelle">' +
-        FLAMME +
+        (pixelStil() ? P.lagerfeuer() : FLAMME) +
         '<h1 class="gold-titel">Lagerfeuer</h1>' +
         '<p class="rast">' + esc(rastSatz) + '</p>' +
         (S.ng ? '<p class="ng-marke">Neues Spiel+' + (S.ng > 1 ? ' ' + S.ng : '') + '</p>' : '') +
@@ -410,7 +429,7 @@ function lagerfeuer(){
       '<h2 class="abschnitt berg-abschnitt"><span>' + AKTE[1].name + '</span><small>' + AKTE[1].zusatz + (berg ? ' · ' + bosseIn(2) + ' von 6 Bossen' : '') + '</small></h2>' +
       '<ul class="kacheln">' +
         (berg ? kreiseVon(2).map(kachel).join('')
-          : '<li><div class="kachel zu berg-zu" style="--bild:url(img/' + BERG_BILD + '-klein.webp)">' +
+          : '<li><div class="kachel zu berg-zu" style="--bild:url(img/' + bildVon(BERG_BILD) + '-klein.webp)">' +
               '<span class="kachel-nr">Jenseits des Eises</span><strong class="kachel-name">Der Läuterungsberg</strong>' +
               '<span class="kachel-lf">Hinter dem Zwischenprüfer. Wer durch das Eis geht, sieht den Berg.</span></div></li>') +
         arenaKachel('gipfel') +
@@ -430,6 +449,7 @@ function lagerfeuer(){
         '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen' +
           (S.raetsel && S.raetsel.versucht ? ' · ' + S.raetsel.geloest + ' von ' + S.raetsel.versucht + ' Rätseln gelöst' : '') + '</p>' +
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
+        '<label class="probe"><input type="checkbox" id="stil"' + (pixelStil() ? ' checked' : '') + '> Pixelstil für das ganze Spiel <small>Alle Kreise, Gesimse und Arenen in 8 Bit. Regeln und Lernstand bleiben gleich.</small></label>' +
         '<label class="probe"><input type="checkbox" id="startwelt"' + (startHimmel() ? ' checked' : '') + '> Im Pixelparadies starten <small>Bunter Titel, danach direkt zur Inselkarte. Das Lagerfeuer bleibt einen Schritt entfernt.</small></label>' +
         '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
@@ -450,6 +470,7 @@ function lagerfeuer(){
   $$('.klasse-karte').forEach(b => b.addEventListener('click', () => { S.klasse = b.dataset.klasse; sichern(); T.schlag({ gut: true, klang: klassenKlang() }); render(); fokus('.klasse-karte.gewaehlt'); }));
   const klasseAb = $('#klasse-ab'); if (klasseAb) klasseAb.addEventListener('click', () => { S.klasse = null; sichern(); render(); fokus('.klasse-karte'); });
   $('#probe').addEventListener('change', e => { S.probe = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#probe'); });
+  $('#stil').addEventListener('change', e => { S.stil = e.target.checked ? 'pixel' : 'souls'; sichern(); render(); $('.spielstand').open = true; fokus('#stil'); });
   $('#startwelt').addEventListener('change', e => { S.startwelt = e.target.checked ? 'himmel' : 'lagerfeuer'; sichern(); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
@@ -464,6 +485,9 @@ function lagerfeuer(){
   installKnopf();
 }
 
+/* Im Pixelstil steht die Szene am Handy gerahmt oben auf der Seite; als Vollbild wäre sie dort nur ein Ausschnitt */
+const buehnenbild = bild => pixelStil() ? '<figure class="px-buehnenbild" style="--szene:url(img/' + bildVon(bild) + '.webp)" aria-hidden="true"></figure>' : '';
+
 /* Kreis oder Gesims: Bild, Zitat, Stand, Gang oder Nebeltor */
 function kreisSeite(lf){
   const k = kreis(lf), st = kz(lf), z = kreisZahlen(lf);
@@ -471,7 +495,7 @@ function kreisSeite(lf){
   const torOffen = st.feuer >= K.FEUER_ZUM_TOR && !st.boss;
   app.innerHTML =
     '<main class="kreis-seite' + (k.akt === 2 ? ' am-berg' : k.akt === 0 ? ' in-katakomben' : '') + '">' +
-      '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' +
+      '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' + buehnenbild(k.bild) +
       '<header class="kreis-kopf">' +
         '<p class="ueber">' + kreisMarke(k) + '</p>' +
         '<h1 class="kreis-name">' + esc(k.name) + '</h1>' +
@@ -509,7 +533,7 @@ function arenaSeite(id){
   const knopf = id === 'gipfel' ? 'Durch das Feuer gehen' : 'Aufs Eis treten';
   app.innerHTML =
     '<main class="kreis-seite arena-seite arena-' + id + '">' +
-      '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' +
+      '<a class="zurueck" href="#/">Zum Lagerfeuer</a>' + buehnenbild(a.bild) +
       '<header class="kreis-kopf">' +
         '<p class="ueber">' + esc(a.nr) + ' · ' + esc(a.name) + '</p>' +
         '<h1 class="kreis-name">' + esc(a.boss) + '</h1>' +
@@ -885,8 +909,9 @@ function kampf(){
           '<div class="px-boss-info"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
           '<div class="px-lp" role="meter" aria-label="Treffer bis zum Fall" aria-valuemin="0" aria-valuemax="' + ph.treffer + '" aria-valuenow="' + (ph.treffer - L.phaseTreffer) + '">' +
             Array.from({ length: ph.treffer }, (_, i) => '<i class="' + (i < ph.treffer - L.phaseTreffer ? 'an' : '') + '"></i>').join('') + '</div></div></div>'
-        : boss ? '<div class="bossbalken"><span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
-        '<div class="balken"><i style="width:' + ((ph.treffer - L.phaseTreffer) / ph.treffer * 100) + '%"></i></div></div>' : '') +
+        : boss ? '<div class="bossbalken' + (pixelStil() ? ' mit-figur' : '') + '">' + (pixelStil() ? P.figur(P.bossFigur(L.ort, L.phase), 'boss-figur' + (f.beantwortet ? (f.gut ? ' getroffen' : ' lacht') : '')) + '<div class="px-boss-info">' : '') +
+          '<span class="boss-name">' + esc(ph.name) + '<small>' + esc(ph.zusatz) + '</small></span>' + phasenAnzeige +
+          '<div class="balken"><i style="width:' + ((ph.treffer - L.phaseTreffer) / ph.treffer * 100) + '%"></i></div></div>' + (pixelStil() ? '</div>' : '') : '') +
       '<section class="karte' + (phantom ? ' phantom-karte' : '') + (r ? ' raetsel-karte raetsel-' + r.art : '') + (f.bombe ? ' bombe-karte' + (f.beantwortet ? (f.gut ? ' entschaerft' : ' explodiert') : '') : '') + '" id="karte">' +
         (f.bombe && !f.beantwortet ? '<div class="bombe-kopf">' + P.figur('bombe', 'bombe-figur') + '<p>' + esc(BOMBE.auftritt[streu(f.id) % BOMBE.auftritt.length]) + '</p></div>' : '') +
         (f.auftritt && !f.beantwortet && ph.auftritt ? '<p class="auftritt">' + esc(ph.auftritt) + '</p>' : '') +
@@ -1389,6 +1414,7 @@ function zeige(){
     app.innerHTML =
       '<main class="gross tod' + (z.ort === 'gipfel' ? ' durchgefallen' : z.ort === 'kokytos' ? ' erfroren' : '') + '" role="alertdialog" aria-modal="true" aria-labelledby="tod-titel">' +
         '<div class="band"><h1 id="tod-titel">' + titel + '</h1></div>' +
+        (pixelStil() ? '<div class="px-szene" aria-hidden="true">' + P.figur('bit', 'szene-bit tot') + '<i class="px-wolke"></i></div>' : '') +
         '<div class="gross-inhalt spaet">' +
           '<p class="tod-von">' + (z.ort === 'gipfel' ? 'Der Ausschuss hat entschieden, wegen' : 'Erledigt von') + '</p>' +
           '<p class="tod-begriff">' + esc(r ? R.NAMEN[r.art] : c.n) + '</p>' +
@@ -1409,7 +1435,7 @@ function zeige(){
     hintergrund(null, 'feuer');
     app.innerHTML =
       '<main class="gross feuer-gross" role="dialog" aria-modal="true" aria-labelledby="feuer-titel">' +
-        FLAMME.replace('class="flamme"', 'class="flamme gross-flamme"') +
+        (pixelStil() ? P.lagerfeuer('gross-feuer') : FLAMME.replace('class="flamme"', 'class="flamme gross-flamme"')) +
         '<div class="band gold"><h1 id="feuer-titel">' + (z.neu ? 'Lagerfeuer entzündet' : 'Rast am Lagerfeuer') + '</h1></div>' +
         '<div class="gross-inhalt spaet">' +
           '<p class="bilanz"><b>' + z.richtig + '</b> von ' + z.gesamt + ' richtig · <b>+' + zahl(z.plus) + '</b> Seelen</p>' +
@@ -1434,6 +1460,7 @@ function zeige(){
       '<main class="gross nebel' + (arena ? ' tor-' + z.ort : '') + '" role="dialog" aria-modal="true" aria-labelledby="tor-titel">' +
         (arena ? '' : '<div class="nebel-schleier" aria-hidden="true"></div>') +
         '<p class="ueber">' + (z.ort === 'gipfel' ? 'Hinter der Feuerwand' : z.ort === 'kokytos' ? 'Auf dem gefrorenen See' : 'Hinter dem Nebeltor') + '</p>' +
+        (pixelStil() ? '<div class="waechter-auftritt">' + P.figur(P.bossFigur(z.ort), 'waechter-gross') + '</div>' : '') +
         '<h1 class="boss-gross" id="tor-titel">' + esc(O.boss) + '<small>' + esc(O.bossZusatz) + '</small></h1>' +
         '<ul class="regeln">' + regeln.map(r => '<li>' + r + '</li>').join('') + '</ul>' +
         '<div class="zeile"><button type="button" class="knopf haupt" id="weiter">' + (z.ort === 'gipfel' ? 'Platz nehmen' : 'Eintreten') + '</button><button type="button" class="knopf leise" id="zurueck">Noch nicht</button></div>' +
@@ -1451,6 +1478,7 @@ function zeige(){
       '<main class="gross sieg" role="dialog" aria-modal="true" aria-labelledby="sieg-titel">' +
         '<div class="band gold"><h1 id="sieg-titel">Gegner bezwungen</h1></div>' +
         '<div class="gross-inhalt spaet">' +
+          (pixelStil() ? '<div class="px-szene sieg-szene" aria-hidden="true">' + P.figur(P.bossFigur(z.ort, 9), 'szene-waechter besiegt') + P.figur('bit', 'szene-bit jubel') + '</div>' : '') +
           '<p class="boss-gross klein-boss">' + esc(O.boss) + '</p>' +
           '<p class="bilanz"><b>+' + zahl(z.seelen) + '</b> Seelen' + belohnung + '</p>' +
           '<p>Titel errungen: <b class="gold-text">' + esc(O.titel) + '</b></p>' +

@@ -9,6 +9,7 @@ Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 > und zwischen den Karten Rätsel: Rechengegner, Botschaften, Mimic-Truhen und Restore-Notfälle.
 > Dazu die Werkstatt mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk zum Ausprobieren,
 > und als Erweiterung **das Pixelparadies**: sieben schwebende Inseln in 8 Bit, AP1 und AP2 nach Themen gemischt, mit Kombos, Bomben und Goldwürfeln.
+> Das ganze Spiel lässt sich in zwei Varianten spielen: **Souls** (düster, gemalt) oder **Pixel** (alles in 8 Bit). Umschalten oben auf dem Titel.
 > **Live:** https://itdavid04.github.io/Souls_Pruefungspruegler/
 
 ## Die Reise, frei nach Dante
@@ -204,8 +205,30 @@ vom Knall nur der Schriftzug, ohne Funken und Beben.
 
 Alles Bunte hängt an `body[data-welt="pixel"]` in `app.css`. Die Figuren (Bit, der kleine Prüfling mit der Kaffeetasse als Hut, die Wächter,
 Herzen, Würfel, Bombe, Schatzkiste) zeichnet `src/js/pixel.js` als Pixel-SVG mit Umriss, dazu den Knall mit eckigen Funken.
-Himmel und Inseln malt `python3 -I tools/pixel_bilder.py` Pixel für Pixel in kleiner Auflösung (verlustfreies WebP, zusammen etwa 100 KB),
+Himmel, Inseln und die Szenen für den Spielstil Pixel malt `python3 -I tools/pixel_bilder.py` Pixel für Pixel in kleiner Auflösung (verlustfreies WebP, zusammen etwa 250 KB),
 die App vergrößert sie ohne Glätten.
+
+
+## Zwei Varianten: Souls oder Pixel
+
+Oben rechts auf dem Titel (und unter „Spielstand“) liegt der Schalter **Souls | Pixel**. Er wirkt sofort und gilt für das ganze Spiel.
+Regeln, Karten, Lernstand, Seelen und Blutfleck bleiben gleich, es wechselt nur das Aussehen:
+
+| **Was** | **Souls** | **Pixel** |
+|---|---|---|
+| Titel | Das Tor mit Augen, Flüstern und rotem Schleier | Drei schwebende Inseln, Bit, ein Logo, das hereinknallt |
+| Lagerfeuer | Gemalte Flamme mit Schwert | Pixelfeuer mit Schwert und eckigen Funken unter Sternen |
+| Kreise, Gesimse, Arenen | Die gemalten Bilder des Reinprüglers und die Silhouetten am Berg | Eigene Pixelszenen: Lastenwälzer, Blutfluss, Sturm, Cerberus im Schlamm, Stadt Dis, Styx, die sechs Gesimse, Katakomben, Kokytos, Feuerwand, Prüfungsraum |
+| Bosse | Name und Balken | Jeder Boss als Pixelfigur, im Kampf, am Nebeltor und beim Sieg (beim Zwischenprüfer und im Ausschuss je Phase eine eigene) |
+| Werkstatt | Dunkler Souls-Anstrich | Heller Originalanstrich der Werkzeuge, Kopfzeile in 8 Bit |
+
+Am Handy steht die Szene eines Ortes gerahmt oben auf der Seite, als Vollbild wäre dort nur ein schmaler Ausschnitt zu sehen;
+am breiten Bildschirm füllt sie den ganzen Hintergrund. Der Spielstil ist unabhängig von der Startwelt: Wer will, spielt düster
+und startet trotzdem im Pixelparadies, oder umgekehrt.
+
+Technik: `S.stil` ist `souls` oder `pixel`. Im Pixelstil trägt `body` immer `data-welt="pixel"`, und `app.css` malt alle Ansichten
+in 8 Bit. Jedes gemalte Bild hat ein Gegenstück (`PIXEL_BILDER` in `welt.js`), das `tools/pixel_bilder.py` zeichnet.
+Die Bossfiguren und das Pixelfeuer stehen in `src/js/pixel.js`, die Werkstatt liest den Stil in `src/werkstatt/werkstatt-stil.js`.
 
 ## Fragen
 
