@@ -25,7 +25,7 @@ const store = {
 const SPIEL = 'spp.spiel', PROG = 'spp.prog';
 const neuesSpiel = () => ({
   v: 2, gestartet: false, stufe: 1, seelen: 0, verdient: 0, tode: 0, antworten: 0, flakons: 3, roestung: 0, ng: 0,
-  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, lauf: null, zeige: null
+  blut: null, kreise: {}, arenen: {}, aufstieg: false, bestanden: 0, probe: false, nurAp2: false, frieden: false, lauf: null, zeige: null
 });
 let S = Object.assign(neuesSpiel(), store.get(SPIEL, {}) || {});
 let prog = store.get(PROG, {}) || {};
@@ -39,12 +39,13 @@ const sichern = () => { store.set(SPIEL, S); store.set(PROG, prog); };
 const kz = lf => S.kreise[lf] || (S.kreise[lf] = { feuer: 0, boss: false });
 const az = id => S.arenen[id] || (S.arenen[id] = { boss: false, versuche: 0 });
 const besiegt = ort => typeof ort === 'number' ? kz(ort).boss : az(ort).boss;
-const aufstiegOffen = () => S.aufstieg || S.probe;
+const aufstiegOffen = () => S.aufstieg || S.probe || S.nurAp2;
 const kreisOffen = lf => kreis(lf).akt !== 2 || aufstiegOffen();
 const arenaOffen = id => S.probe || ARENEN[id].voraus.every(besiegt);
 const fehlend = id => ARENEN[id].voraus.filter(o => !besiegt(o)).length;
 const maxLeben = () => K.maxLeben(S.stufe);
 const heilung = () => K.heilung(S.roestung);
+const friede = () => !!S.frieden;
 
 /* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln;
    die Katakomben bringen eigene Phasen, Seelen und Regeln mit. */
@@ -340,6 +341,8 @@ function lagerfeuer(){
         '<p>' + zahl(S.verdient) + ' Seelen verdient · ' + zahl(S.antworten) + ' Antworten · ' + S.tode + ' ' + (S.tode === 1 ? 'Tod' : 'Tode') + ' · ' + KARTEN.filter(c => K.stand(prog, c).b > 0).length + ' von ' + zahl(KARTEN.length) + ' Karten gesehen' +
           (S.raetsel && S.raetsel.versucht ? ' · ' + S.raetsel.geloest + ' von ' + S.raetsel.versucht + ' Rätseln gelöst' : '') + '</p>' +
         (titelListe.length ? '<p class="titel-liste"><b>Deine Titel:</b> ' + titelListe.map(esc).join(' · ') + '</p>' : '') +
+        '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
+        (!S.aufstieg ? '<label class="probe"><input type="checkbox" id="nurAp2"' + (S.nurAp2 ? ' checked' : '') + '> Nur AP2 lernen <small>Öffnet den Läuterungsberg sofort, ohne den Zwischenprüfer.</small></label>' : '') +
         '<label class="probe"><input type="checkbox" id="probe"' + (S.probe ? ' checked' : '') + '> Prototyp: alle Tore offen <small>Zum Ansehen. Bosse zählen erst, wenn du sie besiegst.</small></label>' +
         '<button type="button" class="knopf leise" id="installieren" hidden>App installieren</button>' +
         '<div class="loeschen" id="loeschen"><button type="button" class="knopf leise gefahr" id="loeschen-frage">Spielstand löschen</button></div>' +
@@ -353,6 +356,8 @@ function lagerfeuer(){
     fokus('#aufstieg');
   });
   $('#probe').addEventListener('change', e => { S.probe = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#probe'); });
+  const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
+  const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
   $('#loeschen-frage').addEventListener('click', () => {
     $('#loeschen').innerHTML = '<span>Alles löschen, auch den Lernstand?</span><button type="button" class="knopf leise gefahr" id="loeschen-ja">Ja, löschen</button><button type="button" class="knopf leise" id="loeschen-nein">Abbrechen</button>';
     $('#loeschen-ja').addEventListener('click', () => { store.del(SPIEL); store.del(PROG); S = neuesSpiel(); prog = {}; location.hash = ''; render(); });
@@ -605,15 +610,16 @@ function kampf(){
     ? '<span class="phase">' + esc(O.phasenWort) + ' ' + (L.phase + 1) + ' von ' + O.phasen.length + '</span>' : '';
   app.innerHTML =
     '<main class="kampf' + (boss ? ' ist-boss' : '') + '">' +
-      '<header class="hud">' +
-        '<div class="leben" role="meter" aria-label="Leben" aria-valuemin="0" aria-valuemax="' + mx + '" aria-valuenow="' + L.leben + '">' +
-          '<div class="balken"><i class="spur" style="width:' + pct(vorher) + '%"></i><i class="wert" style="width:' + pct(L.leben) + '%"></i></div>' +
-          '<span class="leben-zahl">' + L.leben + ' / ' + mx + '</span>' +
-        '</div>' +
-        '<button type="button" class="flakon' + (kaffeeVerboten ? ' verboten' : O.kaffee === 'gefroren' ? ' gefroren' : '') + '" id="flakon"' +
-          (kaffeeVerboten || L.flakons <= 0 || L.leben <= 0 || L.leben >= mx ? ' disabled' : '') +
-          ' aria-label="' + (kaffeeVerboten ? 'Kein Kaffee im Prüfungsraum' : 'Kaffeeflakon trinken, plus ' + heilung() + ' Leben, noch ' + L.flakons) + '">' +
-          TASSE + '<b>' + (kaffeeVerboten ? '0' : L.flakons) + '</b></button>' +
+      '<header class="hud' + (friede() ? ' ruhig' : '') + '">' +
+        (friede() ? '<span class="ruhig-marke">Ruhiger Modus</span>' :
+          '<div class="leben" role="meter" aria-label="Leben" aria-valuemin="0" aria-valuemax="' + mx + '" aria-valuenow="' + L.leben + '">' +
+            '<div class="balken"><i class="spur" style="width:' + pct(vorher) + '%"></i><i class="wert" style="width:' + pct(L.leben) + '%"></i></div>' +
+            '<span class="leben-zahl">' + L.leben + ' / ' + mx + '</span>' +
+          '</div>' +
+          '<button type="button" class="flakon' + (kaffeeVerboten ? ' verboten' : O.kaffee === 'gefroren' ? ' gefroren' : '') + '" id="flakon"' +
+            (kaffeeVerboten || L.flakons <= 0 || L.leben <= 0 || L.leben >= mx ? ' disabled' : '') +
+            ' aria-label="' + (kaffeeVerboten ? 'Kein Kaffee im Prüfungsraum' : 'Kaffeeflakon trinken, plus ' + heilung() + ' Leben, noch ' + L.flakons) + '">' +
+            TASSE + '<b>' + (kaffeeVerboten ? '0' : L.flakons) + '</b></button>') +
         '<span class="seelen-hud"><b>' + zahl(S.seelen) + '</b> Seelen</span>' +
       '</header>' +
       '<div class="lauf-kopf">' +
@@ -640,7 +646,7 @@ function kampf(){
   if (vorher !== L.leben) requestAnimationFrame(() => requestAnimationFrame(() => { const s = $('.spur'); if (s) s.style.width = pct(L.leben) + '%'; }));
   letzteLeben = L.leben;
 
-  $('#flakon').addEventListener('click', trinken);
+  const flakonKnopf = $('#flakon'); if (flakonKnopf) flakonKnopf.addEventListener('click', trinken);
   $('#rueckzug').addEventListener('click', rueckzugFragen);
   if (f.beantwortet) { $('#weiter').addEventListener('click', weiter); fokus('#weiter'); return; }
   if (r) raetselBinden(f);
@@ -894,7 +900,7 @@ function antworten(gut, info){
         } else { L.gefallen = true; zeilen.push(O.schluss || 'Der Boss wankt …'); }
       } else zeilen.push('Treffer. Noch ' + (ph.treffer - L.phaseTreffer) + (mehrphasig ? ' bei ' + ph.name : ' bis zum Fall') + '.');
     }
-    if (f.tippfehler && O.tippfehler) {
+    if (f.tippfehler && O.tippfehler && !friede()) {
       L.leben = Math.max(1, L.leben - O.tippfehler);
       zeilen.push('Der Vorsitz runzelt die Stirn über die Rechtschreibung: −' + O.tippfehler + ' Leben');
     }
@@ -902,11 +908,14 @@ function antworten(gut, info){
     else if (Math.random() < 0.2) f.spruch = K.pick(TREFFER);
     if (r && r.art === 'mimic') f.spruch = MIMIC.auf;
   } else {
-    const d = r && r.art === 'mimic' ? K.schadenFuer(3, boss, akt, S.ng) : boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng);
+    const d = friede() ? 0 : (r && r.art === 'mimic' ? K.schadenFuer(3, boss, akt, S.ng) : boss && O.schaden ? Math.round(O.schaden * K.ngSchaden(S.ng)) : K.schadenFuer(fachVorher, boss, akt, S.ng));
     L.leben = Math.max(0, L.leben - d);
     if (f.zeit) zeilen.push('Die Zeit ist um');
-    zeilen.push((r && r.art === 'mimic' ? 'Biss: ' : '') + '−' + d + ' Leben' + (!r && !boss && fachVorher >= 3 ? ', die Karte saß schon, das tut mehr weh' : ''));
-    if (f.blut && S.blut) { zeilen.push('Deine ' + zahl(S.blut.seelen) + ' Seelen versickern im Boden.'); S.blut = null; L.blutOffen = false; }
+    if (friede()) zeilen.push('Daneben.');
+    else {
+      zeilen.push((r && r.art === 'mimic' ? 'Biss: ' : '') + '−' + d + ' Leben' + (!r && !boss && fachVorher >= 3 ? ', die Karte saß schon, das tut mehr weh' : ''));
+      if (f.blut && S.blut) { zeilen.push('Deine ' + zahl(S.blut.seelen) + ' Seelen versickern im Boden.'); S.blut = null; L.blutOffen = false; }
+    }
     if (!r && !boss && L.leben > 0 && !L.nach[c.i]) {
       L.plan.splice(Math.min(L.plan.length, L.pos + 4), 0, '!' + c.i);
       L.nach[c.i] = true;
@@ -953,12 +962,12 @@ function rueckzugFragen(){
   if (!S.lauf || S.lauf.leben <= 0) return;
   const box = $('#rueckzug-frage'), L = S.lauf, boss = L.art === 'boss', pruefung = L.ort === 'gipfel';
   box.hidden = false;
-  box.innerHTML = '<p>' + (pruefung ? 'Den Prüfungsraum verlassen? Das zählt als durchgefallen.'
+  box.innerHTML = '<p>' + (pruefung ? (friede() ? 'Den Prüfungsraum verlassen?' : 'Den Prüfungsraum verlassen? Das zählt als durchgefallen.')
       : boss ? 'Fliehen? Der Boss erholt sich, du behältst deine Seelen.'
       : 'Zum Lagerfeuer zurückziehen? Dieser Gang zählt nicht, deine Seelen behältst du.') + '</p>' +
     '<div class="zeile"><button type="button" class="knopf leise" id="rz-ja">' + (pruefung ? 'Verlassen' : boss ? 'Fliehen' : 'Zurückziehen') + '</button><button type="button" class="knopf haupt" id="rz-nein">' + (pruefung ? 'Bleiben' : 'Weiterkämpfen') + '</button></div>';
   $('#rz-ja').addEventListener('click', () => {
-    if (pruefung) { L.leben = 0; sichern(); sterben(); return; }
+    if (pruefung && !friede()) { L.leben = 0; sichern(); sterben(); return; }
     const ort = L.ort; S.lauf = null; sichern(); location.hash = ortSeite(ort); render();
   });
   $('#rz-nein').addEventListener('click', () => { box.hidden = true; box.innerHTML = ''; });

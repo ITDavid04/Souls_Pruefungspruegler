@@ -125,6 +125,13 @@ genau diese Aufgabe gestellt (Adresse und Präfix, die Routingtabelle mit dem Zi
 nach einer Mimic-Truhe öffnet das Rechenwerk die Gatterwand. Oben führt „Zurück zum Kampf“ ohne Titel wieder in den Gang.
 Den Übungsteil der Klappuhr (Vorhersagen, Fehler finden) gibt es nur im Spiel, als Rätsel.
 
+### Ruhiger Modus und AP2-Abkürzung
+
+Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:
+
+- **Ruhiger Modus** nimmt Leben und Tod heraus. Falsche Antworten kosten nichts, es gibt keinen Blutfleck und kein Sterben. Im Kampf verschwinden Lebensbalken und Kaffee, stattdessen brennt oben ein ruhiger Kerzenpunkt. Seelen und Stufen laufen weiter.
+- **Nur AP2 lernen** öffnet den Läuterungsberg sofort, auch ohne den Zwischenprüfer. Die AP1 bleibt dabei gesperrt. Der Schalter ist nur sichtbar, solange der Berg nicht ohnehin schon offen ist.
+
 ### Prototyp-Schalter
 
 Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.

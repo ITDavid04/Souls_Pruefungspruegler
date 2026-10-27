@@ -243,6 +243,10 @@ html.im-kampf .app { padding-bottom: calc(var(--unten) + 96px); }
 .tasse { width: 22px; height: 22px; color: #d9b98a; }
 .seelen-hud { position: relative; font-size: 13.5px; color: var(--blass); text-align: right; white-space: nowrap; }
 .seelen-hud b { display: block; font: 700 19px/1 var(--f-titel); color: var(--gold); font-variant-numeric: tabular-nums; }
+/* Ruhiger Modus: statt des Lebensbalkens ein ruhiger Kerzenpunkt, kein Flackern */
+.hud.ruhig { grid-template-columns: 1fr auto; }
+.ruhig-marke { display: inline-flex; align-items: center; gap: 9px; min-width: 0; font: 600 14px/1.2 var(--f-text); color: var(--blass); }
+.ruhig-marke::before { content: ""; flex: none; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f0d196, #b8863f 70%); box-shadow: 0 0 12px 3px rgba(232, 194, 122, .45); }
 .seelen-flug { position: absolute; right: 0; top: 100%; font: 700 14px/1 var(--f-titel); color: var(--gold); white-space: nowrap; animation: flug 1.3s ease-out forwards; pointer-events: none; text-shadow: 0 0 10px rgba(224, 184, 102, .6); }
 @keyframes flug { 0% { opacity: 0; transform: translateY(10px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-22px); } }
 

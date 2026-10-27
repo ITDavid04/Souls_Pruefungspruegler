@@ -3,7 +3,7 @@
    CHROME=/pfad npm test   -> falls Chrome woanders liegt
    CI=1 npm test           -> wie auf GitHub (ohne Sandbox)
    Prüft: Titel, Lagerfeuer, Gang bis zum Lagerfeuer, Tod mit Blutfleck, Seelen zurückholen, Weiterspielen nach Neuladen,
-   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Katakomben der Kürzel mit Gebeinhaus
+   Rückzug, Kaffee, Eintippen mit Tippfehler, Nebeltor und Boss, Stufenaufstieg, Ruhiger Modus, AP2-Abkürzung, Katakomben der Kürzel mit Gebeinhaus
    und Akronymant, Rätsel (Rechengegner, Botschaft, Mimic-Truhe, Restore, Tod durch ein Rätsel, Rätsel im Bosskampf),
    Werkstatt (Sprung aus einem falschen Rätsel, Rückweg ohne Titel, Breite am Handy, nichts aus dem Netz),
    Installierbarkeit, Start ohne Netz (auch die Werkstatt), keine Fehler in der Konsole. Gewartet wird auf Zustände, nie fest. */
@@ -710,9 +710,36 @@ try {
   await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
   await ansicht(d, 'hub');
   await d.$eval('.spielstand', e => { e.open = true; });
+  await klick(d, '#nurAp2');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).nurAp2 === true);
+  const ap2Berg = await d.$$eval('.kachel.berg-kachel', k => k.length) === 6;
+  await d.goto(BASE + '#/kreis/1', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'kreis-seite');
+  const ap1Zu = await d.$('#tor') === null && await d.$('.tor-zu') !== null;
+  check('Desktop: AP2-Abkürzung öffnet nur den Berg, AP1 bleibt zu', ap2Berg && ap1Zu, `Berg ${ap2Berg}, AP1 zu ${ap1Zu}`);
+  await foto(d, '59-desktop-nur-ap2', true);
+  await d.goto(BASE + '#/', { waitUntil: 'networkidle0' });
+  await ansicht(d, 'hub');
+  await d.$eval('.spielstand', e => { e.open = true; });
+  await klick(d, '#nurAp2');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).nurAp2 === false);
   await klick(d, '#probe');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).probe === true);
   check('Desktop: Prototyp-Schalter öffnet den Berg', await d.$$eval('.kachel.berg-kachel', k => k.length) === 6);
+  await setze(d, 'S.frieden = true; S.lauf = null; S.zeige = null;');
+  await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
+  await neuLaden(d);
+  await ansicht(d, 'kreis-seite');
+  await klick(d, '#gang');
+  await ansicht(d, 'kampf');
+  const hudRuhig = await d.$('.hud .ruhig-marke') !== null && await d.$('.hud .leben') === null && await d.$('#flakon') === null;
+  const vorFalsch = (await spiel(d)).lauf.leben;
+  await antworte(d, false);
+  const sRuhig = await spiel(d);
+  check('Desktop: Ruhiger Modus, falsch kostet kein Leben und kein Tod', hudRuhig && sRuhig.lauf && sRuhig.lauf.leben === vorFalsch && sRuhig.tode === 0, `Leben ${sRuhig.lauf && sRuhig.lauf.leben} von ${vorFalsch}, HUD ${hudRuhig}`);
+  await foto(d, '60-desktop-ruhiger-modus');
+  await setze(d, 'S.frieden = false; S.lauf = null; S.zeige = null;');
+  await neuLaden(d);
   await d.goto(BASE + '#/gipfel', { waitUntil: 'networkidle0' });
   await ansicht(d, 'arena-gipfel');
   await sleep(1000);
