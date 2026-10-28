@@ -445,49 +445,60 @@ export const ANLEITUNG = {
   unter: 'Ariadne gab Theseus einen Faden mit ins Labyrinth. Hier ist deiner.',
   teile: [
     ['Das Spiel in einer Minute',
-      '<p>Der Prüfungsprügler packt über 1100 Lernkarten und 300 Kürzel für die AP1 und AP2 der Fachinformatik in ein Spiel. <b>Richtig</b> bringt Seelen, <b>falsch</b> kostet Leben. ' +
-      'Im Hintergrund merkt sich ein Lernkasten, was du schon kannst, und holt jede Karte zurück, kurz bevor du sie vergessen hättest.</p>' +
-      '<p>Alles beginnt am <b>Lagerfeuer</b>. Von dort wählst du, wohin es geht. Für den Anfang: der <b>Erste Kreis</b>.</p>'],
+      '<p>Der Prüfungsprügler macht aus Lernkarten für die AP1 und AP2 der Fachinformatik ein Spiel: über 1100 Fachkarten und gut 300 Kürzel.</p>' +
+      '<ul><li><b>Richtig</b> bringt Seelen, <b>falsch</b> kostet Leben.</li>' +
+      '<li>Ein <b>Lernkasten</b> merkt sich jede Karte und holt sie zurück, kurz bevor du sie vergessen würdest.</li>' +
+      '<li>Alles beginnt am <b>Lagerfeuer</b>. Für den Anfang: der <b>Erste Kreis</b>.</li></ul>'],
     ['Dein erster Gang',
-      '<ol><li>Am Lagerfeuer einen Kreis antippen, zum Beispiel den Ersten Kreis.</li>' +
-      '<li><b>Gang beginnen:</b> zehn Karten, etwa drei bis vier Minuten, also eine Bahnfahrt.</li>' +
-      '<li>Antworten: den passenden Begriff wählen, die passende Erklärung wählen oder den Begriff eintippen. Je besser eine Karte sitzt, desto öfter wird getippt.</li>' +
-      '<li>Nach der zehnten Karte rastest du an einem Lagerfeuer.</li>' +
-      '<li>Drei Lagerfeuer in einem Kreis öffnen das <b>Nebeltor</b>. Dahinter wartet der Boss. Fünf Treffer, und er fällt.</li></ol>'],
+      '<p>Ein Gang ist eine Runde mit zehn Karten, etwa drei bis vier Minuten lang.</p>' +
+      '<ol><li>Am Lagerfeuer einen Kreis antippen und <b>Gang beginnen</b> wählen.</li>' +
+      '<li>Antworten: den Begriff wählen, die Erklärung wählen oder den Begriff eintippen. Je besser eine Karte sitzt, desto öfter wird getippt.</li>' +
+      '<li>Nach der zehnten Karte rastest du an einem Lagerfeuer des Kreises.</li>' +
+      '<li>Nach drei Lagerfeuern öffnet sich das <b>Nebeltor</b>. Dahinter wartet der Boss, er fällt nach fünf Treffern.</li></ol>'],
     ['Leben, Kaffee und Tod',
-      '<ul><li>Ein Fehler kostet 20 Leben, bei einer Karte, die schon saß, 30. Die Karte kommt drei Karten später noch einmal.</li>' +
-      '<li>Der <b>Kaffeeflakon</b> oben im Kampf heilt 45 Leben. Drei Stück je Gang, am Lagerfeuer wird er wieder voll.</li>' +
-      '<li>Stirbst du, bleiben deine Seelen als <b>Blutfleck</b> bei der Karte, die dich erledigt hat. Sie kommt im nächsten Gang an diesem Ort zuerst: richtig beantwortet, und die Seelen gehören wieder dir. Falsch beantwortet oder vorher woanders gestorben, und sie sind weg.</li>' +
+      '<p>Du startest mit 100 Leben. Fehler kosten Leben, Kaffee bringt sie zurück.</p>' +
+      '<ul><li>Ein Fehler kostet <b>20 Leben</b>, bei einer Karte ab dem dritten Fach <b>30</b>, im Bosskampf <b>35</b>. Die Karte kommt drei Karten später noch einmal.</li>' +
+      '<li>Der <b>Kaffeeflakon</b> oben im Kampf heilt <b>45 Leben</b>. Du hast anfangs drei, am Lagerfeuer füllen sie sich wieder.</li>' +
+      '<li>Stirbst du, bleiben deine Seelen als <b>Blutfleck</b> bei der Karte, die dich erledigt hat. Im nächsten Gang an diesem Ort kommt sie zuerst: Richtig beantwortet holst du die Seelen zurück, falsch beantwortet oder vorher anderswo gestorben, sind sie weg.</li>' +
       '<li><b>Rückzug</b> geht jederzeit. Der Gang zählt dann nicht, die Seelen behältst du.</li></ul>'],
     ['Seelen, Stufen und Klassen',
-      '<ul><li>Mit Seelen steigst du am Lagerfeuer eine <b>Stufe</b> auf. Jede Stufe gibt 5 Leben mehr.</li>' +
-      '<li>Jeder Boss bringt Seelen, einen <b>Titel</b> und einen Kaffeeflakon mehr (bis fünf), und danach heilt der Kaffee stärker.</li>' +
-      '<li>Am Lagerfeuer wählst du eine <b>Klasse</b>, jederzeit wechselbar und ohne Nachteile: Der Krieger hält mehr aus, der Magier bekommt mehr Seelen, der Priester überlebt einmal je Gang den tödlichen Treffer.</li></ul>'],
+      '<p>Seelen sind die Währung. Du gibst sie am Lagerfeuer für Stufen aus.</p>' +
+      '<ul><li>Eine richtige Antwort bringt <b>10 Seelen</b>, für jedes Fach, das die Karte schon weiter ist, 5 mehr, im Bosskampf 15 mehr.</li>' +
+      '<li>Die erste <b>Stufe</b> kostet 60 Seelen, jede weitere 15 % mehr. Jede Stufe gibt <b>5 Leben</b> dazu, bis 200.</li>' +
+      '<li>Jeder Bosssieg bringt <b>150 Seelen</b>, am Berg 250. Beim ersten Sieg über einen Boss gibt es dazu einen <b>Titel</b> und einen Kaffeeflakon mehr, bis du fünf hast. Danach macht jeder erste Sieg deinen Kaffee um 10 Leben stärker.</li>' +
+      '<li>Am Lagerfeuer wählst du eine <b>Klasse</b>, jederzeit wechselbar: Der <b>Krieger</b> hat 20 % mehr Leben, der <b>Magier</b> bekommt 15 % mehr Seelen, der <b>Priester</b> überlebt einmal je Gang den tödlichen Treffer mit 1 Leben.</li></ul>'],
     ['Der Weg durch die Prüfung',
-      '<ol><li><b>Der Abstieg (AP1):</b> sechs Höllenkreise, einer je Lernfeld, jeder mit seinem Boss.</li>' +
-      '<li><b>Kokytos:</b> Liegen alle sechs Bosse, wartet im Eis der <b>Zwischenprüfer</b>. Sein Kaffee ist gefroren und taut erst im Kampf auf.</li>' +
-      '<li><b>Der Aufstieg (AP2):</b> sechs Gesimse am Läuterungsberg. Fehler tun etwas mehr weh, dafür gibt es anderthalbmal so viele Seelen.</li>' +
-      '<li><b>Der Gipfel:</b> Liegen alle dreizehn Bosse, öffnet sich der <b>Prüfungsausschuss</b>: 20 Sekunden je Frage, kein Kaffee. Wer besteht, kann ein Neues Spiel+ beginnen.</li></ol>' +
-      '<p>Du lernst nur für die AP2? Unter <b>Spielstand</b> öffnet „Nur AP2 lernen“ den Berg sofort.</p>'],
+      '<p>Die Reise führt erst hinab durch die AP1, dann hinauf durch die AP2. Die Regeln jedes Bosses stehen vor dem Kampf am Tor.</p>' +
+      '<ol><li><b>Der Abstieg (AP1):</b> sechs Höllenkreise, einer je Lernfeld, jeder mit eigenem Boss.</li>' +
+      '<li><b>Kokytos:</b> Liegen alle sechs, wartet im Eis der <b>Zwischenprüfer</b>. Dein Kaffee ist dort gefroren, mit jedem Gesicht, das fällt, taut ein Flakon auf.</li>' +
+      '<li><b>Der Aufstieg (AP2):</b> sechs Gesimse am Läuterungsberg. Jeder Fehler kostet 5 Leben mehr, dafür gibt es anderthalbmal so viele Seelen.</li>' +
+      '<li><b>Der Gipfel:</b> Liegen alle dreizehn Bosse, tagt der <b>Prüfungsausschuss</b>: drei Prüfende, 20 Sekunden je Frage, 40 Leben je Fehler, kein Kaffee. Danach kannst du ein <b>Neues Spiel+</b> beginnen.</li></ol>' +
+      '<p>Du lernst nur für die AP2? Unter <b>Spielstand</b> öffnet <b>Nur AP2 lernen</b> den Berg sofort.</p>'],
     ['Abseits des Weges',
-      '<ul><li><b>Die Katakomben der Kürzel</b> sind von Anfang an offen: 304 Abkürzungen, am Ende der Akronymant. Jedes Kürzel, das du einmal richtig hattest, landet im <b>Gebeinhaus</b>, deinem Sammelalbum.</li>' +
-      '<li>An manchen Orten lauern zwischen den Karten <b>Rätsel</b>: Subnetze ausrechnen, den falschen Schritt in einem Rechenweg finden, das Gatter einer Mimic-Truhe erraten oder Sicherungen in der richtigen Reihenfolge zurückspielen.</li>' +
-      '<li>In der <b>Werkstatt</b> übst du ohne Leben und Seelen: Subnetz-Klappuhr, Rechenwerk und Zahlenwerk. Nach einem falschen Rätsel führt dich ein Knopf direkt zur passenden Aufgabe.</li></ul>'],
+      '<p>Drei Orte liegen neben dem Hauptweg. Du kannst sie jederzeit besuchen.</p>' +
+      '<ul><li><b>Die Katakomben der Kürzel:</b> gut 300 Abkürzungen, am Ende wartet der Akronymant. Jedes Kürzel, das du einmal richtig hattest, landet im <b>Gebeinhaus</b>, deinem Sammelalbum.</li>' +
+      '<li><b>Rätsel:</b> An manchen Orten liegen sie zwischen den Karten. Du rechnest Subnetze aus, findest den falschen Schritt in einem Rechenweg, errätst das Gatter einer Mimic-Truhe oder spielst Sicherungen in der richtigen Reihenfolge zurück.</li>' +
+      '<li><b>Die Werkstatt:</b> Hier übst du ohne Leben und Seelen mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk. Nach einem falschen Rätsel führt dich ein Knopf direkt zur passenden Übung.</li></ul>'],
     ['Das Pixelparadies',
       '<p>Über dem Lagerfeuer schwebt ein buntes Quadrat. Dahinter liegen sieben Inseln in 8 Bit, von Anfang an offen, mit AP1 und AP2 nach Themen gemischt. Hier oben stirbt niemand.</p>' +
-      '<ul><li>Ein <b>Sprung</b> hat zehn Karten. Statt Leben hast du fünf <b>Herzen</b>, ein Fehler kostet eins.</li>' +
-      '<li>Richtig hintereinander baut eine <b>Kombo</b> auf und bringt mehr <b>Splitter</b>. Acht Splitter sind ein <b>Goldwürfel</b>.</li>' +
-      '<li><b>Bomben</b> brennen 15 Sekunden: rechtzeitig richtig heißt entschärft, falsch oder zu langsam kostet zwei Herzen.</li>' +
+      '<ul><li>Ein <b>Sprung</b> hat zehn Karten. Statt Leben hast du <b>5 Herzen</b>, ein Fehler kostet eins, ein Kaffee bringt zwei zurück.</li>' +
+      '<li>Richtige Antworten hintereinander bauen eine <b>Kombo</b>: ab 5 gibt es 2 <b>Splitter</b> je Treffer, ab 10 drei. <b>8 Splitter</b> ergeben einen <b>Goldwürfel</b>.</li>' +
+      '<li>Zwei Karten je Sprung sind <b>Bomben</b> mit 15 Sekunden Zündschnur: Rechtzeitig richtig entschärft sie, falsch oder zu langsam kostet 2 Herzen.</li>' +
       '<li>Alle Herzen weg? Du fällst weich auf eine Wolke und verlierst nur die losen Splitter.</li>' +
-      '<li>Drei Goldwürfel öffnen das Tor zum <b>Wächter</b> der Insel. Liegen alle sieben, wartet ganz oben der <b>Große Glitch</b>.</li></ul>'],
+      '<li><b>3 Goldwürfel</b> öffnen das Tor zum <b>Wächter</b> der Insel. Er fällt nach 8 Treffern, ab einer Kombo von 3 trifft jede Antwort doppelt. Liegen alle sieben Wächter, wartet ganz oben der <b>Große Glitch</b>.</li></ul>'],
     ['So lernt das Spiel mit dir',
-      '<p>Hinter allem steckt ein <b>Lernkasten</b> mit fünf Fächern. Weißt du eine Karte, rutscht sie ein Fach weiter und kommt seltener wieder: nach einem, drei, sieben und vierzehn Tagen. Ein Fehler schickt sie zurück ins erste Fach.</p>' +
-      '<p>Ein Gang nimmt zuerst den Blutfleck, dann fällige Karten, dann neue, dann wacklige. Ab dem vierten Fach <b>sitzt</b> eine Karte. Was du im Pixelparadies lernst, zählt auch unten, und umgekehrt.</p>'],
+      '<p>Hinter allem steckt ein <b>Lernkasten</b> mit fünf Fächern. Jede Karte liegt in einem davon.</p>' +
+      '<ul><li>Richtig beantwortet rutscht die Karte ein Fach weiter und kommt seltener wieder: nach <b>1, 3, 7 und 14 Tagen</b>.</li>' +
+      '<li>Ein Fehler schickt sie zurück ins <b>erste Fach</b>.</li>' +
+      '<li>Ab dem vierten Fach <b>sitzt</b> eine Karte.</li>' +
+      '<li>Ein Gang nimmt zuerst den Blutfleck, dann fällige Karten, dann bis zu sieben neue, dann wacklige.</li>' +
+      '<li>Was du im Pixelparadies lernst, zählt auch unten, und umgekehrt.</li></ul>'],
     ['Einstellungen unter Spielstand',
-      '<ul><li><b>Souls oder Pixel:</b> das ganze Spiel düster gemalt oder in 8 Bit, auch oben auf dem Titel umschaltbar.</li>' +
+      '<p>Ganz unten am Lagerfeuer öffnet <b>Spielstand</b> alle Schalter.</p>' +
+      '<ul><li><b>Souls oder Pixel:</b> das ganze Spiel düster gemalt oder in 8 Bit. Der Schalter steht auch oben rechts neben dem Fragezeichen.</li>' +
       '<li><b>Im Pixelparadies starten:</b> bunter Titel, danach direkt zur Inselkarte.</li>' +
-      '<li><b>Ruhiger Modus:</b> Lernen ohne Leben und Tod, Fehler kosten nichts.</li>' +
-      '<li><b>Musik, Wind und Kampfklang</b> lassen sich einzeln an- und ausschalten, die Musik auch lauter und leiser stellen.</li>' +
+      '<li><b>Ruhiger Modus:</b> lernen ohne Leben und Tod, Fehler kosten nichts.</li>' +
+      '<li><b>Musik, Wind und Kampfklang:</b> einzeln an- und ausschaltbar, die Musik dazu lauter und leiser.</li>' +
       '<li><b>App installieren:</b> auf den Startbildschirm legen, danach läuft alles auch ohne Netz.</li></ul>']
   ],
   schluss: 'Kleingedrucktes: Wer die Karten lernt, kommt wieder raus.'

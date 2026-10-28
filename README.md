@@ -52,7 +52,8 @@ Oben rechts sitzt auf jeder Seite ein runder Knopf mit Fragezeichen. Er öffnet 
 das Spiel in einer Minute, der erste Gang Schritt für Schritt, Leben, Kaffee und Tod, Seelen, Stufen und Klassen, der Weg durch die Prüfung,
 was abseits des Weges liegt, das Pixelparadies, wie der Lernkasten lernt und die Einstellungen unter „Spielstand“. Die Texte stehen in `welt.js` (`ANLEITUNG`).
 
-Bis zum ersten Öffnen läuft ein roter Faden langsam um den Knopf (im Pixelstil eckig und in Schritten), danach bleibt ein ruhiger Ring.
+Bis zum ersten Öffnen fliegt der Faden bald nach dem Laden und danach alle halbe Minute heran: Er kreist in der Mitte, zieht eine rote Spur in die Ecke und windet sich um den Knopf; die Spur verglimmt, der Knopf leuchtet einmal auf. Dazwischen läuft der Faden langsam um den Knopf (im Pixelstil eckig und in Schritten), nach dem ersten Öffnen bleibt ein ruhiger Ring. Bei „Bewegung reduzieren“ fliegt nichts.
+Jeder Teil der Anleitung beginnt mit einem Satz, worum es geht, danach folgen die Regeln mit ihren Zahlen.
 Mitten im Kampf tritt der Knopf zurück, damit Prüfungsuhr und Lunte nicht hinter dem Blatt weiterlaufen.
 Bei „Bewegung reduzieren“ steht der Faden still.
 
@@ -159,15 +160,15 @@ Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:
 
 Unter „Spielstand“ liegt der Schalter „Musik“ (Voreinstellung an). Nach dem ersten Tippen spielt leise, prozedural erzeugte Musik ohne Takt: einzelne weiche Töne aus einer festen Tonleiter über einem atmenden Grundton, ganz ohne Audiodateien. Jeder Ort klingt anders: das Lagerfeuer warm, die Hölle dunkel mit leiser Glut, der Kokytos gläsern, die Katakomben hohl, der Berg nach Glocken, der Gipfel nach feierlichen Quinten. Beim Ortswechsel blendet sie langsam über. Im Bosskampf wird sie nicht schneller, sondern tiefer, und fällt der Boss, löst ein Dur-Akkord alles auf. Mit Musik weht der Wind etwas leiser. Darunter regelt „Lautstärke“ die Musik von 0 bis 100 Prozent (50 ist der Grundpegel, ganz rechts sind es rund 9 dB mehr); der Wert bleibt im Spielstand (`S.musikLaut`).
 
-Im Pixelparadies und im Pixelstil spielt stattdessen Abenteuermusik in 8 Bit: 16 eigene Themen über acht Takte mit Pulswellen, Dreiecksbass, Arpeggios und leichtem Schlagzeug. Die Inselkarte hat ihr Hauptthema, jede der sieben Inseln ihr eigenes (Venus als Walzer, Mars als Marsch, Saturn mit Echo), die Wächter einen treibenden Bosskampf, der Große Glitch ein Thema, das stolpert und springt. Im Pixelstil klingen Lagerfeuer, Hölle, Katakomben, Kokytos, Berg und Gipfel ebenfalls in 8 Bit. Fällt ein Boss, schweigt die Musik kurz für die Fanfare. Die Hörproben zum Abstimmen liegen in `tools/hoerprobe/` (Souls und Pixel).
+Im Pixelparadies und im Pixelstil spielt stattdessen Abenteuermusik in 8 Bit: 16 eigene Themen über acht Takte mit Pulswellen, Dreiecksbass, Arpeggios und leichtem Schlagzeug. Die Inselkarte hat ihr Hauptthema, jede der sieben Inseln ihr eigenes (Venus als Walzer, Mars als Marsch, Saturn mit Echo), die Wächter einen treibenden Bosskampf, der Große Glitch ein Thema, das stolpert und springt. Im Pixelstil klingen Lagerfeuer, Hölle, Katakomben, Kokytos, Berg und Gipfel ebenfalls in 8 Bit. Fällt ein Boss, schweigt die Musik kurz für die Fanfare. Die Hörproben zum Abstimmen liegen in `tools/hoerprobe/` (Souls, Pixel und Klassen); die Seite für die Klassen spielt den Code aus `src/js/ton.js` und braucht deshalb einen Server im Repo-Ordner.
 
 ### Wind
 
-Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung), weht nach dem ersten Tippen ein ruhiger, prozedural erzeugter Wind, ganz ohne Audiodateien. Er schwillt langsam an und ab, nie plötzlich, und schläft, wenn der Tab im Hintergrund liegt. Ton beginnt erst nach dem ersten Tippen, weil der Browser ihn bis dahin sperrt.
+Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung), weht nach dem ersten Tippen ein ruhiger, prozedural erzeugter Wind, ganz ohne Audiodateien. Er schwillt langsam an und ab, nie plötzlich, und schläft, wenn der Tab im Hintergrund liegt. Ton beginnt erst nach dem ersten Tippen, weil der Browser ihn bis dahin sperrt. Jedes weitere Tippen holt ihn zurück, falls Browser oder Handy ihn zwischendurch angehalten haben (Anruf, andere App, Sperrbildschirm).
 
 ### Kampfklang
 
-Unter „Spielstand“ liegt der Schalter „Kampfklang“ (Voreinstellung an). Beim Antworten im Kampf klingt ein kurzer, prozedural erzeugter Ton: ein Treffer bei richtig, ein dumpfer Schlag bei falsch, ein Biss an der Mimic-Truhe. Jeder Ort klingt etwas anders (die Hölle knistert, die Katakomben raunen, der Berg schimmert, der Gipfel klingt nach Stahl). Auch der Kaffeeschluck und der Stufenaufstieg haben ihren Klang. Alles läuft auf derselben Tonebene wie der Wind.
+Unter „Spielstand“ liegt der Schalter „Kampfklang“ (Voreinstellung an). Beim Antworten im Kampf klingt ein kurzer, prozedural erzeugter Ton: ein Treffer bei richtig, ein dumpfer Schlag bei falsch, ein Biss an der Mimic-Truhe. Mit gewählter Klasse klingt ihre Waffe: Beim Krieger klirren richtig die Schwerter und falsch fängt der Schild den Hieb, der Magier wirft einen Feuerball oder sein Zauber verpufft, der Priester schlägt helle Glocken oder eine gedämpfte. Ohne Klasse klingt jeder Ort etwas anders (die Hölle knistert, die Katakomben raunen, der Berg schimmert, der Gipfel klingt nach Stahl). Auch der Kaffeeschluck und der Stufenaufstieg haben ihren Klang. Alles läuft auf derselben Tonebene wie der Wind.
 
 ### Prototyp-Schalter
 

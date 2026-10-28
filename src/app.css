@@ -1199,10 +1199,19 @@ html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
 .faden-knopf::before { content: ""; position: absolute; inset: -6px; border-radius: inherit; padding: 2px; pointer-events: none;
   background: rgba(177, 39, 29, .55);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.faden-knopf.neu { box-shadow: 0 0 22px rgba(177, 39, 29, .55), 0 4px 14px rgba(0, 0, 0, .5); }
+.faden-knopf.neu { border-color: var(--blut-hell); box-shadow: 0 0 22px rgba(177, 39, 29, .55), 0 4px 14px rgba(0, 0, 0, .5); }
 .faden-knopf.neu::before { padding: 3px; background: conic-gradient(from var(--faden-winkel), rgba(228, 89, 74, .12) 0deg, rgba(228, 89, 74, .35) 180deg, var(--blut-hell) 300deg, #ffd6cc 345deg, rgba(228, 89, 74, .12) 360deg); filter: drop-shadow(0 0 5px rgba(228, 89, 74, .85)); animation: faden 4.5s linear infinite; }
 @keyframes faden { to { --faden-winkel: 360deg; } }
 html.im-kampf .faden-knopf { display: none; }
+.faden-knopf.gefangen { animation: gefangen 1.1s ease-out; }
+@keyframes gefangen { 30% { transform: scale(1.12); box-shadow: 0 0 34px rgba(228, 89, 74, .9), 0 4px 14px rgba(0, 0, 0, .5); } }
+/* Der fliegende Faden: eine rote Spur mit Schein, darüber ein glühender Kopf */
+.faden-flug { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 9; pointer-events: none; overflow: visible; }
+.faden-flug path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.faden-spur { stroke: var(--blut-hell); stroke-width: 3.5; }
+.faden-schein { stroke: rgba(228, 89, 74, .45); stroke-width: 10; filter: blur(4px); }
+.faden-kopf { fill: #ffd6cc; filter: drop-shadow(0 0 6px #e4594a) drop-shadow(0 0 12px rgba(228, 89, 74, .8)); }
+html.im-kampf .faden-flug { display: none; }
 
 html:has(dialog.anleitung[open]) { overflow: hidden; }
 .anleitung { width: min(560px, calc(100% - 2 * var(--rand))); max-height: min(88dvh, 880px); padding: 0; border: 1px solid var(--linie-hell); border-radius: 8px; background: var(--stein); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, .7); }
@@ -1233,7 +1242,11 @@ html:has(dialog.anleitung[open]) { overflow: hidden; }
 /* Im Pixelstil: eckig, Papier und Tinte, der Faden läuft in Schritten */
 body[data-welt="pixel"] .faden-knopf { border-radius: 0; background: var(--px-papier); color: var(--px-tinte); border: 3px solid var(--px-tinte); font: 700 22px/1 var(--f-pixel); box-shadow: 0 4px 0 #000; }
 body[data-welt="pixel"] .faden-knopf::before { inset: -8px; }
-body[data-welt="pixel"] .faden-knopf.neu { box-shadow: 0 4px 0 #000, 0 0 18px rgba(255, 59, 92, .6); }
+body[data-welt="pixel"] .faden-knopf.neu { border-color: var(--px-rot); box-shadow: 0 4px 0 #000, 0 0 18px rgba(255, 59, 92, .6); }
+body[data-welt="pixel"] .faden-flug path { stroke-linecap: square; stroke-linejoin: miter; }
+body[data-welt="pixel"] .faden-spur { stroke: var(--px-rot); stroke-width: 4; }
+body[data-welt="pixel"] .faden-schein { stroke: rgba(0, 0, 0, .55); stroke-width: 4; filter: none; transform: translate(0, 4px); }
+body[data-welt="pixel"] .faden-kopf { fill: #fff; filter: none; stroke: var(--px-rot); stroke-width: 2; }
 body[data-welt="pixel"] .faden-knopf.neu::before { background: conic-gradient(from var(--faden-winkel), rgba(255, 59, 92, .15) 0deg, rgba(255, 59, 92, .4) 180deg, var(--px-rot) 300deg, #ffd0d8 345deg, rgba(255, 59, 92, .15) 360deg); filter: none; animation-timing-function: steps(16); }
 body[data-welt="pixel"] .anleitung { background: var(--px-papier); color: var(--px-tinte); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 6px 0 #000; }
 body[data-welt="pixel"] .anleitung-kopf h2 { font: 700 26px/1.1 var(--f-pixel); color: var(--px-tinte); letter-spacing: 0; }

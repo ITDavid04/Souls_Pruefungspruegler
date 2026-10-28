@@ -915,6 +915,14 @@ try {
   check('Desktop: Kampfklang-Schalter steht im Spielstand und schaltet S.kampfklang', kkVor === true && kkNach === false, `vorher ${kkVor}, nachher ${kkNach}`);
   const zFx = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzenFx(true); T.schlag({ gut: true, akt: 1 }); T.schlag({ gut: false, mimic: true }); T.heilen(); T.aufstieg(); for (const a of ['treffer', 'splitter', 'daneben', 'wuerfel', 'kombo', 'boom', 'entschaerft', 'herz', 'absturz', 'sieg', 'tor']) T.chip(a, 2); return T.zustand(); });
   check('Desktop: Kampfklang und 8-Bit-Klänge entstehen ohne Fehler', zFx.fx >= 15 && zFx.state === 'running', JSON.stringify(zFx));
+  const zKlasse = await d.evaluate(async () => { const T = await import('./js/ton.js'); const vor = T.zustand().fx; for (const klang of ['stahl', 'feuer', 'heilig']) for (const gut of [true, false]) T.schlag({ gut, klang, wucht: gut }); return T.zustand().fx - vor; });
+  check('Desktop: Krieger, Magier und Priester klingen nach ihrer Waffe, richtig wie falsch', zKlasse === 6, 'Klänge ' + zKlasse);
+  /* Hält Browser oder Handy den Ton an, holt ihn das nächste Tippen irgendwo zurück */
+  await d.evaluate(async () => { await (await import('./js/ton.js')).aussetzen(); });
+  await d.mouse.click(4, 300);
+  await warte(d, async () => (await import('./js/ton.js')).zustand().state === 'running').catch(() => {});
+  const zWach = await d.evaluate(async () => (await import('./js/ton.js')).zustand());
+  check('Desktop: Nach einer Unterbrechung bringt das nächste Tippen den Ton zurück', zWach.state === 'running', JSON.stringify(zWach));
   const tonStand = () => d.evaluate(async () => (await import('./js/ton.js')).zustand());
   const zFeuer = await tonStand();
   check('Desktop: Am Lagerfeuer spielt die Lagerfeuer-Musik', zFeuer.musikAn === true && zFeuer.musikOrt === 'lagerfeuer', JSON.stringify(zFeuer));
@@ -951,6 +959,13 @@ try {
   check('Desktop: Alle 22 Musikstücke starten, das Pixelthema spielt Töne, schweigt beim Sieg kurz und setzt wieder ein', zPixel.alle && zPixel.anzahl === 22 && zPixel.toene > 0 && zPixel.still === null && zPixel.wieder === 'px-waechter', JSON.stringify(zPixel));
   const zBoss = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.musik('hoelle', true); const vor = T.zustand(); T.musikSieg(); const nach = T.zustand(); T.musik('lagerfeuer'); return { vor, nach }; });
   check('Desktop: Bosskampf vertieft die Musik, der Sieg löst sie auf', zBoss.vor.boss === true && zBoss.vor.musikOrt === 'hoelle' && zBoss.nach.boss === false && zBoss.nach.toene >= 4, JSON.stringify(zBoss));
+  /* Frisch geladen fliegt der Faden von der Mitte zum Knopf und windet sich darum */
+  await d.goto(BASE + '?zurueck', { waitUntil: 'networkidle0' });
+  await warte(d, () => !!document.querySelector('.faden-flug'));
+  await sleep(1300);
+  await foto(d, '85-desktop-faden-flug');
+  await warte(d, () => !document.querySelector('.faden-flug'));
+  const flug = await d.evaluate(() => ({ gefangen: document.querySelector('#faden').classList.contains('gefangen') }));
   const faden = await d.evaluate(async () => {
     const k = document.querySelector('#faden'), r = k.getBoundingClientRect();
     const winkel = () => getComputedStyle(k, '::before').getPropertyValue('--faden-winkel');
@@ -963,7 +978,10 @@ try {
   await foto(d, '86-desktop-anleitung');
   await klick(d, '.anleitung-los');
   await warte(d, () => !document.querySelector('#anleitung').open);
-  check('Desktop: Anleitung hinter dem Knopf oben rechts, der rote Faden läuft bis zum ersten Öffnen', faden.da && faden.neu && faden.laeuft && faden.rechts <= 16 && faden.oben <= 16 && blatt.teile === 9 && blatt.offen === 1 && blatt.gemerkt && !blatt.neu, JSON.stringify({ faden, blatt }));
+  check('Desktop: Anleitung hinter dem Knopf oben rechts, der rote Faden fliegt heran und läuft bis zum ersten Öffnen', flug.gefangen && faden.da && faden.neu && faden.laeuft && faden.rechts <= 16 && faden.oben <= 16 && blatt.teile === 9 && blatt.offen === 1 && blatt.gemerkt && !blatt.neu, JSON.stringify({ flug, faden, blatt }));
+  await d.goto(BASE + '?zurueck', { waitUntil: 'networkidle0' });
+  await sleep(2000);
+  check('Desktop: Nach dem ersten Öffnen fliegt kein Faden mehr', await d.evaluate(() => !document.querySelector('.faden-flug')));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
   await setze(d, 'S.lauf = null; S.zeige = null;');

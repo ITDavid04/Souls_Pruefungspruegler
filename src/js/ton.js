@@ -5,7 +5,7 @@
 
 const ZIEL = 0.05;        // Grundlautstärke, bewusst leise; mit Musik weht er leiser, damit sie nicht untergeht
 const windZiel = () => musikAn ? ZIEL * 0.6 : ZIEL;
-let ctx = null, master = null, windAn = false, an = true, entsperrt = false;
+let ctx = null, master = null, windAn = false, an = true, entsperrt = false, versteckt = false;
 
 /* Den Audiokontext erst beim ersten Gestus bauen, sonst meckert der Browser und es kostet Akku */
 function sicherstellen(){
@@ -17,6 +17,9 @@ function sicherstellen(){
     master = ctx.createGain();
     master.gain.value = 0;
     master.connect(ctx.destination);
+    /* Unterbricht das Handy den Ton (Anruf, andere App, Sperrbildschirm), gleich wieder anlaufen;
+       klappt das ohne Gestus nicht, holt ihn das nächste Tippen zurück */
+    ctx.onstatechange = () => { if (ctx.state !== 'running') fortsetzen(); };
     return true;
   } catch (e) { return false; }
 }
@@ -71,14 +74,24 @@ function windBauen(){
 
 function einblenden(){ if (ctx) try { master.gain.setTargetAtTime(windZiel(), ctx.currentTime, 2.5); } catch (e) {} }
 function ausblenden(){ if (ctx) try { master.gain.setTargetAtTime(0, ctx.currentTime, 1.2); } catch (e) {} }
-function fortsetzen(){ if (ctx && ctx.state === 'suspended') try { ctx.resume(); } catch (e) {} }
+/* Nicht nur 'suspended': Safari meldet nach einer Unterbrechung 'interrupted', und auch daraus muss der Ton zurück */
+function fortsetzen(){
+  if (!ctx || versteckt || ctx.state === 'running' || ctx.state === 'closed') return;
+  try { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+/* Ein winziger stiller Ton im Gestus: so lassen auch ältere iPhones den Ton heraus */
+function stilleSpielen(){
+  try { const q = ctx.createBufferSource(); q.buffer = ctx.createBuffer(1, 1, 22050); q.connect(ctx.destination); q.start(0); } catch (e) {}
+}
 
-/* Der erste Gestus entsperrt den Ton; danach weht der Wind, wenn er angeschaltet ist */
+/* Jedes Tippen weckt den Ton: das erste entsperrt ihn und lässt den Wind wehen, jedes weitere holt ihn zurück,
+   falls Browser oder Handy ihn zwischendurch angehalten haben */
 export function wecken(){
-  if (entsperrt) return;
   if (!sicherstellen()) return;
-  entsperrt = true;
   fortsetzen();
+  if (entsperrt) return;
+  entsperrt = true;
+  stilleSpielen();
   if (an) { windBauen(); einblenden(); }
   musikFolgen();
 }
@@ -93,8 +106,10 @@ export function setzen(ein){
 
 /* Tab sichtbar oder versteckt: Wind und Musik schlafen legen und wieder wecken */
 export function sichtbar(ja){
-  if (!ctx || !entsperrt || !(an || musikAn)) return;
-  try { if (ja) ctx.resume(); else ctx.suspend(); } catch (e) {}
+  versteckt = !ja;
+  if (!ctx || !entsperrt) return;
+  if (ja) fortsetzen();
+  else try { const p = ctx.suspend(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
 }
 
 /* Die Musik: kein Lied in Schleife, sondern einzelne weiche Töne aus einer festen Tonleiter, die langsam
@@ -545,7 +560,7 @@ let fx = null, fxAn = true, fxZahl = 0;
 function fxBus(){
   if (!ctx) return false;
   if (!fx) { fx = ctx.createGain(); fx.gain.value = 0.35; fx.connect(ctx.destination); }
-  if (ctx.state === 'suspended') try { ctx.resume(); } catch (e) {}
+  fortsetzen();
   return true;
 }
 
@@ -583,6 +598,78 @@ function rauschStoss(t0, dauer, spitze, filterTyp, f, Q){
   } catch (e) {}
 }
 
+/* Rauschen, dessen Filter wandert: Fauchen eines Feuerballs, Zischen, Verpuffen. anstieg steuert, wie weich es kommt */
+function rauschZug(t0, dauer, spitze, filterTyp, f0, f1, Q, anstieg){
+  try {
+    const laenge = Math.max(1, Math.ceil(ctx.sampleRate * dauer));
+    const buf = ctx.createBuffer(1, laenge, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < laenge; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const flt = ctx.createBiquadFilter(); flt.type = filterTyp; flt.Q.value = Q || 1;
+    flt.frequency.setValueAtTime(f0, t0); flt.frequency.exponentialRampToValueAtTime(f1, t0 + dauer);
+    const g = ctx.createGain(); huelle(g, t0, spitze, dauer, anstieg);
+    src.connect(flt); flt.connect(g); g.connect(fx);
+    src.start(t0); src.stop(t0 + dauer + 0.03);
+  } catch (e) {}
+}
+/* Ein Klangkörper aus mehreren Teiltönen, die verschieden lang nachklingen: Klinge, Schildrand, Glocke */
+function koerper(f, teile, t0, spitze){
+  teile.forEach(([faktor, anteil, dauer]) => stimme('sine', f * faktor, f * faktor, t0, dauer, spitze * anteil));
+}
+
+/* Die Klassen klingen im Kampf nach ihrer Waffe. Richtig: Der Krieger lässt die Klinge klirren, der Magier wirft
+   einen Feuerball, der Priester schlägt eine helle Glocke. Falsch: Der Krieger fängt den Hieb mit dem Schild,
+   dem Magier verpufft der Zauber, die Glocke des Priesters klingt gedämpft. */
+const KLINGE = [[1, 1, 0.9], [1.41, 0.7, 0.7], [1.89, 0.55, 0.55], [2.66, 0.35, 0.4], [3.33, 0.2, 0.28]];
+const SCHILD = [[1, 1, 0.32], [1.58, 0.6, 0.22], [2.31, 0.3, 0.14]];
+const GLOCKE = [[1, 1, 1.6], [2, 0.45, 1.1], [2.76, 0.3, 0.8], [5.4, 0.12, 0.4]];
+function klasseKlingt(art, gut, t0){
+  if (art === 'stahl') {
+    if (gut) {
+      rauschZug(t0, 0.12, 0.16, 'bandpass', 1400, 5200, 1.4, 0.05);           // der Schwung
+      const t = t0 + 0.11, f = 1750 + Math.random() * 180;
+      rauschStoss(t, 0.035, 0.32, 'highpass', 2600);                           // Stahl auf Stahl
+      koerper(f, KLINGE, t, 0.075);
+      koerper(f * 1.06, KLINGE.slice(0, 3), t + 0.07, 0.035);                 // die zweite Klinge antwortet
+      rauschZug(t + 0.02, 0.22, 0.05, 'bandpass', 5200, 3200, 6);            // kurzes Schaben
+      stimme('triangle', 260, 120, t, 0.14, 0.18);
+    } else {
+      rauschStoss(t0, 0.16, 0.36, 'lowpass', 320);                             // der Hieb trifft den Schild
+      stimme('sine', 125, 62, t0, 0.24, 0.38);
+      rauschStoss(t0, 0.05, 0.2, 'bandpass', 820, 3);                          // Holz und Beschlag
+      koerper(310, SCHILD, t0 + 0.005, 0.07);                                  // der Schildrand dröhnt kurz nach
+    }
+  } else if (art === 'feuer') {
+    if (gut) {
+      rauschZug(t0, 0.32, 0.22, 'bandpass', 320, 2300, 1.6, 0.22);            // der Feuerball faucht heran
+      stimme('sine', 180, 330, t0 + 0.04, 0.26, 0.06);
+      const t = t0 + 0.3;
+      rauschStoss(t, 0.5, 0.3, 'lowpass', 900);                                // Einschlag
+      stimme('sine', 95, 38, t, 0.5, 0.28);
+      for (let i = 0; i < 6; i++) rauschStoss(t + 0.05 + i * (0.04 + Math.random() * 0.05), 0.03, 0.09, 'bandpass', 2000 + Math.random() * 2600, 3);  // Glut prasselt
+    } else {
+      rauschZug(t0, 0.3, 0.12, 'bandpass', 1900, 360, 2, 0.02);               // der Zauber verpufft
+      stimme('triangle', 520, 140, t0, 0.28, 0.08);
+      rauschStoss(t0 + 0.06, 0.14, 0.28, 'lowpass', 300);
+      stimme('sine', 140, 88, t0 + 0.06, 0.18, 0.28);
+    }
+  } else if (art === 'heilig') {
+    if (gut) {
+      koerper(1046.5, GLOCKE, t0, 0.07);                                       // zwei helle Glocken, die zweite eine Quinte höher
+      koerper(1568, GLOCKE, t0 + 0.12, 0.05);
+      stimme('sine', 523, 784, t0, 0.6, 0.05);                                 // ein warmer Schein darunter
+      rauschZug(t0, 0.7, 0.025, 'highpass', 5000, 9000, 0.7, 0.3);             // ein Hauch Luft
+      stimme('triangle', 300, 110, t0, 0.14, 0.16);
+    } else {
+      rauschStoss(t0, 0.12, 0.26, 'lowpass', 300);
+      stimme('sine', 150, 92, t0, 0.16, 0.28);
+      koerper(392, GLOCKE.map(([f, a, d]) => [f, a, d * 0.3]), t0 + 0.05, 0.06); // die Glocke, mit der Hand gedämpft
+    }
+  }
+}
+const KLASSEN_KLANG = new Set(['stahl', 'feuer', 'heilig']);
+
 /* Jeder Ort klingt anders: die Hölle knistert, die Katakomben raunen tief, der Berg schimmert hell, der Gipfel klingt nach Stahl */
 function faerbung(art, t0){
   if (art === 'feuer') { for (let i = 0; i < 4; i++) rauschStoss(t0 + 0.02 + i * 0.03, 0.05, 0.1, 'bandpass', 1700 + Math.random() * 1300, 3); }
@@ -598,6 +685,12 @@ export function schlag(info){
   if (!fxAn || !fxBus()) return;
   fxZahl++;
   const t0 = ctx.currentTime, akt = info && info.akt;
+  /* Mit gewählter Klasse klingt ihre Waffe; der Fall des Bosses und die Mimic-Truhe klingen wie immer */
+  if (info && KLASSEN_KLANG.has(info.klang) && !info.mimic) {
+    klasseKlingt(info.klang, !!info.gut, t0);
+    if (info.gut && info.wucht) { stimme('sine', 72, 44, t0 + 0.12, 0.6, 0.45); rauschStoss(t0 + 0.12, 0.28, 0.22, 'lowpass', 380); }
+    return;
+  }
   if (info && info.gut) {
     rauschStoss(t0, 0.09, 0.2, 'highpass', 900);
     stimme('triangle', 320, 90, t0 + 0.045, 0.18, 0.4);
@@ -660,6 +753,9 @@ export function setzenFx(ein){ fxAn = !!ein; }
 
 /* Nur zum Testen: alle Stücke, die musik() kennt */
 export const musikStuecke = () => Object.keys(KLANGORTE).concat(Object.keys(PIXEL_STUECKE));
+
+/* Nur zum Testen: so tun, als hätte das Handy den Ton angehalten */
+export const aussetzen = () => ctx ? ctx.suspend() : null;
 
 /* Nur zum Testen: der innere Stand, ohne etwas zu verändern */
 export const zustand = () => ({ entsperrt, an, windAn, fxAn, fx: fxZahl, musikAn, lautstaerke: Math.round(musikLaut * 100) / 100, musikOrt: spielt ? spielt.key : null, boss: !!(spielt && spielt.boss), toene: musikZahl, pxToene: pxZahl, state: ctx ? ctx.state : 'kein' });

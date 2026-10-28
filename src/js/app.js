@@ -202,12 +202,57 @@ function anleitungBauen(){
   knopf.addEventListener('click', () => {
     blatt.showModal();
     if (!S.anleitung) { S.anleitung = true; sichern(); fadenZeigen(); }
+    const flug = $('.faden-flug'); if (flug) flug.remove();
   });
   blatt.querySelectorAll('.anleitung-zu, .anleitung-los').forEach(b => b.addEventListener('click', () => blatt.close()));
   /* Ein Tipp neben das Blatt schließt es */
   blatt.addEventListener('click', e => { if (e.target === blatt) blatt.close(); });
 }
 function fadenZeigen(){ const k = $('#faden'); if (k) k.classList.toggle('neu', !S.anleitung); }
+
+/* Der Faden fliegt: Er kreist erst in der Mitte, zieht dann eine rote Spur in die Ecke und windet sich um den Knopf.
+   Bald nach dem Laden und danach alle halbe Minute, solange die Anleitung noch nie offen war; nie im Kampf, nie bei ruhigem Bild. */
+const FADEN_DAUER = 2900;
+function fadenFlug(){
+  const knopf = $('#faden'), blatt = $('#anleitung');
+  if (!knopf || S.anleitung || ruhig() || document.hidden || (blatt && blatt.open) || $('.faden-flug')) return;
+  const r = knopf.getBoundingClientRect();
+  if (!r.width) return;
+  const px = pixelStil(), mx = innerWidth / 2, my = innerHeight * 0.42, rk = 30;
+  const zx = r.left + r.width / 2, zy = r.top + r.height / 2, rz = r.width / 2 + 6;
+  /* Ein Kreis im Uhrzeigersinn, oben hinaus, im Bogen zur Ecke, unten an den Knopf und anderthalbmal gegen den Uhrzeigersinn herum */
+  const d = 'M' + mx + ',' + (my - rk) + ' A' + rk + ',' + rk + ' 0 1 1 ' + mx + ',' + (my + rk) + ' A' + rk + ',' + rk + ' 0 1 1 ' + mx + ',' + (my - rk) +
+    ' C' + (mx + (zx - mx) * 0.55) + ',' + (my - rk - 70) + ' ' + (zx - 110) + ',' + (zy + rz + 90) + ' ' + zx + ',' + (zy + rz) +
+    ' A' + rz + ',' + rz + ' 0 1 0 ' + zx + ',' + (zy - rz) + ' A' + rz + ',' + rz + ' 0 1 0 ' + zx + ',' + (zy + rz) + ' A' + rz + ',' + rz + ' 0 1 0 ' + zx + ',' + (zy - rz);
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'faden-flug'); svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = '<path class="faden-schein" d="' + d + '"/><path class="faden-spur" d="' + d + '"/>' + (px ? '<rect class="faden-kopf" width="8" height="8"/>' : '<circle class="faden-kopf" r="4"/>');
+  document.body.append(svg);
+  const wege = svg.querySelectorAll('path'), kopf = svg.querySelector('.faden-kopf'), L = wege[1].getTotalLength();
+  /* Das letzte Stück ist die Windung um den Knopf: Sie bleibt stehen, während die Spur dahinter verglimmt */
+  const windung = 3 * Math.PI * rz, start = performance.now();
+  wege.forEach(w => { w.style.strokeDasharray = L + ' ' + L; w.style.strokeDashoffset = L; });
+  const schritt = jetzt => {
+    if (!svg.isConnected) return;
+    let p = Math.min(1, (jetzt - start) / FADEN_DAUER);
+    p = 0.5 - Math.cos(Math.PI * p) / 2;
+    if (px) p = Math.round(p * 48) / 48;
+    const l = p * L, pt = wege[1].getPointAtLength(l);
+    wege.forEach(w => { w.style.strokeDashoffset = L - l; });
+    if (px) { kopf.setAttribute('x', Math.round(pt.x - 4)); kopf.setAttribute('y', Math.round(pt.y - 4)); }
+    else { kopf.setAttribute('cx', pt.x); kopf.setAttribute('cy', pt.y); }
+    if (p < 1) return requestAnimationFrame(schritt);
+    /* Angekommen: die Spur verglimmt vom Anfang her, der Knopf leuchtet einmal auf */
+    const rest = L - windung;
+    wege.forEach(w => w.animate([{ strokeDasharray: '0 0 ' + L + ' ' + L, strokeDashoffset: 0 }, { strokeDasharray: '0 ' + rest + ' ' + windung + ' ' + L, strokeDashoffset: 0 }], { duration: 700, easing: 'ease-in', fill: 'forwards' }));
+    kopf.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
+    knopf.classList.remove('gefangen'); void knopf.offsetWidth; knopf.classList.add('gefangen');
+    svg.animate([{ opacity: 1 }, { opacity: 1, offset: 0.6 }, { opacity: 0 }], { duration: 1700, fill: 'forwards' }).onfinish = () => svg.remove();
+  };
+  requestAnimationFrame(schritt);
+}
+setTimeout(fadenFlug, 1400);
+setInterval(fadenFlug, 30000);
 
 /* Musik je Ansicht: welcher Ort klingt und ob gerade ein Boss kämpft (oder hinter dem Tor wartet).
    Im Pixelparadies und im Pixelstil spielt statt der leisen Klänge ein 8-Bit-Thema (px-…), im Bosskampf das der Wächter. */
@@ -1735,16 +1780,17 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   }).catch(() => {});
 }
 
+/* Die Tonebene zuerst, damit sie auch dann hört, wenn beim ersten Bild etwas schiefgeht: der Wunsch aus dem Spielstand,
+   jedes Tippen weckt den Ton (Handys zählen erst das Loslassen als Gestus), versteckte Tabs schlafen */
+T.setzenLautstaerke(musikLaut());
+T.setzenMusik(S.musik !== false);
+T.setzen(S.wind !== false);
+T.setzenFx(S.kampfklang !== false);
+['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, () => T.wecken(), { capture: true, passive: true }));
+document.addEventListener('visibilitychange', () => T.sichtbar(!document.hidden));
+
 anleitungBauen();
 /* Wer mitten im Sterben die App geschlossen hat, wacht trotzdem am Lagerfeuer auf */
 if (S.lauf && S.lauf.leben <= 0 && !S.zeige) sterben();
 else render();
 document.documentElement.classList.add('bereit');
-
-/* Die Tonebene: der Wunsch aus dem Spielstand, der erste Gestus weckt den Wind, versteckte Tabs schlafen */
-T.setzenLautstaerke(musikLaut());
-T.setzenMusik(S.musik !== false);
-T.setzen(S.wind !== false);
-T.setzenFx(S.kampfklang !== false);
-['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => T.wecken(), { once: true }));
-document.addEventListener('visibilitychange', () => T.sichtbar(!document.hidden));
