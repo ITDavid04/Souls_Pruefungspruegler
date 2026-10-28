@@ -930,7 +930,18 @@ try {
     await warte(d, h => location.hash === h || (h === '#/' && location.hash === ''), h);
     orte.push((await tonStand()).musikOrt);
   }
-  check('Desktop: Jede Ansicht hat ihre Musik (Gebeinhaus, Kokytos, Pixelparadies still, Lagerfeuer)', orte.join() === 'katakomben,kokytos,,lagerfeuer', orte.join());
+  check('Desktop: Jede Ansicht hat ihre Musik (Gebeinhaus, Kokytos, Inselkarte, Lagerfeuer)', orte.join() === 'katakomben,kokytos,px-karte,lagerfeuer', orte.join());
+  const zPixel = await d.evaluate(async () => {
+    const T = await import('./js/ton.js'), gespielt = [];
+    for (const k of T.musikStuecke()) { T.musik(k); gespielt.push(T.zustand().musikOrt === k); }
+    T.musik('px-waechter'); await new Promise(r => setTimeout(r, 400));
+    const toene = T.zustand().pxToene; T.musikSieg(); const still = T.zustand().musikOrt;
+    await new Promise(r => setTimeout(r, 2000));
+    const wieder = T.zustand().musikOrt;
+    T.musik('lagerfeuer');
+    return { alle: gespielt.every(Boolean), anzahl: gespielt.length, toene, still, wieder };
+  });
+  check('Desktop: Alle 22 Musikstücke starten, das Pixelthema spielt Töne, schweigt beim Sieg kurz und setzt wieder ein', zPixel.alle && zPixel.anzahl === 22 && zPixel.toene > 0 && zPixel.still === null && zPixel.wieder === 'px-waechter', JSON.stringify(zPixel));
   const zBoss = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.musik('hoelle', true); const vor = T.zustand(); T.musikSieg(); const nach = T.zustand(); T.musik('lagerfeuer'); return { vor, nach }; });
   check('Desktop: Bosskampf vertieft die Musik, der Sieg löst sie auf', zBoss.vor.boss === true && zBoss.vor.musikOrt === 'hoelle' && zBoss.nach.boss === false && zBoss.nach.toene >= 4, JSON.stringify(zBoss));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
@@ -1062,6 +1073,8 @@ try {
   await klick(q, '#weiter');
   await ansicht(q, 'ist-boss');
   check('Pixelstil: Bosskampf mit Figur im Bossbalken', await q.$('.bossbalken.mit-figur .px-matrix') !== null);
+  const qTon = await q.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); return T.zustand().musikOrt; });
+  check('Pixelstil: Im Bosskampf spielt das Wächter-Thema', qTon === 'px-waechter', qTon);
   await foto(q, '82-pixelstil-boss');
   await bossRichtig(q);
   await ansicht(q, 'sieg');

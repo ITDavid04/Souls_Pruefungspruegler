@@ -151,6 +151,9 @@ function musikBauen(){
   knisterBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.03), ctx.sampleRate);
   const k = knisterBuf.getChannelData(0);
   for (let i = 0; i < k.length; i++) k[i] = Math.random() * 2 - 1;
+  pxRausch = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const r = pxRausch.getChannelData(0);
+  for (let i = 0; i < r.length; i++) r[i] = Math.random() * 2 - 1;
 }
 
 /* Einen Ort aufbauen: Grundton, Bossgrund (anfangs stumm) und der Taktgeber für die Töne */
@@ -275,19 +278,233 @@ function bossPegel(z, an){
   try { z.bossG.gain.cancelScheduledValues(t); z.bossG.gain.setTargetAtTime(an ? z.o.bordunPegel * 1.3 : 0.0001, t, 1.6); } catch (e) {}
 }
 
-/* Den Wunsch aus dem Spiel umsetzen: anderer Ort blendet über, gleicher Ort ändert nur den Bossgrund */
-function musikFolgen(){
-  if (!ctx || !entsperrt) return;
-  const key = musikAn && KLANGORTE[wunsch.ort] ? wunsch.ort : null;
-  if (spielt && spielt.key !== key) { ortAbbauen(spielt); spielt = null; }
-  if (!key) return;
-  fortsetzen();
-  musikBauen();
-  if (!spielt) spielt = ortBauen(key);
-  bossPegel(spielt, !!wunsch.boss);
+/* Die Pixelmusik: kurze, eigene Themen über acht Takte in Schleife, wie auf alten Handkonsolen.
+   Die Melodie spielt eine Pulswelle, darunter ein Dreiecksbass, Arpeggios und Rauschen als Schlagzeug.
+   Notiert wird pro Takt in Achteln: Note (C5, F#4, Bb4), "-" hält die Note, "." ist Pause.
+   Bass, Begleitung und Schlagzeug ergeben sich aus den Akkorden und dem Stil des Stücks. Erprobt in tools/hoerprobe/pixel.html. */
+const PIXEL_PEGEL = 0.62;  // relativ zum Musikbus: die Pixelmusik bleibt unter den 8-Bit-Treffern
+const PIXEL_STUECKE = {
+  'px-karte': { bpm: 138, lead: { welle: 'puls25' }, arp: 'arp16', bass: 'gehen', drums: 'kick',
+    akkorde: 'D | G | D | A | Bm | G | Em A | D',
+    melodie: 'D5 - - A4 D5 E5 F#5 - | G5 - F#5 E5 D5 - B4 - | A4 - D5 - F#5 - A5 - | G5 F#5 E5 - - - . . | F#5 - - D5 B4 - D5 - | G5 - - F#5 G5 A5 B5 - | A5 - G5 - E5 - C#5 - | D5 - - - . . . .' },
+  'px-mond': { bpm: 96, lead: { welle: 'dreieck' }, arp: 'arp8', bass: 'halbe', drums: 'hats',
+    akkorde: 'F | G | Em | Am | F | G | F | F',
+    melodie: 'C5 - - - A4 - C5 - | B4 - - - D5 - G5 - | E5 - - - D5 - B4 - | C5 - - - - - . . | A5 - - - G5 - F5 - | D5 - - - B4 - G4 - | A4 - C5 - E5 - G5 - | F5 - - - - - . .' },
+  'px-merkur': { bpm: 160, lead: { welle: 'puls12' }, arp: 'arp16', bass: 'treiben', drums: 'leicht',
+    akkorde: 'Em | D | C | D | Em | D | C | B',
+    melodie: 'E5 . G5 A5 B5 . A5 G5 | F#5 . D5 E5 F#5 . A5 F#5 | G5 . E5 G5 C6 . B5 A5 | B5 - A5 - F#5 - D5 - | E5 . G5 A5 B5 . D6 B5 | A5 . F#5 A5 D6 . C6 A5 | G5 . E5 G5 C6 B5 A5 G5 | F#5 - D#5 - B4 - - .' },
+  'px-venus': { bpm: 132, takt: 6, lead: { welle: 'puls25' }, arp: 'walzer', bass: 'walzer', drums: 'walzer',
+    akkorde: 'Bb | Gm | Eb | F | Bb | Gm | Cm F | Bb',
+    melodie: 'F5 - - D5 - Bb4 | G5 - - Bb5 - G5 | Bb5 - - G5 - Eb5 | F5 - - - . . | D5 - F5 Bb5 - A5 | G5 - - F5 - D5 | Eb5 - C5 A4 - C5 | Bb4 - - - . .' },
+  'px-sonne': { bpm: 126, lead: { welle: 'puls50' }, arp: 'stakkato', bass: 'gehen', drums: 'kick',
+    akkorde: 'C | F | C | G | Am | F | G | C',
+    melodie: 'G4 . C5 . E5 - G5 - | A5 - - G5 F5 - C5 - | E5 - G5 - C6 - G5 - | D5 - - - B4 - G4 - | A4 - C5 E5 A5 - G5 - | F5 - A5 - C6 - A5 - | G5 - F5 E5 D5 - B4 D5 | C5 - - - . . G4 .' },
+  'px-mars': { bpm: 112, lead: { welle: 'puls25', gate: 0.75 }, arp: 'stakkato', bass: 'marsch', drums: 'marsch',
+    akkorde: 'Am | Am | F | G | Am | Dm | E | Am',
+    melodie: 'A4 - - A4 C5 - E5 - | A5 - G5 - E5 - C5 - | F5 - - E5 D5 - C5 - | B4 - - - G4 - - . | A4 - - A4 C5 - E5 - | F5 - E5 - D5 - A5 - | G#5 - - E5 B4 - G#4 - | A4 - - - . . . .' },
+  'px-jupiter': { bpm: 92, lead: { welle: 'puls50', doppel: true }, arp: 'akkord', bass: 'halbe', drums: 'feier',
+    akkorde: 'Eb | Ab | Bb | Eb | Cm | Ab | Bb | Eb',
+    melodie: 'Eb5 - - - Bb4 - Eb5 F5 | Ab5 - - - G5 - Eb5 - | F5 - - - D5 - Bb4 - | Eb5 - - - - - . . | G5 - - - Eb5 - G5 Ab5 | Bb5 - - - C6 - Ab5 - | G5 - F5 - D5 - F5 - | Eb5 - - - - - . .' },
+  'px-saturn': { bpm: 104, lead: { welle: 'puls12', echo: true }, arp: 'arp16', bass: 'gehen', drums: 'hats',
+    akkorde: 'Dm | G | Dm | G | C | F | G | A',
+    melodie: 'D5 - F5 - A5 - G5 F5 | B4 - - D5 G5 - F5 D5 | A4 - D5 - F5 - E5 D5 | B4 - - - G4 - - . | E5 - G5 - C6 - B5 G5 | A5 - - G5 F5 - C5 - | D5 - G5 - B5 - A5 G5 | E5 - - C#5 A4 - - .' },
+  'px-waechter': { bpm: 150, boss: true, lead: { welle: 'puls50', gate: 0.8 }, arp: 'arp16', bass: 'treiben', drums: 'treiben',
+    akkorde: 'Cm | Cm | Ab | Bb | Cm | Cm | Ab | G',
+    melodie: 'C5 . C5 . Eb5 - D5 C5 | G5 - - F5 Eb5 - D5 - | Eb5 . Eb5 . C5 - Ab4 C5 | D5 - Bb4 - F5 - D5 - | C5 . C5 . Eb5 - G5 - | C6 - - Bb5 G5 - Eb5 - | Ab5 - G5 F5 Eb5 - C5 Eb5 | D5 - - - B4 - G4 -' },
+  'px-glitch': { bpm: 144, boss: true, glitch: true, lead: { welle: 'puls25', gate: 0.85 }, arp: 'arp16', bass: 'treiben', drums: 'treiben',
+    akkorde: 'Em | C | D | B | Em | C | Am | B',
+    melodie: 'E5 G5 B5 . E5 G5 B5 . | C6 - B5 G5 E5 - G5 - | F#5 A5 D6 . F#5 A5 D6 . | D#6 - B5 - F#5 - D#5 - | E5 G5 B5 . G5 B5 E5 . | C6 - - B5 A5 - G5 - | E5 - A5 - C6 - B5 A5 | B5 - - - F#5 - D#5 -' },
+  'px-rast': { bpm: 84, lead: { welle: 'dreieck' }, arp: 'arp8', bass: 'halbe', drums: 'keine',
+    akkorde: 'G | Em | C | D | G | Em | Am D | G',
+    melodie: 'B4 - - - D5 - G5 - | E5 - - - D5 - B4 - | C5 - - - E5 - G5 - | F#5 - - - - - . . | G5 - - - A5 - B5 - | G5 - - - E5 - D5 - | C5 - E5 - D5 - F#5 - | G5 - - - - - . .' },
+  'px-hoelle': { bpm: 108, lead: { welle: 'puls25' }, arp: 'arp8', bass: 'gehen', drums: 'hats',
+    akkorde: 'Em | F | Em | F | Am | G | F | E',
+    melodie: 'E5 - . B4 E5 - G5 - | F5 - - E5 F5 - A5 - | G5 - F5 - E5 - B4 - | C5 - - - A4 - - . | A4 - C5 - E5 - A5 - | G5 - F5 - D5 - B4 - | C5 - F5 - A5 - G5 F5 | E5 - - - B4 - G#4 -' },
+  'px-katakomben': { bpm: 100, lead: { welle: 'puls25', gate: 0.45 }, arp: 'keiner', bass: 'marsch', drums: 'hats',
+    akkorde: 'Am | E | Am | E | Dm | Am | E | Am',
+    melodie: 'A4 . C5 . E5 . D5 C5 | B4 . G#4 . E4 . . . | A4 . C5 . E5 . A5 . | G#5 . E5 . B4 . . . | D5 . F5 . A5 . F5 D5 | C5 . E5 . A4 . . . | B4 . D5 . E5 . G#5 . | A5 . . . A4 . . .' },
+  'px-kokytos': { bpm: 80, lead: { welle: 'dreieck' }, arp: 'glocke16', bass: 'halbe', drums: 'keine',
+    akkorde: 'Bm | G | D | A | Bm | G | Em | F#',
+    melodie: 'F#5 - - - D5 - B4 - | G5 - - - D5 - B4 - | A5 - - - F#5 - D5 - | E5 - - - - - . . | B5 - - - F#5 - D5 - | G5 - - - B5 - D6 - | B5 - - - G5 - E5 - | F#5 - - - A#4 - C#5 -' },
+  'px-berg': { bpm: 120, lead: { welle: 'puls25' }, arp: 'arp16', bass: 'gehen', drums: 'leicht',
+    akkorde: 'A | E | F#m | D | A | E | D E | A',
+    melodie: 'E5 - A5 - - B5 C#6 - | B5 - - - G#5 - E5 - | A5 - - - F#5 - C#5 - | D5 - F#5 - A5 - - - | C#6 - - - B5 - A5 - | G#5 - - - E5 - B4 - | F#5 - A5 - G#5 - B5 - | A5 - - - - - . .' },
+  'px-gipfel': { bpm: 96, lead: { welle: 'puls50' }, arp: 'akkord', bass: 'halbe', drums: 'feier',
+    akkorde: 'F | C | Dm | Bb | F | C | Bb C | F',
+    melodie: 'C5 - - - F5 - - - | E5 - - - G5 - - - | F5 - - - A5 - - - | Bb5 - - - - - . . | A5 - - - C6 - A5 - | G5 - - - E5 - C5 - | D5 - F5 - E5 - G5 - | F5 - - - - - . .' }
+};
+
+/* Noten und Akkorde lesen */
+const HALBTON = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const midiVon = (name, okt) => 12 * (okt + 1) + HALBTON[name[0]] + (name[1] === '#' ? 1 : name[1] === 'b' ? -1 : 0);
+const midiHz = m => 440 * Math.pow(2, (m - 69) / 12);
+const AKKORD_ART = { '': [0, 4, 7], m: [0, 3, 7], '7': [0, 4, 7, 10], dim: [0, 3, 6] };
+function notenwert(t){ const m = t.match(/^([A-G][#b]?)(\d)$/); return midiVon(m[1], Number(m[2])); }
+function akkordVon(t){ const m = t.match(/^([A-G][#b]?)(.*)$/); return { grund: midiVon(m[1], 2), toene: AKKORD_ART[m[2]] || AKKORD_ART[''] }; }
+/* Ein Stück in Sechzehntel zerlegen: wann welche Melodienote beginnt und welcher Akkord gilt */
+const gelesen = {};
+function lesen(key){
+  if (gelesen[key]) return gelesen[key];
+  const st = PIXEL_STUECKE[key], achtel = st.takt || 8, n16 = achtel * 2;
+  const takte = st.melodie.split('|').map(t => t.trim()).filter(Boolean).map(t => t.split(/\s+/));
+  const akk = st.akkorde.split('|').map(t => t.trim().split(/\s+/).map(akkordVon));
+  const len = takte.length * n16, mel = {};
+  let offen = null;
+  takte.flat().forEach((tok, i) => {
+    if (tok === '-') { if (offen) offen.d += 2; return; }
+    offen = null;
+    if (tok === '.') return;
+    offen = mel[i * 2] = { m: notenwert(tok), d: 2 };
+  });
+  const akkordBei = s => { s = ((s % len) + len) % len; const teile = akk[Math.floor(s / n16) % akk.length]; return teile[Math.floor((s % n16) / (n16 / teile.length))]; };
+  return gelesen[key] = { len, n16, mel, akkordBei };
 }
 
-/* Das Spiel sagt bei jeder Ansicht, wo man ist: Ort (lagerfeuer, hoelle, kokytos, katakomben, berg, gipfel oder null für Stille) und ob ein Boss kämpft */
+/* Pulswellen wie auf alten Konsolen: 12,5, 25 oder 50 Prozent Tastverhältnis */
+let pxRausch = null, pxZahl = 0;
+const pxWellen = {};
+function pxWelle(art){
+  if (pxWellen[art]) return pxWellen[art];
+  const duty = { puls12: 0.125, puls25: 0.25, puls50: 0.5 }[art], n = 48;
+  const re = new Float32Array(n), im = new Float32Array(n);
+  for (let k = 1; k < n; k++) re[k] = 2 / (k * Math.PI) * Math.sin(k * Math.PI * duty);
+  return pxWellen[art] = ctx.createPeriodicWave(re, im);
+}
+/* Ein Ton mit kurzer Hülle; lange Töne bekommen ein leichtes Vibrato */
+function pxTon(ziel, art, f, t, dauer, pegel, extra = {}){
+  try {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    if (art === 'dreieck') o.type = 'triangle'; else o.setPeriodicWave(pxWelle(art));
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(pegel, t + 0.006);
+    g.gain.setTargetAtTime(pegel * 0.72, t + 0.006, 0.09);
+    g.gain.setTargetAtTime(0, t + dauer, 0.025);
+    if (dauer > 0.3 && !extra.ohneVibrato) {
+      const lfo = ctx.createOscillator(), tiefe = ctx.createGain();
+      lfo.frequency.value = 5.5; tiefe.gain.setValueAtTime(0, t); tiefe.gain.linearRampToValueAtTime(f * 0.006, t + 0.35);
+      lfo.connect(tiefe); tiefe.connect(o.frequency); lfo.start(t); lfo.stop(t + dauer + 0.2);
+    }
+    if (extra.knick) { o.frequency.setValueAtTime(f, t + dauer * 0.6); o.frequency.exponentialRampToValueAtTime(f * 0.89, t + dauer); }
+    o.connect(g); g.connect(ziel);
+    o.start(t); o.stop(t + dauer + 0.2);
+    pxZahl++;
+  } catch (e) {}
+}
+function pxRauschen(ziel, t, dauer, pegel, typ, freq){
+  try {
+    const q = ctx.createBufferSource(); q.buffer = pxRausch;
+    const f = ctx.createBiquadFilter(); f.type = typ; f.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(pegel, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dauer);
+    q.connect(f); f.connect(g); g.connect(ziel);
+    q.start(t, Math.random() * 0.5); q.stop(t + dauer + 0.02);
+  } catch (e) {}
+}
+function pxTrommel(ziel, t, start, ende, dauer, pegel){
+  try {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(start, t); o.frequency.exponentialRampToValueAtTime(ende, t + dauer);
+    g.gain.setValueAtTime(pegel, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dauer);
+    o.connect(g); g.connect(ziel); o.start(t); o.stop(t + dauer + 0.02);
+  } catch (e) {}
+}
+
+/* Ein Stück starten: eigener Bus, kurz eingeblendet, ein Taktgeber plant immer ein Stück voraus */
+function pxStarten(key){
+  const st = PIXEL_STUECKE[key], noten = lesen(key), sek16 = 60 / st.bpm / 4, t = ctx.currentTime;
+  const bus = ctx.createGain(); bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(PIXEL_PEGEL, t + 0.4); bus.connect(musikBus);
+  let leadBus = bus;
+  if (st.lead.echo) {
+    leadBus = ctx.createGain(); leadBus.connect(bus);
+    const verz = ctx.createDelay(1); verz.delayTime.value = sek16 * 3;
+    const rueck = ctx.createGain(); rueck.gain.value = 0.3;
+    const nass = ctx.createGain(); nass.gain.value = 0.35;
+    leadBus.connect(verz); verz.connect(rueck); rueck.connect(verz); verz.connect(nass); nass.connect(bus);
+  }
+  const z = { key, px: true, st, noten, sek16, bus, leadBus, schritt: 0, zeit: t + 0.08 };
+  z.timer = setInterval(() => pxPlanen(z), 25);
+  pxPlanen(z);
+  return z;
+}
+function pxStoppen(z, aus = 0.5){
+  clearInterval(z.timer);
+  const t = ctx.currentTime;
+  try { z.bus.gain.cancelScheduledValues(t); z.bus.gain.setValueAtTime(z.bus.gain.value, t); z.bus.gain.linearRampToValueAtTime(0, t + aus); } catch (e) {}
+  setTimeout(() => z.bus.disconnect(), (aus + 2) * 1000);
+}
+function pxPlanen(z){
+  if (ctx.state !== 'running') return;
+  if (z.zeit < ctx.currentTime) z.zeit = ctx.currentTime + 0.05;   // nach dem Aufwachen nicht alles nachholen
+  while (z.zeit < ctx.currentTime + 0.12) {
+    pxSechzehntel(z, z.schritt, z.zeit);
+    z.schritt = (z.schritt + 1) % z.noten.len;
+    z.zeit += z.sek16;
+  }
+}
+function pxSechzehntel(z, s, t){
+  const { st, noten, sek16 } = z, i = s % noten.n16, a = noten.akkordBei(s), viertel = noten.n16 === 12 ? 3 : 4;
+  /* Melodie; im Großen Glitch stolpert sie manchmal oder knickt ab */
+  const m = noten.mel[s];
+  if (m) {
+    const f = midiHz(m.m), dauer = m.d * sek16 * (st.lead.gate || 0.92), pegel = st.lead.welle === 'dreieck' ? 0.12 : 0.07;
+    if (st.glitch && Math.random() < 0.12) {
+      for (let k = 0; k < 3; k++) pxTon(z.leadBus, st.lead.welle, f * (k === 1 ? 2 : 1), t + k * sek16 / 2, sek16 * 0.4, pegel, { ohneVibrato: true });
+    } else {
+      pxTon(z.leadBus, st.lead.welle, f, t, dauer, pegel, { knick: st.glitch && Math.random() < 0.1 });
+      if (st.lead.doppel) pxTon(z.leadBus, 'dreieck', f / 2, t, dauer, 0.09);
+    }
+  }
+  /* Bass: Dreieck, Grundton und Quinte */
+  const g = a.grund < 40 ? a.grund + 12 : a.grund, quinte = g + 7;
+  const bass = (mm, d) => pxTon(z.bus, 'dreieck', midiHz(mm), t, d * sek16, 0.15, { ohneVibrato: true });
+  if (st.bass === 'halbe' && i % 8 === 0) bass(g, 7.5);
+  if (st.bass === 'gehen' && i % 4 === 0) bass((i / 4) % 2 ? quinte : g, 3.4);
+  if (st.bass === 'marsch' && i % 4 === 0) bass((i / 4) % 2 ? quinte : g, 1.6);
+  if (st.bass === 'treiben' && i % 2 === 0) bass((i / 2) % 2 ? g + 12 : g, 1.5);
+  if (st.bass === 'walzer' && i === 0) bass(g, 3.5);
+  /* Begleitung aus den Akkordtönen */
+  const toene = a.toene.map(x => a.grund + 24 + x), arp = (art, mm, d, p) => pxTon(z.bus, art, midiHz(mm), t, d * sek16, p, { ohneVibrato: true });
+  if (st.arp === 'arp16') arp('puls12', toene[i % toene.length] + 12, 0.85, 0.022);
+  if (st.arp === 'arp8' && i % 2 === 0) arp('puls12', toene[(i / 2) % toene.length] + 12, 1.7, 0.022);
+  if (st.arp === 'glocke16' && Math.random() < 0.5) arp('dreieck', toene[i % toene.length] + 24, 0.9, 0.05);
+  if (st.arp === 'stakkato' && i % 4 === 2) toene.forEach(mm => arp('puls25', mm + 12, 0.8, 0.014));
+  if (st.arp === 'walzer' && (i === 4 || i === 8)) toene.forEach(mm => arp('puls25', mm + 12, 1.4, 0.014));
+  if (st.arp === 'akkord' && (i === 0 || noten.akkordBei(s - 1) !== a)) {
+    const lang = i === 0 && noten.akkordBei(s + noten.n16 - 1) === a ? noten.n16 : noten.n16 / 2;
+    toene.forEach(mm => arp('puls50', mm, lang * 0.95, 0.012));
+  }
+  /* Schlagzeug aus Rauschen, ohne Doppelschlag */
+  const hat = p => pxRauschen(z.bus, t, 0.03, p, 'highpass', 7000);
+  const snare = p => { pxRauschen(z.bus, t, 0.13, p, 'bandpass', 1900); pxTrommel(z.bus, t, 220, 160, 0.06, p * 0.8); };
+  const kick = () => pxTrommel(z.bus, t, 130, 45, 0.13, 0.16);
+  const zwei = i === viertel && viertel === 4, vier = i === 3 * viertel;
+  if (st.drums === 'hats' && i % 4 === 2) hat(0.018);
+  if (st.drums === 'leicht') { if (i % 2 === 0) hat(i % 4 === 2 ? 0.02 : 0.01); if (zwei || vier) snare(0.035); }
+  if (st.drums === 'kick') { if (i % 2 === 0) hat(i % 4 === 2 ? 0.02 : 0.01); if (zwei || vier) snare(0.035); if (i === 0 || i === 8) kick(); }
+  if (st.drums === 'treiben') { hat(i % 2 ? 0.008 : 0.016); if (zwei || vier) snare(0.04); if (i === 0 || i === 8) kick(); }
+  if (st.drums === 'marsch') { if (zwei || vier) snare(0.04); if (i >= 13 && Math.floor(s / noten.n16) % 2 === 1) snare(0.018); if (i === 0) kick(); }
+  if (st.drums === 'feier') { if (i === 0) pxTrommel(z.bus, t, 95, 62, 0.45, 0.2); if (i === 0 && Math.floor(s / noten.n16) % 4 === 0) pxRauschen(z.bus, t, 1.2, 0.015, 'highpass', 5000); }
+  if (st.drums === 'walzer') { if (i === 0) kick(); if (i === 4 || i === 8) hat(0.016); }
+}
+
+/* Den Wunsch aus dem Spiel umsetzen: anderer Ort blendet über, gleicher Ort ändert nur den Bossgrund */
+let ruheBis = 0, ruheTimer = 0;
+function musikFolgen(){
+  if (!ctx || !entsperrt) return;
+  const key = musikAn && (KLANGORTE[wunsch.ort] || PIXEL_STUECKE[wunsch.ort]) ? wunsch.ort : null;
+  if (spielt && spielt.key !== key) { if (spielt.px) pxStoppen(spielt); else ortAbbauen(spielt); spielt = null; }
+  if (!key) return;
+  /* Nach einem Pixelsieg schweigt die Musik kurz, damit die Fanfare allein klingt */
+  const warten = ruheBis - ctx.currentTime;
+  if (warten > 0) { clearTimeout(ruheTimer); ruheTimer = setTimeout(musikFolgen, warten * 1000 + 50); return; }
+  fortsetzen();
+  musikBauen();
+  if (!spielt) spielt = PIXEL_STUECKE[key] ? pxStarten(key) : ortBauen(key);
+  if (!spielt.px) bossPegel(spielt, !!wunsch.boss);
+}
+
+/* Das Spiel sagt bei jeder Ansicht, wo man ist: Ort (lagerfeuer, hoelle, kokytos, katakomben, berg, gipfel, ein Pixelstück px-… oder null für Stille) und ob ein Boss kämpft */
 export function musik(ort, boss = false){
   wunsch = { ort: ort || null, boss: !!boss };
   musikFolgen();
@@ -296,6 +513,7 @@ export function musik(ort, boss = false){
 /* Der Boss fällt: der Bossgrund weicht, und ein langsamer Dur-Akkord löst alles auf */
 export function musikSieg(){
   if (!spielt || !musikAn) return;
+  if (spielt.px) { pxStoppen(spielt, 0.2); spielt = null; ruheBis = ctx.currentTime + 1.8; musikFolgen(); return; }
   const z = spielt, o = z.o, t = ctx.currentTime + 0.3;
   let f0 = o.grund; while (f0 < 160) f0 *= 2;
   clearTimeout(z.timer);
@@ -433,5 +651,8 @@ export function chip(art, stufe = 0){
 /* Schalter im Spielstand: Kampfklang an oder aus */
 export function setzenFx(ein){ fxAn = !!ein; }
 
+/* Nur zum Testen: alle Stücke, die musik() kennt */
+export const musikStuecke = () => Object.keys(KLANGORTE).concat(Object.keys(PIXEL_STUECKE));
+
 /* Nur zum Testen: der innere Stand, ohne etwas zu verändern */
-export const zustand = () => ({ entsperrt, an, windAn, fxAn, fx: fxZahl, musikAn, musikOrt: spielt ? spielt.key : null, boss: !!(spielt && spielt.boss), toene: musikZahl, state: ctx ? ctx.state : 'kein' });
+export const zustand = () => ({ entsperrt, an, windAn, fxAn, fx: fxZahl, musikAn, musikOrt: spielt ? spielt.key : null, boss: !!(spielt && spielt.boss), toene: musikZahl, pxToene: pxZahl, state: ctx ? ctx.state : 'kein' });
