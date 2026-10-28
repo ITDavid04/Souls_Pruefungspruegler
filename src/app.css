@@ -1181,3 +1181,66 @@ html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
   .rolle { overflow: auto; }
   .rolle-innen { animation: none !important; }
 }
+
+/* ---------- Anleitung: der rote Faden ----------
+   Der Knopf sitzt fest oben rechts. Bis zum ersten Öffnen läuft ein roter Faden langsam um ihn herum (kein Blinken),
+   danach bleibt ein ruhiger Ring. Mitten im Kampf tritt er zurück, damit Uhr und Lunte nicht hinter dem Blatt weiterlaufen. */
+@property --faden-winkel { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.faden-knopf { position: fixed; z-index: 8; top: calc(var(--oben) + 10px); right: calc(env(safe-area-inset-right, 0px) + 10px); width: 44px; height: 44px; padding: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(11, 9, 8, .86); border: 1px solid var(--linie-hell); color: var(--gold); font: 700 21px/1 var(--f-titel); cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, .5); transition: border-color .3s, box-shadow .6s; }
+.faden-knopf:hover { border-color: var(--gold); }
+.faden-knopf::before { content: ""; position: absolute; inset: -6px; border-radius: inherit; padding: 2px; pointer-events: none;
+  background: rgba(177, 39, 29, .55);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.faden-knopf.neu { box-shadow: 0 0 22px rgba(177, 39, 29, .55), 0 4px 14px rgba(0, 0, 0, .5); }
+.faden-knopf.neu::before { padding: 3px; background: conic-gradient(from var(--faden-winkel), rgba(228, 89, 74, .12) 0deg, rgba(228, 89, 74, .35) 180deg, var(--blut-hell) 300deg, #ffd6cc 345deg, rgba(228, 89, 74, .12) 360deg); filter: drop-shadow(0 0 5px rgba(228, 89, 74, .85)); animation: faden 4.5s linear infinite; }
+@keyframes faden { to { --faden-winkel: 360deg; } }
+html.im-kampf .faden-knopf { display: none; }
+/* Auf schmalen Bildschirmen rückt der Schalter Souls | Pixel auf dem Titel nach links, damit der Faden Platz hat */
+@media (max-width: 700px) { .stil-wahl { right: 52px; } }
+
+html:has(dialog.anleitung[open]) { overflow: hidden; }
+.anleitung { width: min(560px, calc(100% - 2 * var(--rand))); max-height: min(88dvh, 880px); padding: 0; border: 1px solid var(--linie-hell); border-radius: 8px; background: var(--stein); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, .7); }
+.anleitung[open] { display: flex; flex-direction: column; }
+.anleitung::backdrop { background: rgba(5, 4, 3, .74); backdrop-filter: blur(2px); }
+.anleitung-blatt { overflow: auto; overscroll-behavior: contain; padding: 16px 18px 20px; display: grid; gap: 6px; }
+.anleitung-kopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.anleitung-kopf h2 { margin: 0; font: 600 25px/1.2 var(--f-titel); color: var(--gold); letter-spacing: .03em; }
+.anleitung-zu { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--linie); background: none; color: var(--blass); font: 400 26px/1 var(--f-text); cursor: pointer; }
+.anleitung-zu:hover { color: var(--text); border-color: var(--linie-hell); }
+.anleitung-unter { margin: 0 0 10px; font: italic 500 18px/1.4 var(--f-zitat); color: var(--blass); }
+.anleitung details { border-top: 1px solid var(--linie); }
+.anleitung summary { list-style: none; position: relative; cursor: pointer; padding: 14px 34px 14px 0; font: 600 14.5px/1.3 var(--f-titel); letter-spacing: .07em; text-transform: uppercase; color: var(--text); }
+.anleitung summary::-webkit-details-marker { display: none; }
+.anleitung summary::after { content: "+"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%); color: var(--gold); font: 400 24px/1 var(--f-text); }
+.anleitung details[open] summary { color: var(--gold); }
+.anleitung details[open] summary::after { content: "−"; }
+/* Durch jeden offenen Teil läuft der Faden als rote Linie */
+.anleitung-text { margin: 0 0 16px 2px; padding-left: 14px; border-left: 2px solid var(--blut); font-size: 16px; line-height: 1.55; color: #ddd3c3; }
+.anleitung-text p { margin: 0 0 10px; }
+.anleitung-text p:last-child { margin-bottom: 0; }
+.anleitung-text ol, .anleitung-text ul { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 8px; }
+.anleitung-text ol:last-child, .anleitung-text ul:last-child { margin-bottom: 0; }
+.anleitung-text b { color: var(--gold); font-weight: 700; }
+.anleitung-schluss { margin: 10px 0 4px; padding-top: 14px; border-top: 1px solid var(--linie); text-align: center; font: italic 500 17px/1.4 var(--f-zitat); color: var(--blass); }
+.anleitung-los { margin-top: 6px; }
+
+/* Im Pixelstil: eckig, Papier und Tinte, der Faden läuft in Schritten */
+body[data-welt="pixel"] .faden-knopf { border-radius: 0; background: var(--px-papier); color: var(--px-tinte); border: 3px solid var(--px-tinte); font: 700 22px/1 var(--f-pixel); box-shadow: 0 4px 0 #000; }
+body[data-welt="pixel"] .faden-knopf::before { inset: -8px; }
+body[data-welt="pixel"] .faden-knopf.neu { box-shadow: 0 4px 0 #000, 0 0 18px rgba(255, 59, 92, .6); }
+body[data-welt="pixel"] .faden-knopf.neu::before { background: conic-gradient(from var(--faden-winkel), rgba(255, 59, 92, .15) 0deg, rgba(255, 59, 92, .4) 180deg, var(--px-rot) 300deg, #ffd0d8 345deg, rgba(255, 59, 92, .15) 360deg); filter: none; animation-timing-function: steps(16); }
+body[data-welt="pixel"] .anleitung { background: var(--px-papier); color: var(--px-tinte); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 6px 0 #000; }
+body[data-welt="pixel"] .anleitung-kopf h2 { font: 700 26px/1.1 var(--f-pixel); color: var(--px-tinte); letter-spacing: 0; }
+body[data-welt="pixel"] .anleitung-zu { border-radius: 0; border: 2px solid var(--px-tinte); color: var(--px-tinte); }
+body[data-welt="pixel"] .anleitung-unter, body[data-welt="pixel"] .anleitung-schluss { font: 400 16px/1.45 var(--f-text); color: var(--px-leise); }
+body[data-welt="pixel"] .anleitung details, body[data-welt="pixel"] .anleitung-schluss { border-color: var(--px-papier-2); }
+body[data-welt="pixel"] .anleitung summary { font: 700 16px/1.3 var(--f-pixel); letter-spacing: 0; text-transform: none; color: var(--px-tinte); }
+body[data-welt="pixel"] .anleitung summary::after { color: var(--px-rot); }
+body[data-welt="pixel"] .anleitung details[open] summary { color: var(--px-lila-tief); }
+body[data-welt="pixel"] .anleitung-text { color: var(--px-leise); border-left: 3px solid var(--px-rot); }
+body[data-welt="pixel"] .anleitung-text b { color: var(--px-tinte); }
+
+@media (prefers-reduced-motion: reduce) {
+  .faden-knopf.neu::before { animation: none; background: var(--blut-hell); }
+  body[data-welt="pixel"] .faden-knopf.neu::before { background: var(--px-rot); }
+}

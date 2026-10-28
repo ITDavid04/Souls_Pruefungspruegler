@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -166,6 +166,7 @@ function render(){
   document.documentElement.classList.toggle('im-kampf', titelGezeigt && !!S.lauf && !S.zeige);
   document.body.dataset.welt = pixelStil() ? 'pixel' : '';
   T.musik(...musikDerAnsicht());
+  fadenZeigen();
   if (!titelGezeigt) return titel();
   if (S.zeige) return zeige();
   if (S.lauf) return kampf();
@@ -179,6 +180,32 @@ function render(){
   return lagerfeuer();
 }
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
+
+/* Anleitung für Neue, der rote Faden: ein Knopf oben rechts, immer da außer mitten im Kampf.
+   Bis zum ersten Öffnen läuft ein roter Faden langsam um ihn herum, danach bleibt er als ruhiger Ring. */
+function anleitungBauen(){
+  const knopf = document.createElement('button');
+  knopf.type = 'button'; knopf.id = 'faden'; knopf.className = 'faden-knopf';
+  knopf.setAttribute('aria-label', 'Anleitung'); knopf.setAttribute('aria-haspopup', 'dialog');
+  knopf.innerHTML = '<span aria-hidden="true">?</span>';
+  const blatt = document.createElement('dialog');
+  blatt.id = 'anleitung'; blatt.className = 'anleitung'; blatt.setAttribute('aria-labelledby', 'anleitung-titel');
+  blatt.innerHTML = '<div class="anleitung-blatt">' +
+    '<div class="anleitung-kopf"><h2 id="anleitung-titel">' + esc(ANLEITUNG.titel) + '</h2><button type="button" class="anleitung-zu" aria-label="Anleitung schließen">×</button></div>' +
+    '<p class="anleitung-unter">' + esc(ANLEITUNG.unter) + '</p>' +
+    ANLEITUNG.teile.map(([name, text], i) => '<details' + (i ? '' : ' open') + '><summary>' + esc(name) + '</summary><div class="anleitung-text">' + text + '</div></details>').join('') +
+    '<p class="anleitung-schluss">' + esc(ANLEITUNG.schluss) + '</p>' +
+    '<button type="button" class="knopf haupt anleitung-los">Los geht’s</button></div>';
+  document.body.append(knopf, blatt);
+  knopf.addEventListener('click', () => {
+    blatt.showModal();
+    if (!S.anleitung) { S.anleitung = true; sichern(); fadenZeigen(); }
+  });
+  blatt.querySelectorAll('.anleitung-zu, .anleitung-los').forEach(b => b.addEventListener('click', () => blatt.close()));
+  /* Ein Tipp neben das Blatt schließt es */
+  blatt.addEventListener('click', e => { if (e.target === blatt) blatt.close(); });
+}
+function fadenZeigen(){ const k = $('#faden'); if (k) k.classList.toggle('neu', !S.anleitung); }
 
 /* Musik je Ansicht: welcher Ort klingt und ob gerade ein Boss kämpft (oder hinter dem Tor wartet).
    Im Pixelparadies und im Pixelstil spielt statt der leisen Klänge ein 8-Bit-Thema (px-…), im Bosskampf das der Wächter. */
@@ -1700,6 +1727,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   }).catch(() => {});
 }
 
+anleitungBauen();
 /* Wer mitten im Sterben die App geschlossen hat, wacht trotzdem am Lagerfeuer auf */
 if (S.lauf && S.lauf.leben <= 0 && !S.zeige) sterben();
 else render();

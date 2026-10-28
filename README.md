@@ -46,6 +46,16 @@ Augen und Glut liegen in einer Ebene mit den Maßen des Titelbilds (`TITEL_TOR` 
 Danach erinnert sich der Titel: an offene Gänge („Weiterkämpfen“ mit Ort und Karte), an liegengebliebene Seelen und daran, wie oft du gestorben bist.
 Bei „Bewegung reduzieren“ bleibt alles still.
 
+## Die Anleitung: der rote Faden
+
+Oben rechts sitzt auf jeder Seite ein runder Knopf mit Fragezeichen. Er öffnet **den roten Faden**, eine Anleitung für Neue in neun aufklappbaren Teilen:
+das Spiel in einer Minute, der erste Gang Schritt für Schritt, Leben, Kaffee und Tod, Seelen, Stufen und Klassen, der Weg durch die Prüfung,
+was abseits des Weges liegt, das Pixelparadies, wie der Lernkasten lernt und die Einstellungen unter „Spielstand“. Die Texte stehen in `welt.js` (`ANLEITUNG`).
+
+Bis zum ersten Öffnen läuft ein roter Faden langsam um den Knopf (im Pixelstil eckig und in Schritten), danach bleibt ein ruhiger Ring.
+Mitten im Kampf tritt der Knopf zurück, damit Prüfungsuhr und Lunte nicht hinter dem Blatt weiterlaufen.
+Bei „Bewegung reduzieren“ steht der Faden still.
+
 ## So läuft ein Spiel
 
 | **Schritt** | **Was passiert** |

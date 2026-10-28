@@ -944,6 +944,19 @@ try {
   check('Desktop: Alle 22 Musikstücke starten, das Pixelthema spielt Töne, schweigt beim Sieg kurz und setzt wieder ein', zPixel.alle && zPixel.anzahl === 22 && zPixel.toene > 0 && zPixel.still === null && zPixel.wieder === 'px-waechter', JSON.stringify(zPixel));
   const zBoss = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.musik('hoelle', true); const vor = T.zustand(); T.musikSieg(); const nach = T.zustand(); T.musik('lagerfeuer'); return { vor, nach }; });
   check('Desktop: Bosskampf vertieft die Musik, der Sieg löst sie auf', zBoss.vor.boss === true && zBoss.vor.musikOrt === 'hoelle' && zBoss.nach.boss === false && zBoss.nach.toene >= 4, JSON.stringify(zBoss));
+  const faden = await d.evaluate(async () => {
+    const k = document.querySelector('#faden'), r = k.getBoundingClientRect();
+    const winkel = () => getComputedStyle(k, '::before').getPropertyValue('--faden-winkel');
+    const w1 = winkel(); await new Promise(res => setTimeout(res, 300));
+    return { da: getComputedStyle(k).display !== 'none', rechts: Math.round(innerWidth - r.right), oben: Math.round(r.top), neu: k.classList.contains('neu'), laeuft: w1 !== winkel() };
+  });
+  await klick(d, '#faden');
+  await warte(d, () => document.querySelector('#anleitung').open);
+  const blatt = await d.evaluate(() => ({ teile: document.querySelectorAll('#anleitung details').length, offen: document.querySelectorAll('#anleitung details[open]').length, gemerkt: JSON.parse(localStorage.getItem('spp.spiel')).anleitung === true, neu: document.querySelector('#faden').classList.contains('neu') }));
+  await foto(d, '86-desktop-anleitung');
+  await klick(d, '.anleitung-los');
+  await warte(d, () => !document.querySelector('#anleitung').open);
+  check('Desktop: Anleitung hinter dem Knopf oben rechts, der rote Faden läuft bis zum ersten Öffnen', faden.da && faden.neu && faden.laeuft && faden.rechts <= 16 && faden.oben <= 16 && blatt.teile === 9 && blatt.offen === 1 && blatt.gemerkt && !blatt.neu, JSON.stringify({ faden, blatt }));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
   await setze(d, 'S.lauf = null; S.zeige = null;');
@@ -1075,6 +1088,7 @@ try {
   check('Pixelstil: Bosskampf mit Figur im Bossbalken', await q.$('.bossbalken.mit-figur .px-matrix') !== null);
   const qTon = await q.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); return T.zustand().musikOrt; });
   check('Pixelstil: Im Bosskampf spielt das Wächter-Thema', qTon === 'px-waechter', qTon);
+  check('Pixelstil: Mitten im Kampf tritt der Anleitungsknopf zurück', await q.$eval('#faden', k => getComputedStyle(k).display) === 'none');
   await foto(q, '82-pixelstil-boss');
   await bossRichtig(q);
   await ansicht(q, 'sieg');
