@@ -921,9 +921,16 @@ try {
   await klick(d, '#musik');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).musik === false);
   const zStill = await tonStand();
+  const lautAus = await d.$eval('#musik-laut', r => r.disabled);
   await klick(d, '#musik');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).musik === true);
   check('Desktop: Musik-Schalter steht im Spielstand und schaltet die Musik ab', zStill.musikAn === false && zStill.musikOrt === null && (await tonStand()).musikOrt === 'lagerfeuer', JSON.stringify(zStill));
+  const regler = wert => d.$eval('#musik-laut', (r, w) => { r.value = w; r.dispatchEvent(new Event('input', { bubbles: true })); r.dispatchEvent(new Event('change', { bubbles: true })); }, wert);
+  await regler('100');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).musikLaut === 100);
+  const zLaut = await tonStand(), lautText = await d.$eval('#musik-laut-wert', o => o.textContent), lautAn = await d.$eval('#musik-laut', r => r.disabled);
+  await regler('50');
+  check('Desktop: Lautstärkeregler der Musik regelt live, merkt sich den Wert und ruht bei Musik aus', zLaut.lautstaerke === 2.83 && lautText === '100 %' && (await tonStand()).lautstaerke === 1 && lautAus === true && lautAn === false, JSON.stringify({ laut: zLaut.lautstaerke, lautText, lautAus, lautAn }));
   const orte = [];
   for (const h of ['#/gebeinhaus', '#/kokytos', '#/himmel', '#/']) {
     await d.evaluate(h => { location.hash = h; }, h);

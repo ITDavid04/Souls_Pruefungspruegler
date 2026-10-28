@@ -487,7 +487,7 @@ export const ANLEITUNG = {
       '<ul><li><b>Souls oder Pixel:</b> das ganze Spiel düster gemalt oder in 8 Bit, auch oben auf dem Titel umschaltbar.</li>' +
       '<li><b>Im Pixelparadies starten:</b> bunter Titel, danach direkt zur Inselkarte.</li>' +
       '<li><b>Ruhiger Modus:</b> Lernen ohne Leben und Tod, Fehler kosten nichts.</li>' +
-      '<li><b>Musik, Wind und Kampfklang</b> lassen sich einzeln an- und ausschalten.</li>' +
+      '<li><b>Musik, Wind und Kampfklang</b> lassen sich einzeln an- und ausschalten, die Musik auch lauter und leiser stellen.</li>' +
       '<li><b>App installieren:</b> auf den Startbildschirm legen, danach läuft alles auch ohne Netz.</li></ul>']
   ],
   schluss: 'Kleingedrucktes: Wer die Karten lernt, kommt wieder raus.'

@@ -126,7 +126,7 @@ const TEILTOENE = {
 };
 const TON_HUELLE = { weich: [1.4, 5.5], warm: [0.5, 4.2], glas: [0.06, 6.5], glocke: [0.03, 5], feier: [0.9, 5.5] };
 
-let musikAn = true, musikBus = null, hall = null, knisterBuf = null, spielt = null;
+let musikAn = true, musikLaut = 1, musikBus = null, hall = null, knisterBuf = null, spielt = null;
 let wunsch = { ort: null, boss: false }, musikZahl = 0;
 const zufall = (a, b) => a + Math.random() * (b - a);
 const ganz = (a, b) => Math.floor(zufall(a, b + 1));
@@ -138,7 +138,7 @@ function hz(o, stufe){
 /* Musikbus und Hall erst bauen, wenn wirklich Musik spielt */
 function musikBauen(){
   if (musikBus) return;
-  musikBus = ctx.createGain(); musikBus.gain.value = MUSIK_PEGEL;
+  musikBus = ctx.createGain(); musikBus.gain.value = MUSIK_PEGEL * musikLaut;
   const weich = ctx.createBiquadFilter(); weich.type = 'lowpass'; weich.frequency.value = 6000;
   musikBus.connect(weich); weich.connect(ctx.destination);
   /* Ein großer, dunkler Raum: Rauschen, das über gut vier Sekunden verklingt */
@@ -523,6 +523,13 @@ export function musikSieg(){
   bossPegel(z, false);
 }
 
+/* Regler im Spielstand: Lautstärke der Musik von 0 bis 100, 50 ist der Grundpegel.
+   Die Kurve ist gebogen wie bei einem echten Lautstärkeknopf, ganz rechts sind es rund 9 dB mehr. */
+export function setzenLautstaerke(prozent){
+  musikLaut = Math.pow(Math.max(0, Math.min(100, Number(prozent) || 0)) / 50, 1.5);
+  if (musikBus) try { musikBus.gain.setTargetAtTime(MUSIK_PEGEL * musikLaut, ctx.currentTime, 0.08); } catch (e) {}
+}
+
 /* Schalter im Spielstand: Musik an oder aus; der Wind weht mit Musik etwas leiser */
 export function setzenMusik(ein){
   musikAn = !!ein;
@@ -655,4 +662,4 @@ export function setzenFx(ein){ fxAn = !!ein; }
 export const musikStuecke = () => Object.keys(KLANGORTE).concat(Object.keys(PIXEL_STUECKE));
 
 /* Nur zum Testen: der innere Stand, ohne etwas zu verändern */
-export const zustand = () => ({ entsperrt, an, windAn, fxAn, fx: fxZahl, musikAn, musikOrt: spielt ? spielt.key : null, boss: !!(spielt && spielt.boss), toene: musikZahl, pxToene: pxZahl, state: ctx ? ctx.state : 'kein' });
+export const zustand = () => ({ entsperrt, an, windAn, fxAn, fx: fxZahl, musikAn, lautstaerke: Math.round(musikLaut * 100) / 100, musikOrt: spielt ? spielt.key : null, boss: !!(spielt && spielt.boss), toene: musikZahl, pxToene: pxZahl, state: ctx ? ctx.state : 'kein' });

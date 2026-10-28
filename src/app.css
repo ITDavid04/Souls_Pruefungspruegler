@@ -1010,6 +1010,13 @@ body[data-welt="pixel"] .spielstand summary { font-family: var(--f-pixel); }
 body[data-welt="pixel"] .probe { color: var(--px-tinte); }
 body[data-welt="pixel"] .probe small { color: var(--px-leise); }
 body[data-welt="pixel"] .probe input { accent-color: var(--px-lila); }
+/* Lautstärke der Musik: ein Regler unter ihrem Schalter, eingerückt wie dessen Erklärung */
+.regler-zeile { display: grid; grid-template-columns: auto 1fr 3.4em; gap: 12px; align-items: center; margin: -6px 0 14px 30px; font-size: 14px; color: var(--blass); }
+.regler-zeile input { width: 100%; min-height: 32px; margin: 0; accent-color: var(--gold); cursor: pointer; }
+.regler-zeile input:disabled { opacity: .4; cursor: default; }
+.regler-zeile output { text-align: right; font-variant-numeric: tabular-nums; }
+body[data-welt="pixel"] .regler-zeile { color: var(--px-leise); }
+body[data-welt="pixel"] .regler-zeile input { accent-color: var(--px-lila); }
 body[data-welt="pixel"] .titel-liste b { color: #9a5a00; }
 body[data-welt="pixel"] .knopf.gefahr { color: var(--px-rot-tief); }
 body[data-welt="pixel"] .werkstatt-liste a { color: var(--px-tinte); background: var(--px-papier); border: 3px solid var(--px-tinte); border-radius: 0; box-shadow: 0 4px 0 var(--px-tinte); }

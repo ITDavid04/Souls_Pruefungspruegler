@@ -78,6 +78,8 @@ const lebenMax = O => istPixel(O) ? herzMax() : maxLeben();
 const pixelWelt = () => { document.body.dataset.welt = 'pixel'; };
 /* Spielstil: 'souls' (düster, gemalt) oder 'pixel' (das ganze Spiel in 8 Bit, gleiche Regeln) */
 const pixelStil = () => S.stil === 'pixel';
+/* Lautstärke der Musik im Spielstand, 50 ist der Grundpegel */
+const musikLaut = () => S.musikLaut ?? 50;
 const bildVon = name => pixelStil() && PIXEL_BILDER[name] || name;
 
 /* Alles, was ein Kampfort braucht. Ein Kreis ist eine Arena mit einer Phase und den üblichen Regeln;
@@ -509,6 +511,7 @@ function lagerfeuer(){
         '<label class="probe"><input type="checkbox" id="startwelt"' + (startHimmel() ? ' checked' : '') + '> Im Pixelparadies starten <small>Bunter Titel, danach direkt zur Inselkarte. Das Lagerfeuer bleibt einen Schritt entfernt.</small></label>' +
         '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
         '<label class="probe"><input type="checkbox" id="musik"' + (S.musik !== false ? ' checked' : '') + '> Musik <small>Jeder Ort klingt eigen, im Pixelstil als 8-Bit-Abenteuer.</small></label>' +
+        '<div class="regler-zeile"><label for="musik-laut">Lautstärke</label><input type="range" id="musik-laut" min="0" max="100" step="5" value="' + musikLaut() + '"' + (S.musik === false ? ' disabled' : '') + '><output id="musik-laut-wert" for="musik-laut">' + musikLaut() + ' %</output></div>' +
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
         '<label class="probe"><input type="checkbox" id="kampfklang"' + (S.kampfklang !== false ? ' checked' : '') + '> Kampfklang <small>Kurze Klänge beim Antworten im Kampf.</small></label>' +
         (!S.aufstieg ? '<label class="probe"><input type="checkbox" id="nurAp2"' + (S.nurAp2 ? ' checked' : '') + '> Nur AP2 lernen <small>Öffnet den Läuterungsberg sofort, ohne den Zwischenprüfer.</small></label>' : '') +
@@ -531,7 +534,12 @@ function lagerfeuer(){
   $('#startwelt').addEventListener('change', e => { S.startwelt = e.target.checked ? 'himmel' : 'lagerfeuer'; sichern(); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
-  const musikKnopf = $('#musik'); if (musikKnopf) musikKnopf.addEventListener('change', e => { S.musik = e.target.checked; sichern(); T.setzenMusik(S.musik); });
+  const lautRegler = $('#musik-laut');
+  const musikKnopf = $('#musik'); if (musikKnopf) musikKnopf.addEventListener('change', e => { S.musik = e.target.checked; sichern(); T.setzenMusik(S.musik); if (lautRegler) lautRegler.disabled = !S.musik; });
+  if (lautRegler) {
+    lautRegler.addEventListener('input', e => { $('#musik-laut-wert').textContent = e.target.value + ' %'; T.setzenLautstaerke(e.target.value); });
+    lautRegler.addEventListener('change', e => { S.musikLaut = Number(e.target.value); sichern(); });
+  }
   const windKnopf = $('#wind'); if (windKnopf) windKnopf.addEventListener('change', e => { S.wind = e.target.checked; sichern(); T.setzen(S.wind); });
   const kkKnopf = $('#kampfklang'); if (kkKnopf) kkKnopf.addEventListener('change', e => { S.kampfklang = e.target.checked; sichern(); T.setzenFx(S.kampfklang); });
   $('#loeschen-frage').addEventListener('click', () => {
@@ -1734,6 +1742,7 @@ else render();
 document.documentElement.classList.add('bereit');
 
 /* Die Tonebene: der Wunsch aus dem Spielstand, der erste Gestus weckt den Wind, versteckte Tabs schlafen */
+T.setzenLautstaerke(musikLaut());
 T.setzenMusik(S.musik !== false);
 T.setzen(S.wind !== false);
 T.setzenFx(S.kampfklang !== false);
