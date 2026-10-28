@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hörprobe Musik</title>
+<style>
+/* Hörprobe für die Musik im Prüfungsprügler: gleiche Farben wie das Spiel, Handy zuerst */
+:root {
+  color-scheme: dark;
+  --nacht: #0b0908; --stein: #17120f; --stein-2: #221b16; --stein-3: #2d241d;
+  --linie: #43372d; --linie-hell: #6b5a49; --text: #ece4d6; --blass: #b0a492;
+  --gold: #e0b866; --blut: #b1271d;
+  --f-titel: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --f-text: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--nacht); color: var(--text); }
+body { font: 17px/1.5 var(--f-text); min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+main { max-width: 560px; margin: 0 auto; padding: 28px 16px 48px; }
+h1 { font: 600 1.6rem/1.2 var(--f-titel); color: var(--gold); letter-spacing: .04em; margin: 0 0 6px; }
+.unter { color: var(--blass); margin: 0 0 8px; }
+h2 { font: 600 .8rem/1 var(--f-titel); letter-spacing: .14em; text-transform: uppercase; color: var(--blass); margin: 28px 0 10px; }
+.orte { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ort { text-align: left; background: var(--stein); border: 1px solid var(--linie); color: var(--text); border-radius: 10px;
+  padding: 12px 14px; font: inherit; cursor: pointer; min-height: 92px; transition: border-color .5s, background .5s; }
+.ort b { display: block; font: 600 1rem/1.25 var(--f-titel); color: var(--gold); margin-bottom: 4px; }
+.ort span { display: block; font-size: .85rem; line-height: 1.35; color: var(--blass); }
+.ort[aria-pressed="true"] { border-color: var(--gold); background: var(--stein-3); }
+.reihe { display: flex; gap: 10px; flex-wrap: wrap; }
+.knopf { background: var(--stein-2); border: 1px solid var(--linie-hell); color: var(--text); border-radius: 999px;
+  padding: 10px 18px; font: inherit; font-size: .95rem; cursor: pointer; min-height: 44px; transition: border-color .5s, background .5s; }
+.knopf[aria-pressed="true"] { border-color: var(--blut); background: #2a1210; color: #f3c9c2; }
+.knopf:disabled { opacity: .45; cursor: default; }
+.regler { display: grid; grid-template-columns: 64px 1fr 40px; align-items: center; gap: 12px; margin: 8px 0; }
+.regler label { color: var(--blass); }
+.regler output { text-align: right; font-variant-numeric: tabular-nums; color: var(--blass); }
+input[type=range] { width: 100%; accent-color: var(--gold); }
+.wechsel { display: flex; gap: 8px; margin-bottom: 18px; }
+.wechsel a { font: 600 .8rem/1 var(--f-titel); letter-spacing: .1em; color: var(--blass); text-decoration: none; padding: 8px 12px; border: 1px solid var(--linie); border-radius: 999px; }
+.wechsel a[aria-current] { color: var(--gold); border-color: var(--gold); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+@media (max-width: 359px) { .orte { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <nav class="wechsel" aria-label="Hörproben"><a href="./" aria-current="page">Souls</a><a href="pixel.html">Pixel</a></nav>
+  <h1>Hörprobe Musik</h1>
+  <p class="unter">Leise Klänge für den Prüfungsprügler, alles im Browser erzeugt. Noch nicht im Spiel.</p>
+
+  <h2>Ort</h2>
+  <div class="orte" id="orte"></div>
+
+  <h2>Kampf</h2>
+  <div class="reihe">
+    <button class="knopf" id="boss" aria-pressed="false">Bosskampf</button>
+    <button class="knopf" id="sieg" disabled>Sieg</button>
+    <button class="knopf" id="aus">Musik aus</button>
+  </div>
+
+  <h2>Mischung</h2>
+  <div class="regler"><label for="wind">Wind</label><input type="range" id="wind" min="0" max="100" value="60"><output id="windWert" for="wind">60</output></div>
+  <div class="regler"><label for="musik">Musik</label><input type="range" id="musik" min="0" max="100" value="70"><output id="musikWert" for="musik">70</output></div>
+</main>
+
+<script>
+/* Die Musik: kein Lied in Schleife, sondern einzelne weiche Töne aus einer festen Tonleiter, die langsam
+   kommen und gehen, über einem atmenden Grundton. Kein Takt, kein Puls, nichts wiederholt sich erkennbar.
+   Jeder Ort hat Tonleiter, Klangfarbe, Hall und Tempo. Der Wind ist derselbe wie in src/js/ton.js. */
+
+const ORTE = {
+  lagerfeuer: { name: 'Lagerfeuer', was: 'Warm und etwas dichter, zum Aufatmen.', grund: 196.0, leiter: [0, 2, 4, 7, 9], lage: [-3, 7], start: 2,
+    klang: 'warm', abstand: [2.5, 5], fluss: [0.7, 1.2], phrase: [2, 4], pegel: 0.11, bordun: [-12, -5], bordunPegel: 0.05, filter: 1500, hall: 0.35, glut: true },
+  hoelle: { name: 'Hölle', was: 'Dunkler Grund, fremde Tonleiter, leise Glut.', grund: 82.41, leiter: [0, 1, 5, 7, 8], lage: [2, 10], start: 5,
+    klang: 'weich', abstand: [4.5, 8], fluss: [1.0, 1.6], phrase: [1, 3], pegel: 0.11, bordun: [0, 7], bordunPegel: 0.055, filter: 900, hall: 0.55, glut: true },
+  kokytos: { name: 'Kokytos', was: 'Hohe gläserne Töne, kalt und ruhig.', grund: 246.94, leiter: [0, 2, 7, 9], lage: [0, 8], start: 3,
+    klang: 'glas', abstand: [7, 12], fluss: [1.4, 2.2], phrase: [1, 2], pegel: 0.06, bordun: [-24], bordunPegel: 0.035, filter: 5000, hall: 0.9 },
+  katakomben: { name: 'Katakomben', was: 'Tief und hohl, wenige Töne in Moll.', grund: 73.42, leiter: [0, 3, 5, 7, 10], lage: [3, 11], start: 5,
+    klang: 'weich', abstand: [5, 9], fluss: [1.1, 1.8], phrase: [1, 2], pegel: 0.12, bordun: [0, 7], bordunPegel: 0.06, filter: 800, hall: 0.85 },
+  berg: { name: 'Läuterungsberg', was: 'Hell und offen, Glocken in Dur.', grund: 174.61, leiter: [0, 2, 4, 7, 9], lage: [0, 9], start: 4,
+    klang: 'glocke', abstand: [4, 7], fluss: [0.8, 1.3], phrase: [1, 3], pegel: 0.095, bordun: [-12, -5], bordunPegel: 0.045, filter: 2600, hall: 0.7 },
+  gipfel: { name: 'Gipfel', was: 'Feierliche Quinten, getragen.', grund: 130.81, leiter: [0, 5, 7], lage: [0, 7], start: 3,
+    klang: 'feier', abstand: [5, 8], fluss: [1.2, 1.8], phrase: [1, 2], pegel: 0.09, bordun: [-12, -5], bordunPegel: 0.05, filter: 2000, hall: 0.65, quinte: true }
+};
+
+/* Teiltöne je Klangfarbe: [Wellenform, Frequenzfaktor, Anteil] und die Hülle [Anstieg, Ausklang] in Sekunden */
+const TEILE = {
+  weich: [['sine', 1, 1], ['triangle', 1, 0.35]],
+  warm: [['triangle', 1, 1], ['sine', 2, 0.15]],
+  glas: [['sine', 1, 1], ['sine', 2.76, 0.22], ['sine', 5.4, 0.06]],
+  glocke: [['sine', 1, 1], ['sine', 2, 0.35], ['sine', 3.01, 0.14], ['sine', 4.2, 0.06]],
+  feier: [['triangle', 1, 1], ['sine', 2, 0.2]]
+};
+const HUELLE = { weich: [1.4, 5.5], warm: [0.5, 4.2], glas: [0.06, 6.5], glocke: [0.03, 5], feier: [0.9, 5.5] };
+
+const WIND_VOLL = 0.05;   // so laut weht der Wind heute im Spiel, der Regler steht dann auf 100
+const MUSIK_VOLL = 0.4;   // Musik auf 100: klar über dem Wind, aber deutlich unter den Kampfklängen
+const W = { wind: 0.6, musik: 0.7 };
+let ctx = null, windBus, musikBus, hall, anaWind, anaMusik, knisterBuf;
+let aktiv = null, boss = false;
+
+const zufall = (a, b) => a + Math.random() * (b - a);
+const ganz = (a, b) => Math.floor(zufall(a, b + 1));
+
+function hz(o, stufe){
+  const n = o.leiter.length, okt = Math.floor(stufe / n), i = ((stufe % n) + n) % n;
+  return o.grund * Math.pow(2, (o.leiter[i] + 12 * okt) / 12);
+}
+
+/* Erst beim ersten Tippen bauen, weil der Browser Ton bis dahin sperrt */
+function sicherstellen(){
+  if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return false;
+  ctx = new AC();
+  const schutz = ctx.createDynamicsCompressor();
+  schutz.threshold.value = -12; schutz.ratio.value = 4;
+  schutz.connect(ctx.destination);
+
+  windBus = ctx.createGain(); windBus.gain.value = 0; windBus.connect(schutz);
+  musikBus = ctx.createGain(); musikBus.gain.value = MUSIK_VOLL * W.musik;
+  const weich = ctx.createBiquadFilter(); weich.type = 'lowpass'; weich.frequency.value = 6000;
+  musikBus.connect(weich); weich.connect(schutz);
+  hall = ctx.createConvolver(); hall.buffer = hallBuffer(4.5); hall.connect(musikBus);
+
+  anaWind = ctx.createAnalyser(); anaWind.fftSize = 2048; windBus.connect(anaWind);
+  anaMusik = ctx.createAnalyser(); anaMusik.fftSize = 2048; weich.connect(anaMusik);
+
+  knisterBuf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.03), ctx.sampleRate);
+  const k = knisterBuf.getChannelData(0);
+  for (let i = 0; i < k.length; i++) k[i] = Math.random() * 2 - 1;
+
+  windBauen();
+  windBus.gain.setTargetAtTime(WIND_VOLL * W.wind, ctx.currentTime, 2.5);
+  return true;
+}
+
+/* Ein großer, dunkler Raum: Rauschen, das über gut vier Sekunden verklingt */
+function hallBuffer(sek){
+  const len = Math.floor(ctx.sampleRate * sek), buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let kanal = 0; kanal < 2; kanal++) {
+    const d = buf.getChannelData(kanal); let b = 0;
+    for (let i = 0; i < len; i++) { b = 0.6 * b + 0.4 * (Math.random() * 2 - 1); d[i] = b * Math.exp(-i / (ctx.sampleRate * 1.1)); }
+  }
+  return buf;
+}
+
+/* Der Wind aus src/js/ton.js, unverändert, nur auf einem eigenen Regler */
+function windBauen(){
+  const laenge = Math.floor(ctx.sampleRate * 2);
+  const buf = ctx.createBuffer(1, laenge, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < laenge; i++) {
+    const w = Math.random() * 2 - 1;
+    b0 = 0.99 * b0 + 0.045 * w; b1 = 0.95 * b1 + 0.10 * w; b2 = 0.80 * b2 + 0.20 * w;
+    d[i] = (b0 + b1 + b2) * 0.2;
+  }
+  const quelle = ctx.createBufferSource(); quelle.buffer = buf; quelle.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 0.4;
+  const g = ctx.createGain(); g.gain.value = 0.6;
+  quelle.connect(lp); lp.connect(g); g.connect(windBus); quelle.start();
+  const boe = ctx.createOscillator(); boe.frequency.value = 0.06;
+  const boeTiefe = ctx.createGain(); boeTiefe.gain.value = 180;
+  boe.connect(boeTiefe); boeTiefe.connect(lp.frequency); boe.start();
+  const atem = ctx.createOscillator(); atem.frequency.value = 0.045;
+  const atemTiefe = ctx.createGain(); atemTiefe.gain.value = 0.22;
+  atem.connect(atemTiefe); atemTiefe.connect(g.gain); atem.start();
+}
+
+/* Einen Ort aufbauen: Grundton, Bossgrund (anfangs stumm) und der Taktgeber für die Töne */
+function aufbauen(key){
+  const o = ORTE[key], t = ctx.currentTime;
+  const bus = ctx.createGain(); bus.gain.value = 0.0001; bus.connect(musikBus);
+  const send = ctx.createGain(); send.gain.value = o.hall; bus.connect(send); send.connect(hall);
+  bus.gain.setTargetAtTime(1, t, 1.3);
+
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(o.filter, 900); lp.Q.value = 0.5; lp.connect(bus);
+  const bordunG = ctx.createGain(); bordunG.gain.value = o.bordunPegel; bordunG.connect(lp);
+  const quellen = [];
+  const schwinger = (typ, f, pegel, ziel) => {
+    const osc = ctx.createOscillator(); osc.type = typ; osc.frequency.value = f;
+    const g = ctx.createGain(); g.gain.value = pegel;
+    osc.connect(g); g.connect(ziel); osc.start(); quellen.push(osc);
+  };
+  o.bordun.forEach((st, i) => {
+    const f = o.grund * Math.pow(2, st / 12), anteil = i ? 0.6 : 1;
+    schwinger('triangle', f, 0.6 * anteil, bordunG);
+    schwinger('sine', f * 1.0016, 0.5 * anteil, bordunG);   // leicht verstimmt, schwebt sehr langsam
+  });
+  /* Der Grundton atmet über knapp dreißig Sekunden */
+  const atem = ctx.createOscillator(); atem.frequency.value = 0.035;
+  const atemTiefe = ctx.createGain(); atemTiefe.gain.value = o.bordunPegel * 0.35;
+  atem.connect(atemTiefe); atemTiefe.connect(bordunG.gain); atem.start(); quellen.push(atem);
+
+  /* Bosskampf: nicht schneller, sondern tiefer. Eine Oktave und eine Quinte unter dem Grundton */
+  const bossG = ctx.createGain(); bossG.gain.value = 0.0001; bossG.connect(lp);
+  const tief = o.grund * Math.pow(2, (o.bordun[0] - 12) / 12);
+  schwinger('triangle', tief, 0.7, bossG);
+  schwinger('triangle', tief * Math.pow(2, 7 / 12), 0.4, bossG);
+
+  const z = { key, o, bus, send, bossG, quellen, lebt: true, pos: o.start, timer: 0, glutTimer: 0 };
+  bossPegel(z);
+  z.timer = setTimeout(() => phrase(z), 1800);
+  if (o.glut) z.glutTimer = setTimeout(() => glut(z), 1200);
+  return z;
+}
+
+function abbauen(z){
+  z.lebt = false; clearTimeout(z.timer); clearTimeout(z.glutTimer);
+  const t = ctx.currentTime;
+  z.bus.gain.cancelScheduledValues(t); z.bus.gain.setValueAtTime(z.bus.gain.value, t);
+  z.bus.gain.setTargetAtTime(0.0001, t, 1.3);
+  setTimeout(() => { z.quellen.forEach(q => { try { q.stop(); } catch (e) {} }); z.bus.disconnect(); z.send.disconnect(); }, 9000);
+}
+
+/* Eine kurze Tonfolge von ein bis vier Tönen, dann eine lange Pause */
+function phrase(z){
+  if (!z.lebt) return;
+  if (ctx.state !== 'running') { z.timer = setTimeout(() => phrase(z), 1000); return; }
+  const o = z.o, n = ganz(o.phrase[0], o.phrase[1]);
+  let t = ctx.currentTime + 0.05;
+  for (let i = 0; i < n; i++) {
+    schritt(z);
+    let f = hz(o, z.pos);
+    if (boss && Math.random() < 0.6) f /= 2;
+    ton(z, f, t, o.pegel * (i ? 0.8 : 1));
+    if (o.quinte && Math.random() < 0.5) ton(z, f * 1.5, t + 0.15, o.pegel * 0.55);
+    t += zufall(o.fluss[0], o.fluss[1]);
+  }
+  const pause = (t - ctx.currentTime) + zufall(o.abstand[0], o.abstand[1]) * (boss ? 1.2 : 1);
+  z.timer = setTimeout(() => phrase(z), pause * 1000);
+}
+
+/* Meist ein Schritt zum Nachbarton, selten ein Sprung, und sanft zurück zur Mitte */
+function schritt(z){
+  const [lo, hi] = z.o.lage, mitte = (lo + hi) / 2, r = Math.random();
+  let s = r < 0.35 ? 1 : r < 0.7 ? -1 : r < 0.82 ? 2 : r < 0.94 ? -2 : (Math.random() < 0.5 ? 3 : -3);
+  if (Math.abs(z.pos - mitte) > (hi - lo) / 3 && Math.sign(s) === Math.sign(z.pos - mitte) && Math.random() < 0.6) s = -s;
+  z.pos += s;
+  if (z.pos > hi) z.pos = hi - 1;
+  if (z.pos < lo) z.pos = lo + 1;
+}
+
+/* Ein einzelner Ton: langsam an, lange aus, irgendwo zwischen links und rechts */
+function ton(z, f, t, p){
+  const o = z.o, [anstieg, ausklang] = HUELLE[o.klang];
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = o.filter;
+  const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+  if (pan.pan) pan.pan.value = zufall(-0.45, 0.45);
+  lp.connect(pan); pan.connect(z.bus);
+  TEILE[o.klang].forEach(([typ, faktor, anteil], i) => {
+    const osc = ctx.createOscillator(); osc.type = typ; osc.frequency.value = f * faktor;
+    const g = ctx.createGain(), spitze = Math.max(0.0002, p * anteil), aus = ausklang / (1 + i * 0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(spitze, t + anstieg);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + anstieg + aus);
+    osc.connect(g); g.connect(lp); osc.start(t); osc.stop(t + anstieg + aus + 0.1);
+  });
+}
+
+/* Leise Glut: ab und zu ein winziges Knistern */
+function glut(z){
+  if (!z.lebt) return;
+  if (ctx.state === 'running') {
+    const t = ctx.currentTime, n = ganz(1, 3);
+    for (let i = 0; i < n; i++) knister(z, t + i * zufall(0.02, 0.07));
+  }
+  z.glutTimer = setTimeout(() => glut(z), zufall(0.25, 2.2) * 1000);
+}
+function knister(z, t){
+  const src = ctx.createBufferSource(); src.buffer = knisterBuf;
+  const flt = ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = zufall(1800, 4200); flt.Q.value = 1.5;
+  const g = ctx.createGain(), dauer = zufall(0.008, 0.025);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(zufall(0.012, 0.03), t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dauer);
+  src.connect(flt); flt.connect(g); g.connect(z.bus);
+  src.start(t); src.stop(t + 0.035);
+}
+
+function bossPegel(z){
+  const t = ctx.currentTime;
+  z.bossG.gain.cancelScheduledValues(t);
+  z.bossG.gain.setTargetAtTime(boss ? z.o.bordunPegel * 1.3 : 0.0001, t, 1.6);
+}
+
+/* Sieg: der Bossgrund weicht, und ein langsamer Dur-Akkord löst alles auf */
+function sieg(){
+  if (!aktiv) return;
+  const z = aktiv, o = z.o, t = ctx.currentTime + 0.3;
+  let f0 = o.grund; while (f0 < 160) f0 *= 2;
+  clearTimeout(z.timer);
+  [0, 4, 7, 12].forEach((st, i) => ton(z, f0 * Math.pow(2, st / 12), t + i * 0.55, o.pegel * 0.9));
+  z.timer = setTimeout(() => phrase(z), 7000);
+  bossSetzen(false);
+}
+
+function ortWaehlen(key){
+  if (aktiv && aktiv.key === key) return;
+  if (aktiv) abbauen(aktiv);
+  aktiv = aufbauen(key);
+  zeigen();
+}
+function musikAus(){ if (aktiv) abbauen(aktiv); aktiv = null; bossSetzen(false); }
+function bossSetzen(an){ boss = an; if (aktiv) bossPegel(aktiv); zeigen(); }
+
+/* Oberfläche */
+const $ = s => document.querySelector(s);
+$('#orte').innerHTML = Object.entries(ORTE).map(([key, o]) =>
+  '<button class="ort" data-ort="' + key + '" aria-pressed="false"><b>' + o.name + '</b><span>' + o.was + '</span></button>').join('');
+function zeigen(){
+  document.querySelectorAll('.ort').forEach(b => b.setAttribute('aria-pressed', String(!!aktiv && aktiv.key === b.dataset.ort)));
+  $('#boss').setAttribute('aria-pressed', String(boss));
+  $('#boss').disabled = !aktiv;
+  $('#sieg').disabled = !aktiv || !boss;
+  $('#aus').disabled = !aktiv;
+}
+zeigen();
+document.querySelectorAll('.ort').forEach(b => b.addEventListener('click', () => { if (sicherstellen()) ortWaehlen(b.dataset.ort); }));
+$('#boss').addEventListener('click', () => { if (aktiv) bossSetzen(!boss); });
+$('#sieg').addEventListener('click', sieg);
+$('#aus').addEventListener('click', () => { if (ctx) musikAus(); });
+function regler(id, setzen){
+  const r = $('#' + id), out = $('#' + id + 'Wert');
+  r.addEventListener('input', () => { out.textContent = r.value; W[id] = r.value / 100; if (sicherstellen()) setzen(W[id]); });
+}
+regler('wind', v => windBus.gain.setTargetAtTime(WIND_VOLL * v, ctx.currentTime, 0.15));
+regler('musik', v => musikBus.gain.setTargetAtTime(MUSIK_VOLL * v, ctx.currentTime, 0.15));
+document.addEventListener('visibilitychange', () => { if (ctx) try { document.hidden ? ctx.suspend() : ctx.resume(); } catch (e) {} });
+
+/* Nur zum Prüfen: Pegel von Wind und Musik in dBFS */
+function rms(ana){
+  const d = new Float32Array(ana.fftSize); ana.getFloatTimeDomainData(d);
+  let s = 0; for (const x of d) s += x * x;
+  return Math.round(20 * Math.log10(Math.sqrt(s / d.length) + 1e-9) * 10) / 10;
+}
+window.probe = {
+  pegel: () => ctx ? { wind: rms(anaWind), musik: rms(anaMusik) } : null,
+  zustand: () => ({ ort: aktiv && aktiv.key, boss, state: ctx ? ctx.state : 'kein' })
+};
+</script>
+</body>
+</html>

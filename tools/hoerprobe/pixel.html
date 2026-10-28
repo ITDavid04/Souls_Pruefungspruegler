@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hörprobe Pixel</title>
+<style>
+/* Hörprobe für die Pixelmusik: Farben aus dem Pixelparadies, Handy zuerst */
+:root {
+  color-scheme: dark;
+  --px-tinte: #1c1233; --px-tinte-2: #241a52; --px-papier: #fff8e6; --px-papier-2: #ffeec2; --px-leise: #4a4070;
+  --px-gelb: #ffd23a; --px-gelb-tief: #e0961a; --px-rot: #ff3b5c; --px-gruen: #36d27a; --px-blau: #33d6ff; --px-lila: #8f5cff;
+  --f-pixel: 'Pixelify Sans', ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace;
+  --f-text: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--px-tinte); color: var(--px-papier); }
+body { font: 17px/1.5 var(--f-text); min-height: 100dvh; background: linear-gradient(180deg, var(--px-tinte-2), var(--px-tinte) 60%); }
+main { max-width: 600px; margin: 0 auto; padding: 22px 16px 48px; }
+.wechsel { display: flex; gap: 8px; margin-bottom: 18px; }
+.wechsel a { font: 700 .85rem/1 var(--f-pixel); color: var(--px-papier); text-decoration: none; padding: 8px 12px; border: 2px solid var(--px-leise); }
+.wechsel a[aria-current] { background: var(--px-gelb); color: var(--px-tinte); border-color: var(--px-tinte); box-shadow: 0 3px 0 #000; }
+h1 { font: 700 2rem/1.1 var(--f-pixel); color: var(--px-gelb); margin: 0 0 6px; text-shadow: 3px 3px 0 #000; }
+.unter { color: #cfc4f0; margin: 0 0 8px; }
+h2 { font: 700 .9rem/1 var(--f-pixel); letter-spacing: .08em; text-transform: uppercase; color: var(--px-blau); margin: 26px 0 10px; }
+.stuecke { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stueck { text-align: left; background: var(--px-papier); color: var(--px-tinte); border: 3px solid var(--px-tinte); border-radius: 0;
+  padding: 10px 12px; font: inherit; cursor: pointer; min-height: 84px; box-shadow: 0 4px 0 #000, inset -3px -4px 0 var(--px-papier-2); }
+.stueck b { display: block; font: 700 1.02rem/1.2 var(--f-pixel); margin-bottom: 3px; }
+.stueck span { display: block; font-size: .82rem; line-height: 1.3; color: var(--px-leise); }
+.stueck[aria-pressed="true"] { background: var(--px-gelb); box-shadow: 0 4px 0 #000, inset -3px -4px 0 var(--px-gelb-tief); }
+.stueck.boss b::after { content: ' ♦'; color: var(--px-rot); }
+.reihe { display: flex; gap: 10px; flex-wrap: wrap; }
+.knopf { background: var(--px-tinte-2); color: var(--px-papier); border: 3px solid var(--px-papier); border-radius: 0; padding: 8px 14px;
+  font: 700 .95rem/1.2 var(--f-pixel); cursor: pointer; min-height: 44px; box-shadow: 0 4px 0 #000; }
+.knopf.sieg { border-color: var(--px-gruen); color: var(--px-gruen); }
+.knopf:disabled { opacity: .4; cursor: default; }
+.regler { display: grid; grid-template-columns: 64px 1fr 40px; align-items: center; gap: 12px; margin: 8px 0; }
+.regler label, .regler output { font-family: var(--f-pixel); color: #cfc4f0; }
+.regler output { text-align: right; font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--px-gelb); }
+:focus-visible { outline: 3px solid var(--px-blau); outline-offset: 2px; }
+@media (max-width: 359px) { .stuecke { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <nav class="wechsel" aria-label="Hörproben"><a href="./">Souls</a><a href="pixel.html" aria-current="page">Pixel</a></nav>
+  <h1>Hörprobe Pixel</h1>
+  <p class="unter">Abenteuermusik in 8 Bit, eigene Melodien, alles im Browser erzeugt. Noch nicht im Spiel.</p>
+
+  <h2>Pixelparadies</h2>
+  <div class="stuecke" data-gruppe="paradies"></div>
+
+  <h2>Pixelstil im Hauptspiel</h2>
+  <div class="stuecke" data-gruppe="haupt"></div>
+
+  <h2>Kampf</h2>
+  <div class="reihe">
+    <button class="knopf sieg" id="sieg" disabled>Sieg</button>
+    <button class="knopf" id="aus" disabled>Musik aus</button>
+  </div>
+  <div class="reihe" style="margin-top:10px">
+    <button class="knopf" data-fx="treffer">Treffer</button>
+    <button class="knopf" data-fx="kombo">Kombo</button>
+    <button class="knopf" data-fx="boom">Boom</button>
+  </div>
+
+  <h2>Mischung</h2>
+  <div class="regler"><label for="musik">Musik</label><input type="range" id="musik" min="0" max="100" value="70"><output id="musikWert" for="musik">70</output></div>
+</main>
+
+<script>
+/* Pixelmusik: kurze, eigene Themen über acht Takte in Schleife, wie auf alten Handkonsolen.
+   Die Melodie spielt eine Pulswelle, darunter ein Dreiecksbass, Arpeggios und Rauschen als Schlagzeug.
+   Notiert wird pro Takt in Achteln: Note (C5, F#4, Bb4), "-" hält die Note, "." ist Pause.
+   Bass, Arpeggio und Schlagzeug ergeben sich aus den Akkorden und dem Stil jedes Stücks. */
+
+const STUECKE = {
+  karte: { gruppe: 'paradies', name: 'Inselkarte', was: 'Das Hauptthema, Aufbruch zu den Inseln.', bpm: 138,
+    lead: { welle: 'puls25' }, arp: 'arp16', bass: 'gehen', drums: 'kick',
+    akkorde: 'D | G | D | A | Bm | G | Em A | D',
+    melodie: 'D5 - - A4 D5 E5 F#5 - | G5 - F#5 E5 D5 - B4 - | A4 - D5 - F#5 - A5 - | G5 F#5 E5 - - - . . | F#5 - - D5 B4 - D5 - | G5 - - F#5 G5 A5 B5 - | A5 - G5 - E5 - C#5 - | D5 - - - . . . .' },
+  mond: { gruppe: 'paradies', name: 'Mond', was: 'Verträumt und schwebend.', bpm: 96,
+    lead: { welle: 'dreieck', oktave: 0 }, arp: 'arp8', bass: 'halbe', drums: 'hats',
+    akkorde: 'F | G | Em | Am | F | G | F | F',
+    melodie: 'C5 - - - A4 - C5 - | B4 - - - D5 - G5 - | E5 - - - D5 - B4 - | C5 - - - - - . . | A5 - - - G5 - F5 - | D5 - - - B4 - G4 - | A4 - C5 - E5 - G5 - | F5 - - - - - . .' },
+  merkur: { gruppe: 'paradies', name: 'Merkur', was: 'Flink wie ein Datenpaket.', bpm: 160,
+    lead: { welle: 'puls12' }, arp: 'arp16', bass: 'treiben', drums: 'leicht',
+    akkorde: 'Em | D | C | D | Em | D | C | B',
+    melodie: 'E5 . G5 A5 B5 . A5 G5 | F#5 . D5 E5 F#5 . A5 F#5 | G5 . E5 G5 C6 . B5 A5 | B5 - A5 - F#5 - D5 - | E5 . G5 A5 B5 . D6 B5 | A5 . F#5 A5 D6 . C6 A5 | G5 . E5 G5 C6 B5 A5 G5 | F#5 - D#5 - B4 - - .' },
+  venus: { gruppe: 'paradies', name: 'Venus', was: 'Ein süßer Walzer im Dreivierteltakt.', bpm: 132, takt: 6,
+    lead: { welle: 'puls25' }, arp: 'walzer', bass: 'walzer', drums: 'walzer',
+    akkorde: 'Bb | Gm | Eb | F | Bb | Gm | Cm F | Bb',
+    melodie: 'F5 - - D5 - Bb4 | G5 - - Bb5 - G5 | Bb5 - - G5 - Eb5 | F5 - - - . . | D5 - F5 Bb5 - A5 | G5 - - F5 - D5 | Eb5 - C5 A4 - C5 | Bb4 - - - . .' },
+  sonne: { gruppe: 'paradies', name: 'Sonne', was: 'Strahlende Fanfare.', bpm: 126,
+    lead: { welle: 'puls50' }, arp: 'stakkato', bass: 'gehen', drums: 'kick',
+    akkorde: 'C | F | C | G | Am | F | G | C',
+    melodie: 'G4 . C5 . E5 - G5 - | A5 - - G5 F5 - C5 - | E5 - G5 - C6 - G5 - | D5 - - - B4 - G4 - | A4 - C5 E5 A5 - G5 - | F5 - A5 - C6 - A5 - | G5 - F5 E5 D5 - B4 D5 | C5 - - - . . G4 .' },
+  mars: { gruppe: 'paradies', name: 'Mars', was: 'Ein kleiner Marsch, Wache halten.', bpm: 112,
+    lead: { welle: 'puls25', gate: 0.75 }, arp: 'stakkato', bass: 'marsch', drums: 'marsch',
+    akkorde: 'Am | Am | F | G | Am | Dm | E | Am',
+    melodie: 'A4 - - A4 C5 - E5 - | A5 - G5 - E5 - C5 - | F5 - - E5 D5 - C5 - | B4 - - - G4 - - . | A4 - - A4 C5 - E5 - | F5 - E5 - D5 - A5 - | G#5 - - E5 B4 - G#4 - | A4 - - - . . . .' },
+  jupiter: { gruppe: 'paradies', name: 'Jupiter', was: 'Breit und majestätisch.', bpm: 92,
+    lead: { welle: 'puls50', doppel: true }, arp: 'akkord', bass: 'halbe', drums: 'feier',
+    akkorde: 'Eb | Ab | Bb | Eb | Cm | Ab | Bb | Eb',
+    melodie: 'Eb5 - - - Bb4 - Eb5 F5 | Ab5 - - - G5 - Eb5 - | F5 - - - D5 - Bb4 - | Eb5 - - - - - . . | G5 - - - Eb5 - G5 Ab5 | Bb5 - - - C6 - Ab5 - | G5 - F5 - D5 - F5 - | Eb5 - - - - - . .' },
+  saturn: { gruppe: 'paradies', name: 'Saturn', was: 'Geheimnisvoll, mit Echo in den Ringen.', bpm: 104,
+    lead: { welle: 'puls12', echo: true }, arp: 'arp16', bass: 'gehen', drums: 'hats',
+    akkorde: 'Dm | G | Dm | G | C | F | G | A',
+    melodie: 'D5 - F5 - A5 - G5 F5 | B4 - - D5 G5 - F5 D5 | A4 - D5 - F5 - E5 D5 | B4 - - - G4 - - . | E5 - G5 - C6 - B5 G5 | A5 - - G5 F5 - C5 - | D5 - G5 - B5 - A5 G5 | E5 - - C#5 A4 - - .' },
+  waechter: { gruppe: 'paradies', name: 'Wächter', was: 'Bosskampf: treibend, aber kein Alarm.', bpm: 150, boss: true,
+    lead: { welle: 'puls50', gate: 0.8 }, arp: 'arp16', bass: 'treiben', drums: 'treiben',
+    akkorde: 'Cm | Cm | Ab | Bb | Cm | Cm | Ab | G',
+    melodie: 'C5 . C5 . Eb5 - D5 C5 | G5 - - F5 Eb5 - D5 - | Eb5 . Eb5 . C5 - Ab4 C5 | D5 - Bb4 - F5 - D5 - | C5 . C5 . Eb5 - G5 - | C6 - - Bb5 G5 - Eb5 - | Ab5 - G5 F5 Eb5 - C5 Eb5 | D5 - - - B4 - G4 - |' },
+  glitch: { gruppe: 'paradies', name: 'Großer Glitch', was: 'Endboss: die Musik stolpert und springt.', bpm: 144, boss: true, glitch: true,
+    lead: { welle: 'puls25', gate: 0.85 }, arp: 'arp16', bass: 'treiben', drums: 'treiben',
+    akkorde: 'Em | C | D | B | Em | C | Am | B',
+    melodie: 'E5 G5 B5 . E5 G5 B5 . | C6 - B5 G5 E5 - G5 - | F#5 A5 D6 . F#5 A5 D6 . | D#6 - B5 - F#5 - D#5 - | E5 G5 B5 . G5 B5 E5 . | C6 - - B5 A5 - G5 - | E5 - A5 - C6 - B5 A5 | B5 - - - F#5 - D#5 -' },
+
+  rast: { gruppe: 'haupt', name: 'Lagerfeuer', was: 'Rast: sanft, ohne Schlagzeug.', bpm: 84,
+    lead: { welle: 'dreieck' }, arp: 'arp8', bass: 'halbe', drums: 'keine',
+    akkorde: 'G | Em | C | D | G | Em | Am D | G',
+    melodie: 'B4 - - - D5 - G5 - | E5 - - - D5 - B4 - | C5 - - - E5 - G5 - | F#5 - - - - - . . | G5 - - - A5 - B5 - | G5 - - - E5 - D5 - | C5 - E5 - D5 - F#5 - | G5 - - - - - . .' },
+  hoelle: { gruppe: 'haupt', name: 'Hölle', was: 'Ein Verlies, gruselig mit Augenzwinkern.', bpm: 108,
+    lead: { welle: 'puls25' }, arp: 'arp8', bass: 'gehen', drums: 'hats',
+    akkorde: 'Em | F | Em | F | Am | G | F | E',
+    melodie: 'E5 - . B4 E5 - G5 - | F5 - - E5 F5 - A5 - | G5 - F5 - E5 - B4 - | C5 - - - A4 - - . | A4 - C5 - E5 - A5 - | G5 - F5 - D5 - B4 - | C5 - F5 - A5 - G5 F5 | E5 - - - B4 - G#4 -' },
+  katakomben: { gruppe: 'haupt', name: 'Katakomben', was: 'Auf Zehenspitzen durchs Gebein.', bpm: 100,
+    lead: { welle: 'puls25', gate: 0.45 }, arp: 'keiner', bass: 'marsch', drums: 'hats',
+    akkorde: 'Am | E | Am | E | Dm | Am | E | Am',
+    melodie: 'A4 . C5 . E5 . D5 C5 | B4 . G#4 . E4 . . . | A4 . C5 . E5 . A5 . | G#5 . E5 . B4 . . . | D5 . F5 . A5 . F5 D5 | C5 . E5 . A4 . . . | B4 . D5 . E5 . G#5 . | A5 . . . A4 . . .' },
+  kokytos: { gruppe: 'haupt', name: 'Kokytos', was: 'Eiskristalle, langsam und klar.', bpm: 80,
+    lead: { welle: 'dreieck' }, arp: 'glocke16', bass: 'halbe', drums: 'keine',
+    akkorde: 'Bm | G | D | A | Bm | G | Em | F#',
+    melodie: 'F#5 - - - D5 - B4 - | G5 - - - D5 - B4 - | A5 - - - F#5 - D5 - | E5 - - - - - . . | B5 - - - F#5 - D5 - | G5 - - - B5 - D6 - | B5 - - - G5 - E5 - | F#5 - - - A#4 - C#5 -' },
+  berg: { gruppe: 'haupt', name: 'Läuterungsberg', was: 'Aufstieg, voller Zuversicht.', bpm: 120,
+    lead: { welle: 'puls25' }, arp: 'arp16', bass: 'gehen', drums: 'leicht',
+    akkorde: 'A | E | F#m | D | A | E | D E | A',
+    melodie: 'E5 - A5 - - B5 C#6 - | B5 - - - G#5 - E5 - | A5 - - - F#5 - C#5 - | D5 - F#5 - A5 - - - | C#6 - - - B5 - A5 - | G#5 - - - E5 - B4 - | F#5 - A5 - G#5 - B5 - | A5 - - - - - . .' },
+  gipfel: { gruppe: 'haupt', name: 'Gipfel', was: 'Feierlich, die letzte Halle.', bpm: 96,
+    lead: { welle: 'puls50' }, arp: 'akkord', bass: 'halbe', drums: 'feier',
+    akkorde: 'F | C | Dm | Bb | F | C | Bb C | F',
+    melodie: 'C5 - - - F5 - - - | E5 - - - G5 - - - | F5 - - - A5 - - - | Bb5 - - - - - . . | A5 - - - C6 - A5 - | G5 - - - E5 - C5 - | D5 - F5 - E5 - G5 - | F5 - - - - - . .' }
+};
+
+/* ---------- Noten und Akkorde lesen ---------- */
+const HALB = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const midiVon = (name, okt) => 12 * (okt + 1) + HALB[name[0]] + (name[1] === '#' ? 1 : name[1] === 'b' ? -1 : 0);
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+function note(t){ const m = t.match(/^([A-G][#b]?)(\d)$/); if (!m) throw new Error('Note? ' + t); return midiVon(m[1], Number(m[2])); }
+const ART = { '': [0, 4, 7], m: [0, 3, 7], '7': [0, 4, 7, 10], dim: [0, 3, 6] };
+function akkord(t){
+  const m = t.match(/^([A-G][#b]?)(.*)$/);
+  return { grund: midiVon(m[1], 2), toene: ART[m[2]] || ART[''] };
+}
+/* Ein Stück in Sechzehntel zerlegen: wann welche Melodienote beginnt und welcher Akkord gilt */
+function lesen(st){
+  const achtel = st.takt || 8, n16 = achtel * 2;
+  const takte = st.melodie.split('|').map(s => s.trim()).filter(Boolean).map(s => s.split(/\s+/));
+  const akk = st.akkorde.split('|').map(s => s.trim().split(/\s+/).map(akkord));
+  takte.forEach((t, i) => { if (t.length !== achtel) console.warn(st.name, 'Takt', i + 1, 'hat', t.length, 'Achtel'); });
+  const len = takte.length * n16, mel = {};
+  let offen = null;
+  takte.flat().forEach((tok, i) => {
+    if (tok === '-') { if (offen) offen.d += 2; return; }
+    offen = null;
+    if (tok === '.') return;
+    offen = mel[i * 2] = { m: note(tok), d: 2 };
+  });
+  const akkordBei = s => { s = ((s % len) + len) % len; const takt = Math.floor(s / n16), teile = akk[takt % akk.length]; return teile[Math.floor((s % n16) / (n16 / teile.length))]; };
+  return { len, n16, mel, akkordBei };
+}
+
+/* ---------- Klangerzeugung ---------- */
+const MUSIK_VOLL = 0.25;   // Musik auf 100: unter den 8-Bit-Treffern, damit die vorne bleiben
+const W = { musik: 0.7 };
+let ctx = null, musikBus, fxBus, ana, rausch, wellen = {};
+let spiel = null, rueck = null;
+const zufall = (a, b) => a + Math.random() * (b - a);
+
+function sicherstellen(){
+  if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return false;
+  ctx = new AC();
+  const schutz = ctx.createDynamicsCompressor(); schutz.threshold.value = -10; schutz.ratio.value = 4; schutz.connect(ctx.destination);
+  musikBus = ctx.createGain(); musikBus.gain.value = MUSIK_VOLL * W.musik;
+  const weich = ctx.createBiquadFilter(); weich.type = 'lowpass'; weich.frequency.value = 7000;
+  musikBus.connect(weich); weich.connect(schutz);
+  ana = ctx.createAnalyser(); ana.fftSize = 2048; weich.connect(ana);
+  fxBus = ctx.createGain(); fxBus.gain.value = 0.35; fxBus.connect(schutz);
+  rausch = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = rausch.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return true;
+}
+
+/* Pulswellen wie auf alten Konsolen: 12,5, 25 oder 50 Prozent Tastverhältnis */
+function welle(art){
+  if (wellen[art]) return wellen[art];
+  const duty = { puls12: 0.125, puls25: 0.25, puls50: 0.5 }[art], n = 48;
+  const re = new Float32Array(n), im = new Float32Array(n);
+  for (let k = 1; k < n; k++) re[k] = 2 / (k * Math.PI) * Math.sin(k * Math.PI * duty);
+  return wellen[art] = ctx.createPeriodicWave(re, im);
+}
+function oszillator(art, f){
+  const o = ctx.createOscillator();
+  if (art === 'dreieck') o.type = 'triangle'; else o.setPeriodicWave(welle(art));
+  o.frequency.value = f;
+  return o;
+}
+/* Ein Ton mit kurzer Hülle; lange Töne bekommen ein leichtes Vibrato */
+function spielen(ziel, art, f, t, dauer, pegel, extra = {}){
+  const o = oszillator(art, f), g = ctx.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(pegel, t + 0.006);
+  g.gain.setTargetAtTime(pegel * 0.72, t + 0.006, 0.09);
+  g.gain.setTargetAtTime(0, t + dauer, 0.025);
+  if (dauer > 0.3 && !extra.ohneVibrato) {
+    const lfo = ctx.createOscillator(), tiefe = ctx.createGain();
+    lfo.frequency.value = 5.5; tiefe.gain.setValueAtTime(0, t); tiefe.gain.linearRampToValueAtTime(f * 0.006, t + 0.35);
+    lfo.connect(tiefe); tiefe.connect(o.frequency); lfo.start(t); lfo.stop(t + dauer + 0.2);
+  }
+  if (extra.knick) o.frequency.setValueAtTime(f, t + dauer * 0.6), o.frequency.exponentialRampToValueAtTime(f * 0.89, t + dauer);
+  o.connect(g); g.connect(ziel);
+  o.start(t); o.stop(t + dauer + 0.2);
+}
+function geraeusch(ziel, t, dauer, pegel, typ, freq){
+  const s = ctx.createBufferSource(); s.buffer = rausch;
+  const f = ctx.createBiquadFilter(); f.type = typ; f.frequency.value = freq;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(pegel, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dauer);
+  s.connect(f); f.connect(g); g.connect(ziel);
+  s.start(t, Math.random() * 0.5); s.stop(t + dauer + 0.02);
+}
+function trommel(ziel, t, start, ende, dauer, pegel){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(start, t); o.frequency.exponentialRampToValueAtTime(ende, t + dauer);
+  g.gain.setValueAtTime(pegel, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dauer);
+  o.connect(g); g.connect(ziel); o.start(t); o.stop(t + dauer + 0.02);
+}
+
+/* ---------- Ein Stück abspielen ---------- */
+function starten(key){
+  const st = STUECKE[key], noten = lesen(st), sek16 = 60 / st.bpm / 4;
+  const bus = ctx.createGain(); bus.gain.setValueAtTime(0, ctx.currentTime); bus.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.15); bus.connect(musikBus);
+  let leadBus = bus;
+  if (st.lead.echo) {
+    leadBus = ctx.createGain(); leadBus.connect(bus);
+    const verz = ctx.createDelay(1); verz.delayTime.value = sek16 * 3;
+    const rueckf = ctx.createGain(); rueckf.gain.value = 0.3;
+    const nass = ctx.createGain(); nass.gain.value = 0.35;
+    leadBus.connect(verz); verz.connect(rueckf); rueckf.connect(verz); verz.connect(nass); nass.connect(bus);
+  }
+  const z = { key, st, noten, sek16, bus, leadBus, schritt: 0, zeit: ctx.currentTime + 0.08 };
+  z.timer = setInterval(() => planen(z), 25);
+  planen(z);
+  return z;
+}
+function stoppen(z, ausblenden = 0.4){
+  clearInterval(z.timer);
+  const t = ctx.currentTime;
+  z.bus.gain.cancelScheduledValues(t); z.bus.gain.setValueAtTime(z.bus.gain.value, t); z.bus.gain.linearRampToValueAtTime(0, t + ausblenden);
+  setTimeout(() => z.bus.disconnect(), (ausblenden + 2) * 1000);
+}
+function planen(z){
+  while (z.zeit < ctx.currentTime + 0.12) {
+    sechzehntel(z, z.schritt, z.zeit);
+    z.schritt = (z.schritt + 1) % z.noten.len;
+    z.zeit += z.sek16;
+  }
+}
+function sechzehntel(z, s, t){
+  const { st, noten, sek16 } = z, i = s % noten.n16, a = noten.akkordBei(s), viertel = noten.n16 === 12 ? 3 : 4;
+  /* Melodie */
+  const m = noten.mel[s];
+  if (m) {
+    const f = hz(m.m + 12 * (st.lead.oktave || 0)), dauer = m.d * sek16 * (st.lead.gate || 0.92);
+    const pegel = st.lead.welle === 'dreieck' ? 0.12 : 0.07;
+    if (st.glitch && Math.random() < 0.12) {
+      for (let k = 0; k < 3; k++) spielen(z.leadBus, st.lead.welle, f * (k === 1 ? 2 : 1), t + k * sek16 / 2, sek16 * 0.4, pegel, { ohneVibrato: true });
+    } else {
+      spielen(z.leadBus, st.lead.welle, f, t, dauer, pegel, { knick: st.glitch && Math.random() < 0.1 });
+      if (st.lead.doppel) spielen(z.leadBus, 'dreieck', f / 2, t, dauer, 0.09);
+    }
+  }
+  /* Bass: Dreieck, Grundton und Quinte */
+  const g = a.grund < 40 ? a.grund + 12 : a.grund, quinte = g + 7;
+  const bass = (mm, d) => spielen(z.bus, 'dreieck', hz(mm), t, d * sek16, 0.15, { ohneVibrato: true });
+  if (st.bass === 'halbe' && i % 8 === 0) bass(g, 7.5);
+  if (st.bass === 'gehen' && i % 4 === 0) bass((i / 4) % 2 ? quinte : g, 3.4);
+  if (st.bass === 'marsch' && i % 4 === 0) bass((i / 4) % 2 ? quinte : g, 1.6);
+  if (st.bass === 'treiben' && i % 2 === 0) bass((i / 2) % 2 ? g + 12 : g, 1.5);
+  if (st.bass === 'walzer' && i === 0) bass(g, 3.5);
+  /* Begleitung aus den Akkordtönen */
+  const toene = a.toene.map(x => a.grund + 24 + x), arp = (art, mm, d, p) => spielen(z.bus, art, hz(mm), t, d * sek16, p, { ohneVibrato: true });
+  if (st.arp === 'arp16') arp('puls12', toene[i % toene.length] + 12, 0.85, 0.022);
+  if (st.arp === 'arp8' && i % 2 === 0) arp('puls12', toene[(i / 2) % toene.length] + 12, 1.7, 0.022);
+  if (st.arp === 'glocke16' && Math.random() < 0.5) arp('dreieck', toene[i % toene.length] + 24, 0.9, 0.05);
+  if (st.arp === 'stakkato' && i % 4 === 2) toene.forEach(mm => arp('puls25', mm + 12, 0.8, 0.014));
+  if (st.arp === 'walzer' && (i === 4 || i === 8)) toene.forEach(mm => arp('puls25', mm + 12, 1.4, 0.014));
+  if (st.arp === 'akkord' && (i === 0 || noten.akkordBei(s - 1) !== a)) {
+    const lang = s % noten.n16 === 0 && noten.akkordBei(s + noten.n16 - 1) === a ? noten.n16 : noten.n16 / 2;
+    toene.forEach(mm => arp('puls50', mm, lang * 0.95, 0.012));
+  }
+  /* Schlagzeug aus Rauschen, ohne Doppelschlag */
+  const hat = p => geraeusch(z.bus, t, 0.03, p, 'highpass', 7000);
+  const snare = p => { geraeusch(z.bus, t, 0.13, p, 'bandpass', 1900); trommel(z.bus, t, 220, 160, 0.06, p * 0.8); };
+  const kick = () => trommel(z.bus, t, 130, 45, 0.13, 0.16);
+  const zwei = i === viertel && viertel === 4, vier = i === 3 * viertel;
+  if (st.drums === 'hats' && i % 4 === 2) hat(0.018);
+  if (st.drums === 'leicht') { if (i % 2 === 0) hat(i % 4 === 2 ? 0.02 : 0.01); if (zwei || vier) snare(0.035); }
+  if (st.drums === 'kick') { if (i % 2 === 0) hat(i % 4 === 2 ? 0.02 : 0.01); if (zwei || vier) snare(0.035); if (i === 0 || i === 8) kick(); }
+  if (st.drums === 'treiben') { hat(i % 2 ? 0.008 : 0.016); if (zwei || vier) snare(0.04); if (i === 0 || i === 8) kick(); }
+  if (st.drums === 'marsch') { if (zwei || vier) snare(0.04); if (i >= 13 && Math.floor(s / noten.n16) % 2 === 1) snare(0.018); if (i === 0) kick(); }
+  if (st.drums === 'feier') { if (i === 0) trommel(z.bus, t, 95, 62, 0.45, 0.2); if (i === 0 && Math.floor(s / noten.n16) % 4 === 0) geraeusch(z.bus, t, 1.2, 0.015, 'highpass', 5000); }
+  if (st.drums === 'walzer') { if (i === 0) kick(); if (i === 4 || i === 8) hat(0.016); }
+}
+
+/* Kampfklänge aus src/js/ton.js zum Vergleichen der Lautstärke */
+function stimme(typ, f, t0, dauer, spitze){
+  const o = ctx.createOscillator(); o.type = typ; o.frequency.value = f;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(spitze, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
+  o.connect(g); g.connect(fxBus); o.start(t0); o.stop(t0 + dauer + 0.03);
+}
+function fallend(typ, f0, f1, t0, dauer, spitze){
+  const o = ctx.createOscillator(); o.type = typ; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dauer);
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(spitze, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
+  o.connect(g); g.connect(fxBus); o.start(t0); o.stop(t0 + dauer + 0.03);
+}
+const NOTE = { C5: 523, E5: 659, G5: 784, B5: 988, C6: 1047, E6: 1319 };
+function chip(art){
+  const t0 = ctx.currentTime, folge = (n, ab, d, typ = 'square', laut = 0.09) => n.forEach((x, i) => stimme(typ, NOTE[x] || x, t0 + i * ab, d, laut));
+  if (art === 'treffer') folge(['E5', 'B5'], 0.055, 0.09);
+  if (art === 'kombo') folge(['C5', 'E5', 'G5', 'C6'], 0.05, 0.09, 'square', 0.08);
+  if (art === 'boom') { geraeusch(fxBus, t0, 0.55, 0.5, 'lowpass', 1100); fallend('square', 140, 38, t0, 0.5, 0.22); fallend('triangle', 90, 30, t0, 0.7, 0.3); }
+  if (art === 'sieg') { folge(['G5', 'G5', 'G5'], 0.11, 0.09, 'square', 0.09); stimme('square', NOTE.C6, t0 + 0.36, 0.45, 0.1); stimme('triangle', NOTE.E6, t0 + 0.36, 0.5, 0.1); }
+}
+
+/* ---------- Oberfläche ---------- */
+const $ = s => document.querySelector(s);
+document.querySelectorAll('.stuecke').forEach(liste => {
+  liste.innerHTML = Object.entries(STUECKE).filter(([, st]) => st.gruppe === liste.dataset.gruppe).map(([key, st]) =>
+    '<button class="stueck' + (st.boss ? ' boss' : '') + '" data-stueck="' + key + '" aria-pressed="false"><b>' + st.name + '</b><span>' + st.was + '</span></button>').join('');
+});
+function waehlen(key){
+  if (spiel && spiel.key === key) return;
+  if (spiel) stoppen(spiel);
+  if (!STUECKE[key].boss) rueck = key;
+  spiel = starten(key);
+  zeigen();
+}
+function zeigen(){
+  document.querySelectorAll('.stueck').forEach(b => b.setAttribute('aria-pressed', String(!!spiel && spiel.key === b.dataset.stueck)));
+  $('#sieg').disabled = !spiel || !spiel.st.boss;
+  $('#aus').disabled = !spiel;
+}
+document.querySelectorAll('.stueck').forEach(b => b.addEventListener('click', () => { if (sicherstellen()) waehlen(b.dataset.stueck); }));
+/* Sieg: der Bosskampf bricht ab, die Fanfare spielt, dann geht es mit dem Thema von vorher weiter */
+$('#sieg').addEventListener('click', () => {
+  if (!spiel || !spiel.st.boss) return;
+  stoppen(spiel, 0.2); spiel = null; zeigen();
+  chip('sieg');
+  setTimeout(() => { if (!spiel) waehlen(rueck || 'karte'); }, 1800);
+});
+$('#aus').addEventListener('click', () => { if (spiel) stoppen(spiel); spiel = null; zeigen(); });
+document.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => { if (sicherstellen()) chip(b.dataset.fx); }));
+$('#musik').addEventListener('input', e => {
+  $('#musikWert').textContent = e.target.value; W.musik = e.target.value / 100;
+  if (sicherstellen()) musikBus.gain.setTargetAtTime(MUSIK_VOLL * W.musik, ctx.currentTime, 0.15);
+});
+document.addEventListener('visibilitychange', () => { if (ctx) try { document.hidden ? ctx.suspend() : ctx.resume(); } catch (e) {} });
+zeigen();
+
+/* Nur zum Prüfen: Pegel der Musik in dBFS und ob alle Stücke sauber notiert sind */
+window.probe = {
+  pegel: () => { if (!ctx) return null; const d = new Float32Array(ana.fftSize); ana.getFloatTimeDomainData(d); let s = 0; for (const x of d) s += x * x; return Math.round(200 * Math.log10(Math.sqrt(s / d.length) + 1e-9)) / 10; },
+  pruefen: () => Object.entries(STUECKE).map(([k, st]) => { const achtel = st.takt || 8; const takte = st.melodie.split('|').map(s => s.trim()).filter(Boolean); return [k, takte.length, st.akkorde.split('|').length, takte.filter(t => t.split(/\s+/).length !== achtel).length]; }),
+  zustand: () => ({ stueck: spiel && spiel.key, state: ctx ? ctx.state : 'kein' })
+};
+</script>
+</body>
+</html>
