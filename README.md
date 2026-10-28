@@ -52,8 +52,8 @@ Oben rechts sitzt auf jeder Seite ein runder Knopf mit Fragezeichen. Er öffnet 
 das Spiel in einer Minute, der erste Gang Schritt für Schritt, Leben, Kaffee und Tod, Seelen, Stufen und Klassen, der Weg durch die Prüfung,
 was abseits des Weges liegt, das Pixelparadies, wie der Lernkasten lernt und die Einstellungen unter „Spielstand“. Die Texte stehen in `welt.js` (`ANLEITUNG`).
 
-Bis zum ersten Öffnen fliegt der Faden bald nach dem Laden und danach alle halbe Minute heran: Er kreist in der Mitte, zieht eine rote Spur in die Ecke und windet sich um den Knopf; die Spur verglimmt, der Knopf leuchtet einmal auf. Dazwischen läuft der Faden langsam um den Knopf (im Pixelstil eckig und in Schritten), nach dem ersten Öffnen bleibt ein ruhiger Ring. Bei „Bewegung reduzieren“ fliegt nichts.
-Jeder Teil der Anleitung beginnt mit einem Satz, worum es geht, danach folgen die Regeln mit ihren Zahlen.
+Bis die Anleitung gelesen ist, fliegt der Faden bald nach dem Laden und danach alle halbe Minute heran: Er kreist in der Mitte, zieht eine rote Spur in die Ecke und windet sich um den Knopf; die Spur verglimmt, der Knopf leuchtet einmal auf. Dazwischen läuft der Faden langsam um den Knopf (im Pixelstil eckig und in Schritten), danach bleibt ein ruhiger Ring. Als gelesen zählt sie, wenn sie insgesamt 15 Sekunden offen war oder mit „Los geht’s“ geschlossen wurde; kurz auf- und zumachen reicht nicht. Bei „Bewegung reduzieren“ fliegt nichts.
+Jeder Teil der Anleitung beginnt mit einem Satz, worum es geht, danach folgen die Regeln mit ihren Zahlen. Welche Fassung zuletzt offen war, merkt sich der Spielstand (`S.anleitung`); wird die Anleitung neu geschrieben, erhöht `ANLEITUNG_STAND` in `app.js` die Fassung, und der Faden fliegt bei allen noch einmal.
 Mitten im Kampf tritt der Knopf zurück, damit Prüfungsuhr und Lunte nicht hinter dem Blatt weiterlaufen.
 Bei „Bewegung reduzieren“ steht der Faden still.
 

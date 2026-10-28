@@ -974,14 +974,31 @@ try {
   });
   await klick(d, '#faden');
   await warte(d, () => document.querySelector('#anleitung').open);
-  const blatt = await d.evaluate(() => ({ teile: document.querySelectorAll('#anleitung details').length, offen: document.querySelectorAll('#anleitung details[open]').length, gemerkt: JSON.parse(localStorage.getItem('spp.spiel')).anleitung === true, neu: document.querySelector('#faden').classList.contains('neu') }));
+  const blatt = await d.evaluate(() => ({ teile: document.querySelectorAll('#anleitung details').length, offen: document.querySelectorAll('#anleitung details[open]').length }));
   await foto(d, '86-desktop-anleitung');
+  /* Kurz auf und wieder zu zählt nicht als gelesen, „Los geht’s“ schon */
+  await klick(d, '.anleitung-zu');
+  await warte(d, () => !document.querySelector('#anleitung').open);
+  const kurz = await d.evaluate(() => ({ gemerkt: JSON.parse(localStorage.getItem('spp.spiel')).anleitung || null, neu: document.querySelector('#faden').classList.contains('neu') }));
+  await klick(d, '#faden');
+  await warte(d, () => document.querySelector('#anleitung').open);
   await klick(d, '.anleitung-los');
   await warte(d, () => !document.querySelector('#anleitung').open);
-  check('Desktop: Anleitung hinter dem Knopf oben rechts, der rote Faden fliegt heran und läuft bis zum ersten Öffnen', flug.gefangen && faden.da && faden.neu && faden.laeuft && faden.rechts <= 16 && faden.oben <= 16 && blatt.teile === 9 && blatt.offen === 1 && blatt.gemerkt && !blatt.neu, JSON.stringify({ flug, faden, blatt }));
+  const gelesen = await d.evaluate(() => ({ gemerkt: JSON.parse(localStorage.getItem('spp.spiel')).anleitung, neu: document.querySelector('#faden').classList.contains('neu') }));
+  check('Desktop: Anleitung hinter dem Knopf oben rechts, der rote Faden fliegt heran, bis sie gelesen ist', flug.gefangen && faden.da && faden.neu && faden.laeuft && faden.rechts <= 16 && faden.oben <= 16 && blatt.teile === 9 && blatt.offen === 1 && !kurz.gemerkt && kurz.neu && gelesen.gemerkt === 2 && !gelesen.neu, JSON.stringify({ flug, faden, blatt, kurz, gelesen }));
   await d.goto(BASE + '?zurueck', { waitUntil: 'networkidle0' });
   await sleep(2000);
-  check('Desktop: Nach dem ersten Öffnen fliegt kein Faden mehr', await d.evaluate(() => !document.querySelector('.faden-flug')));
+  check('Desktop: Nach dem Lesen fliegt kein Faden mehr', await d.evaluate(() => !document.querySelector('.faden-flug')));
+  /* Wer nur die alte Fassung kannte (anleitung: true), bekommt den Flug für die neue noch einmal */
+  await d.evaluate(() => { const st = JSON.parse(localStorage.getItem('spp.spiel')); st.anleitung = true; localStorage.setItem('spp.spiel', JSON.stringify(st)); });
+  await d.goto(BASE + '?zurueck', { waitUntil: 'networkidle0' });
+  const altFlug = await warte(d, () => !!document.querySelector('.faden-flug')).then(() => true, () => false);
+  const altNeu = await d.$eval('#faden', k => k.classList.contains('neu'));
+  await klick(d, '#faden');
+  await warte(d, () => document.querySelector('#anleitung').open);
+  await klick(d, '.anleitung-los');
+  const altGemerkt = (await spiel(d)).anleitung;
+  check('Desktop: Nach der neuen Fassung fliegt der Faden bei allen noch einmal, bis sie gelesen ist', altFlug && altNeu && altGemerkt === 2, JSON.stringify({ altFlug, altNeu, altGemerkt }));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
   await setze(d, 'S.lauf = null; S.zeige = null;');

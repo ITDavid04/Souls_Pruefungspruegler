@@ -184,7 +184,7 @@ function render(){
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
 
 /* Anleitung für Neue, der rote Faden: ein Knopf oben rechts, immer da außer mitten im Kampf.
-   Bis zum ersten Öffnen läuft ein roter Faden langsam um ihn herum, danach bleibt er als ruhiger Ring. */
+   Bis sie gelesen ist, läuft ein roter Faden langsam um ihn herum, danach bleibt er als ruhiger Ring. */
 function anleitungBauen(){
   const knopf = document.createElement('button');
   knopf.type = 'button'; knopf.id = 'faden'; knopf.className = 'faden-knopf';
@@ -199,23 +199,34 @@ function anleitungBauen(){
     '<p class="anleitung-schluss">' + esc(ANLEITUNG.schluss) + '</p>' +
     '<button type="button" class="knopf haupt anleitung-los">Los geht’s</button></div>';
   document.body.append(knopf, blatt);
+  /* Gelesen ist sie erst, wenn sie insgesamt eine Viertelminute offen war oder mit „Los geht’s“ geschlossen wurde;
+     kurz auf- und wieder zumachen zählt nicht, dann fliegt der Faden weiter */
+  let leseZeit = 0, offenSeit = 0, leseUhr = 0;
+  const gelesen = () => { if (!anleitungGelesen()) { S.anleitung = ANLEITUNG_STAND; sichern(); fadenZeigen(); } };
   knopf.addEventListener('click', () => {
     blatt.showModal();
-    if (!S.anleitung) { S.anleitung = true; sichern(); fadenZeigen(); }
+    offenSeit = performance.now();
+    if (!anleitungGelesen()) leseUhr = setTimeout(gelesen, Math.max(0, LESEN_MS - leseZeit));
     const flug = $('.faden-flug'); if (flug) flug.remove();
   });
-  blatt.querySelectorAll('.anleitung-zu, .anleitung-los').forEach(b => b.addEventListener('click', () => blatt.close()));
+  blatt.addEventListener('close', () => { clearTimeout(leseUhr); if (offenSeit) leseZeit += performance.now() - offenSeit; offenSeit = 0; });
+  blatt.querySelector('.anleitung-zu').addEventListener('click', () => blatt.close());
+  blatt.querySelector('.anleitung-los').addEventListener('click', () => { gelesen(); blatt.close(); });
   /* Ein Tipp neben das Blatt schließt es */
   blatt.addEventListener('click', e => { if (e.target === blatt) blatt.close(); });
 }
-function fadenZeigen(){ const k = $('#faden'); if (k) k.classList.toggle('neu', !S.anleitung); }
+/* S.anleitung merkt sich, welche Fassung zuletzt offen war (früher nur true, das zählt als Fassung 1).
+   Wird die Anleitung neu geschrieben, Stand erhöhen: dann fliegt der Faden bei allen noch einmal, bis sie die neue gelesen haben. */
+const ANLEITUNG_STAND = 2, LESEN_MS = 15000;
+const anleitungGelesen = () => Number(S.anleitung || 0) >= ANLEITUNG_STAND;
+function fadenZeigen(){ const k = $('#faden'); if (k) k.classList.toggle('neu', !anleitungGelesen()); }
 
 /* Der Faden fliegt: Er kreist erst in der Mitte, zieht dann eine rote Spur in die Ecke und windet sich um den Knopf.
-   Bald nach dem Laden und danach alle halbe Minute, solange die Anleitung noch nie offen war; nie im Kampf, nie bei ruhigem Bild. */
+   Bald nach dem Laden und danach alle halbe Minute, solange die Anleitung nicht gelesen ist; nie im Kampf, nie bei ruhigem Bild. */
 const FADEN_DAUER = 2900;
 function fadenFlug(){
   const knopf = $('#faden'), blatt = $('#anleitung');
-  if (!knopf || S.anleitung || ruhig() || document.hidden || (blatt && blatt.open) || $('.faden-flug')) return;
+  if (!knopf || anleitungGelesen() || ruhig() || document.hidden || (blatt && blatt.open) || $('.faden-flug')) return;
   const r = knopf.getBoundingClientRect();
   if (!r.width) return;
   const px = pixelStil(), mx = innerWidth / 2, my = innerHeight * 0.42, rk = 30;
