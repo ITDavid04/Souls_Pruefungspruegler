@@ -941,8 +941,9 @@ body[data-welt="pixel"] .karte.explodiert { animation: wackeln .5s ease; }
    Gleiche Ansichten, gleiche Regeln, nur der Anstrich wechselt: Texte, die direkt auf dem Bild stehen, bekommen Umriss oder eine Tafel,
    alles Übrige wird Papier mit Tinte. Der Schalter liegt oben auf dem Titel und im Spielstand. */
 :root { --umriss-fein: 1px 1px 0 var(--px-tinte), -1px 1px 0 var(--px-tinte), 1px -1px 0 var(--px-tinte), -1px -1px 0 var(--px-tinte), 0 2px 0 var(--px-tinte); }
-.stil-wahl { position: absolute; z-index: 3; top: 0; right: 0; display: flex; border: 1px solid var(--linie-hell); border-radius: 4px; overflow: hidden; background: rgba(11, 9, 8, .6); }
-.stil-knopf { min-height: 36px; padding: 6px 12px; font: 600 13px/1 var(--f-titel); letter-spacing: .08em; color: var(--blass); background: none; border: 0; cursor: pointer; }
+/* Der Schalter Souls | Pixel sitzt fest oben rechts, gleich links neben dem Anleitungsknopf und genauso hoch */
+.stil-wahl { position: fixed; z-index: 8; top: calc(var(--oben) + 10px); right: calc(env(safe-area-inset-right, 0px) + 70px); height: 44px; display: flex; border: 1px solid var(--linie-hell); border-radius: 22px; overflow: hidden; background: rgba(11, 9, 8, .86); box-shadow: 0 4px 14px rgba(0, 0, 0, .5); }
+.stil-knopf { min-height: 36px; padding: 6px 14px; font: 600 13px/1 var(--f-titel); letter-spacing: .08em; color: var(--blass); background: none; border: 0; cursor: pointer; }
 .stil-knopf[data-stil="pixel"] { font-family: var(--f-pixel); letter-spacing: .02em; }
 .stil-knopf[aria-pressed="true"] { color: #1b1206; background: var(--gold); }
 .titel { position: relative; }
@@ -1195,8 +1196,6 @@ html.im-kampf .toast { bottom: calc(var(--unten) + 96px); }
 .faden-knopf.neu::before { padding: 3px; background: conic-gradient(from var(--faden-winkel), rgba(228, 89, 74, .12) 0deg, rgba(228, 89, 74, .35) 180deg, var(--blut-hell) 300deg, #ffd6cc 345deg, rgba(228, 89, 74, .12) 360deg); filter: drop-shadow(0 0 5px rgba(228, 89, 74, .85)); animation: faden 4.5s linear infinite; }
 @keyframes faden { to { --faden-winkel: 360deg; } }
 html.im-kampf .faden-knopf { display: none; }
-/* Auf schmalen Bildschirmen rückt der Schalter Souls | Pixel auf dem Titel nach links, damit der Faden Platz hat */
-@media (max-width: 700px) { .stil-wahl { right: 52px; } }
 
 html:has(dialog.anleitung[open]) { overflow: hidden; }
 .anleitung { width: min(560px, calc(100% - 2 * var(--rand))); max-height: min(88dvh, 880px); padding: 0; border: 1px solid var(--linie-hell); border-radius: 8px; background: var(--stein); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, .7); }
