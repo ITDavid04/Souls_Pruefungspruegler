@@ -145,6 +145,10 @@ Unter „Spielstand“ liegen zwei Schalter zum Lernen ohne Druck:
 - **Ruhiger Modus** nimmt Leben und Tod heraus. Falsche Antworten kosten nichts, es gibt keinen Blutfleck und kein Sterben. Im Kampf verschwinden Lebensbalken und Kaffee, stattdessen brennt oben ein ruhiger Kerzenpunkt. Seelen und Stufen laufen weiter.
 - **Nur AP2 lernen** öffnet den Läuterungsberg sofort, auch ohne den Zwischenprüfer. Die AP1 bleibt dabei gesperrt. Der Schalter ist nur sichtbar, solange der Berg nicht ohnehin schon offen ist.
 
+### Musik
+
+Unter „Spielstand“ liegt der Schalter „Musik“ (Voreinstellung an). Nach dem ersten Tippen spielt leise, prozedural erzeugte Musik ohne Takt: einzelne weiche Töne aus einer festen Tonleiter über einem atmenden Grundton, ganz ohne Audiodateien. Jeder Ort klingt anders: das Lagerfeuer warm, die Hölle dunkel mit leiser Glut, der Kokytos gläsern, die Katakomben hohl, der Berg nach Glocken, der Gipfel nach feierlichen Quinten. Beim Ortswechsel blendet sie langsam über. Im Bosskampf wird sie nicht schneller, sondern tiefer, und fällt der Boss, löst ein Dur-Akkord alles auf. Mit Musik weht der Wind etwas leiser. Das Pixelparadies bleibt vorerst still. Die Hörprobe zum Abstimmen liegt in `tools/hoerprobe/`.
+
 ### Wind
 
 Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung), weht nach dem ersten Tippen ein ruhiger, prozedural erzeugter Wind, ganz ohne Audiodateien. Er schwillt langsam an und ab, nie plötzlich, und schläft, wenn der Tab im Hintergrund liegt. Ton beginnt erst nach dem ersten Tippen, weil der Browser ihn bis dahin sperrt.
@@ -260,7 +264,7 @@ und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor 
 
 ## Technik
 
-Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Inseln, Texte), `src/js/pixel.js` (Pixelfiguren und Knall), `src/js/ton.js` (Wind und Klänge).
+Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Inseln, Texte), `src/js/pixel.js` (Pixelfiguren und Knall), `src/js/ton.js` (Musik, Wind und Klänge).
 Gespeichert wird nur auf dem Gerät: `spp.spiel` (Spielstand) und `spp.prog` (Lernkasten) im localStorage.
 
 ```bash

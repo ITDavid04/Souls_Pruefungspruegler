@@ -915,6 +915,24 @@ try {
   check('Desktop: Kampfklang-Schalter steht im Spielstand und schaltet S.kampfklang', kkVor === true && kkNach === false, `vorher ${kkVor}, nachher ${kkNach}`);
   const zFx = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.wecken(); T.setzenFx(true); T.schlag({ gut: true, akt: 1 }); T.schlag({ gut: false, mimic: true }); T.heilen(); T.aufstieg(); for (const a of ['treffer', 'splitter', 'daneben', 'wuerfel', 'kombo', 'boom', 'entschaerft', 'herz', 'absturz', 'sieg', 'tor']) T.chip(a, 2); return T.zustand(); });
   check('Desktop: Kampfklang und 8-Bit-Klänge entstehen ohne Fehler', zFx.fx >= 15 && zFx.state === 'running', JSON.stringify(zFx));
+  const tonStand = () => d.evaluate(async () => (await import('./js/ton.js')).zustand());
+  const zFeuer = await tonStand();
+  check('Desktop: Am Lagerfeuer spielt die Lagerfeuer-Musik', zFeuer.musikAn === true && zFeuer.musikOrt === 'lagerfeuer', JSON.stringify(zFeuer));
+  await klick(d, '#musik');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).musik === false);
+  const zStill = await tonStand();
+  await klick(d, '#musik');
+  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).musik === true);
+  check('Desktop: Musik-Schalter steht im Spielstand und schaltet die Musik ab', zStill.musikAn === false && zStill.musikOrt === null && (await tonStand()).musikOrt === 'lagerfeuer', JSON.stringify(zStill));
+  const orte = [];
+  for (const h of ['#/gebeinhaus', '#/kokytos', '#/himmel', '#/']) {
+    await d.evaluate(h => { location.hash = h; }, h);
+    await warte(d, h => location.hash === h || (h === '#/' && location.hash === ''), h);
+    orte.push((await tonStand()).musikOrt);
+  }
+  check('Desktop: Jede Ansicht hat ihre Musik (Gebeinhaus, Kokytos, Pixelparadies still, Lagerfeuer)', orte.join() === 'katakomben,kokytos,,lagerfeuer', orte.join());
+  const zBoss = await d.evaluate(async () => { const T = await import('./js/ton.js'); T.musik('hoelle', true); const vor = T.zustand(); T.musikSieg(); const nach = T.zustand(); T.musik('lagerfeuer'); return { vor, nach }; });
+  check('Desktop: Bosskampf vertieft die Musik, der Sieg löst sie auf', zBoss.vor.boss === true && zBoss.vor.musikOrt === 'hoelle' && zBoss.nach.boss === false && zBoss.nach.toene >= 4, JSON.stringify(zBoss));
   await klick(d, '.klasse-karte[data-klasse="krieger"]');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).klasse === 'krieger');
   await setze(d, 'S.lauf = null; S.zeige = null;');

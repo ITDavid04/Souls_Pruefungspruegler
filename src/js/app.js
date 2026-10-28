@@ -165,6 +165,7 @@ function render(){
   if (aufraeumen) { aufraeumen(); aufraeumen = null; }
   document.documentElement.classList.toggle('im-kampf', titelGezeigt && !!S.lauf && !S.zeige);
   document.body.dataset.welt = pixelStil() ? 'pixel' : '';
+  T.musik(...musikDerAnsicht());
   if (!titelGezeigt) return titel();
   if (S.zeige) return zeige();
   if (S.lauf) return kampf();
@@ -178,6 +179,26 @@ function render(){
   return lagerfeuer();
 }
 window.addEventListener('hashchange', () => { rastSatz = null; render(); window.scrollTo(0, 0); });
+
+/* Musik je Ansicht: welcher Ort klingt und ob gerade ein Boss kämpft (oder hinter dem Nebeltor wartet).
+   Das Pixelparadies bleibt vorerst still, dort spielen nur die 8-Bit-Klänge. */
+function klangVon(ort){
+  if (ort === 'kokytos' || ort === 'gipfel') return ort;
+  if (typeof ort !== 'number' || !kreis(ort)) return null;
+  return ['katakomben', 'hoelle', 'berg', null][kreis(ort).akt];
+}
+function musikDerAnsicht(){
+  if (!titelGezeigt) return [startHimmel() || pixelStil() ? null : 'hoelle'];
+  const z = S.zeige, L = S.lauf;
+  if (z) return z.art === 'feuer' ? ['lagerfeuer'] : z.art === 'durchgang' ? ['berg'] : z.art === 'bestanden' ? ['gipfel'] : [klangVon(z.ort), z.art === 'tor'];
+  if (L) return [klangVon(L.ort), L.art === 'boss' && !L.gefallen];
+  const m = location.hash.match(/^#\/(kreis|insel)\/(\d+)$/);
+  if (m && kreis(Number(m[2])) && kreisOffen(Number(m[2]))) return [klangVon(Number(m[2]))];
+  if (location.hash === '#/kokytos' || location.hash === '#/gipfel') return [location.hash.slice(2)];
+  if (location.hash === '#/gebeinhaus') return ['katakomben'];
+  if (location.hash === '#/himmel' || location.hash === '#/glitch') return [null];
+  return ['lagerfeuer'];
+}
 
 /* Titel: bei jedem Start. Wer zum ersten Mal hier ist, bekommt die Regeln, alle anderen einen Satz, der sich erinnert. */
 /* Startwelt: Wer im Pixelparadies startet, bekommt den bunten Titel und landet danach auf der Inselkarte */
@@ -452,6 +473,7 @@ function lagerfeuer(){
         '<label class="probe"><input type="checkbox" id="stil"' + (pixelStil() ? ' checked' : '') + '> Pixelstil für das ganze Spiel <small>Alle Kreise, Gesimse und Arenen in 8 Bit. Regeln und Lernstand bleiben gleich.</small></label>' +
         '<label class="probe"><input type="checkbox" id="startwelt"' + (startHimmel() ? ' checked' : '') + '> Im Pixelparadies starten <small>Bunter Titel, danach direkt zur Inselkarte. Das Lagerfeuer bleibt einen Schritt entfernt.</small></label>' +
         '<label class="probe"><input type="checkbox" id="frieden"' + (S.frieden ? ' checked' : '') + '> Ruhiger Modus <small>Ohne Leben und Tod. Lernen ohne Sterben.</small></label>' +
+        '<label class="probe"><input type="checkbox" id="musik"' + (S.musik !== false ? ' checked' : '') + '> Musik <small>Leise Klänge je Ort, ohne Takt.</small></label>' +
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
         '<label class="probe"><input type="checkbox" id="kampfklang"' + (S.kampfklang !== false ? ' checked' : '') + '> Kampfklang <small>Kurze Klänge beim Antworten im Kampf.</small></label>' +
         (!S.aufstieg ? '<label class="probe"><input type="checkbox" id="nurAp2"' + (S.nurAp2 ? ' checked' : '') + '> Nur AP2 lernen <small>Öffnet den Läuterungsberg sofort, ohne den Zwischenprüfer.</small></label>' : '') +
@@ -474,6 +496,7 @@ function lagerfeuer(){
   $('#startwelt').addEventListener('change', e => { S.startwelt = e.target.checked ? 'himmel' : 'lagerfeuer'; sichern(); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });
   const ap2Knopf = $('#nurAp2'); if (ap2Knopf) ap2Knopf.addEventListener('change', e => { S.nurAp2 = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#nurAp2'); });
+  const musikKnopf = $('#musik'); if (musikKnopf) musikKnopf.addEventListener('change', e => { S.musik = e.target.checked; sichern(); T.setzenMusik(S.musik); });
   const windKnopf = $('#wind'); if (windKnopf) windKnopf.addEventListener('change', e => { S.wind = e.target.checked; sichern(); T.setzen(S.wind); });
   const kkKnopf = $('#kampfklang'); if (kkKnopf) kkKnopf.addEventListener('change', e => { S.kampfklang = e.target.checked; sichern(); T.setzenFx(S.kampfklang); });
   $('#loeschen-frage').addEventListener('click', () => {
@@ -1197,7 +1220,7 @@ function antworten(gut, info){
           zeilen.push(ph.ende || ph.name + ' fällt.');
           L.phase++; L.phaseTreffer = 0; L.phaseNeu = true;
           if (O.kaffee === 'gefroren' && L.flakons < S.flakons) { L.flakons++; zeilen.push('Ein Kaffeeflakon taut auf.'); }
-        } else { L.gefallen = true; zeilen.push(O.schluss || 'Der Boss wankt …'); }
+        } else { L.gefallen = true; f.fall = true; zeilen.push(O.schluss || 'Der Boss wankt …'); }
       } else zeilen.push('Treffer. Noch ' + (ph.treffer - L.phaseTreffer) + (mehrphasig ? ' bei ' + ph.name : ' bis zum Fall') + '.');
     }
     if (f.tippfehler && O.tippfehler && !friede()) {
@@ -1243,6 +1266,7 @@ function antworten(gut, info){
   else { blitz(); vibrieren(L.leben <= 0 ? [90, 60, 240] : 70); }
   if (px) pixelKnall(L, f, gut);
   else T.schlag({ gut, akt: O.akt, klang: klassenKlang(), wucht: !!(gut && L.gefallen), mimic: !!(r && r.art === 'mimic') });
+  if (f.fall && !px) T.musikSieg();
   if (L.leben <= 0) setTimeout(() => { if (S.lauf && S.lauf.leben <= 0) sterben(); }, ruhig() ? 0 : 1300);
 }
 
@@ -1674,6 +1698,7 @@ else render();
 document.documentElement.classList.add('bereit');
 
 /* Die Tonebene: der Wunsch aus dem Spielstand, der erste Gestus weckt den Wind, versteckte Tabs schlafen */
+T.setzenMusik(S.musik !== false);
 T.setzen(S.wind !== false);
 T.setzenFx(S.kampfklang !== false);
 ['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, () => T.wecken(), { once: true }));
