@@ -572,12 +572,12 @@ function huelle(g, t0, spitze, dauer, anstieg){
 }
 
 /* Ein Ton mit fallender oder steigender Tonhöhe */
-function stimme(typ, f0, f1, t0, dauer, spitze, ziel){
+function stimme(typ, f0, f1, t0, dauer, spitze, ziel, anstieg){
   try {
     const o = ctx.createOscillator(); o.type = typ;
     o.frequency.setValueAtTime(f0, t0);
     if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dauer);
-    const g = ctx.createGain(); huelle(g, t0, spitze, dauer);
+    const g = ctx.createGain(); huelle(g, t0, spitze, dauer, anstieg);
     o.connect(g); g.connect(ziel || fx);
     o.start(t0); o.stop(t0 + dauer + 0.03);
   } catch (e) {}
@@ -618,22 +618,21 @@ function koerper(f, teile, t0, spitze){
   teile.forEach(([faktor, anteil, dauer]) => stimme('sine', f * faktor, f * faktor, t0, dauer, spitze * anteil));
 }
 
-/* Die Klassen klingen im Kampf nach ihrer Waffe. Richtig: Der Krieger lässt die Klinge klirren, der Magier wirft
+/* Die Klassen klingen im Kampf nach ihrer Waffe. Richtig: Der Krieger schneidet mit singender Klinge, der Magier wirft
    einen Feuerball, der Priester schlägt eine helle Glocke. Falsch: Der Krieger fängt den Hieb mit dem Schild,
    dem Magier verpufft der Zauber, die Glocke des Priesters klingt gedämpft. */
-const KLINGE = [[1, 1, 0.9], [1.41, 0.7, 0.7], [1.89, 0.55, 0.55], [2.66, 0.35, 0.4], [3.33, 0.2, 0.28]];
+/* Die Klinge singt hoch und klar: eng liegende, unharmonische Teiltöne zwischen 2,8 und 6 kHz, die gegeneinander schweben */
+const KLINGE = [[2821, 0.3, 0.45], [4156, 0.8, 0.9], [4285, 0.7, 0.85], [4393, 0.5, 0.6], [5577, 0.5, 0.8], [5943, 0.45, 0.75], [6008, 1, 0.7]];
 const SCHILD = [[1, 1, 0.32], [1.58, 0.6, 0.22], [2.31, 0.3, 0.14]];
 const GLOCKE = [[1, 1, 1.6], [2, 0.45, 1.1], [2.76, 0.3, 0.8], [5.4, 0.12, 0.4]];
 function klasseKlingt(art, gut, t0){
   if (art === 'stahl') {
     if (gut) {
-      rauschZug(t0, 0.12, 0.16, 'bandpass', 1400, 5200, 1.4, 0.05);           // der Schwung
-      const t = t0 + 0.11, f = 1750 + Math.random() * 180;
-      rauschStoss(t, 0.035, 0.32, 'highpass', 2600);                           // Stahl auf Stahl
-      koerper(f, KLINGE, t, 0.075);
-      koerper(f * 1.06, KLINGE.slice(0, 3), t + 0.07, 0.035);                 // die zweite Klinge antwortet
-      rauschZug(t + 0.02, 0.22, 0.05, 'bandpass', 5200, 3200, 6);            // kurzes Schaben
-      stimme('triangle', 260, 120, t, 0.14, 0.18);
+      rauschZug(t0, 0.22, 0.07, 'bandpass', 5500, 9500, 0.8, 0.17);           // die Klinge zischt heran
+      const t = t0 + 0.2, v = 0.97 + Math.random() * 0.06;
+      rauschStoss(t, 0.09, 0.5, 'bandpass', 3800, 0.6);                        // der Schnitt
+      stimme('sine', 560, 320, t, 0.09, 0.1);
+      KLINGE.forEach(([f, anteil, dauer]) => stimme('sine', f * v, f * v, t + 0.015, dauer, 0.07 * anteil, null, 0.004));  // das helle Singen der Klinge
     } else {
       rauschStoss(t0, 0.16, 0.36, 'lowpass', 320);                             // der Hieb trifft den Schild
       stimme('sine', 125, 62, t0, 0.24, 0.38);
