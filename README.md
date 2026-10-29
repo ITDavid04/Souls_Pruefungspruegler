@@ -4,7 +4,7 @@ Lernkarten für die Abschlussprüfung Fachinformatik (AP1 und AP2) als Souls-lik
 Wer stirbt, lässt seine Seelen bei der Karte liegen, die ihn erledigt hat, und holt sie sich im nächsten Gang zurück.
 Installierbare Web-App (PWA), läuft nach dem ersten Besuch auch ohne Netz.
 
-> **Stand:** Prototyp mit der ganzen Reise: 1134 Karten aus dem AP1 und AP2 Reinprügler, 12 Bosse, Zwischenboss, Endboss,
+> **Stand:** Beta mit der ganzen Reise: 1134 Karten für AP1 und AP2, 12 Bosse, Zwischenboss, Endboss,
 > dazu abseits des Weges die Katakomben der Kürzel mit 304 Abkürzungen und einem eigenen Boss,
 > und zwischen den Karten Rätsel: Rechengegner, Botschaften, Mimic-Truhen und Restore-Notfälle.
 > Dazu die Werkstatt mit Subnetz-Klappuhr, Rechenwerk und Zahlenwerk zum Ausprobieren,
@@ -170,10 +170,10 @@ Unter „Spielstand“ liegt der Schalter „Wind“. Ist er an (Voreinstellung)
 
 Unter „Spielstand“ liegt der Schalter „Kampfklang“ (Voreinstellung an). Beim Antworten im Kampf klingt ein kurzer, prozedural erzeugter Ton: ein Treffer bei richtig, ein dumpfer Schlag bei falsch, ein Biss an der Mimic-Truhe. Mit gewählter Klasse klingt ihre Waffe: Beim Krieger klirren richtig die Schwerter und falsch fängt der Schild den Hieb, der Magier wirft einen Feuerball oder sein Zauber verpufft, der Priester schlägt helle Glocken oder eine gedämpfte. Ohne Klasse klingt jeder Ort etwas anders (die Hölle knistert, die Katakomben raunen, der Berg schimmert, der Gipfel klingt nach Stahl). Auch der Kaffeeschluck und der Stufenaufstieg haben ihren Klang. Alles läuft auf derselben Tonebene wie der Wind.
 
-### Prototyp-Schalter
+### Alle Tore offen (nur für Tests)
 
-Unter „Spielstand“ öffnet „Prototyp: alle Tore offen“ den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
-Damit lässt sich alles ansehen, ohne erst die AP1 durchzuspielen. Vor einer breiteren Veröffentlichung kommt er raus.
+`S.probe` im Spielstand öffnet den Berg, alle Nebeltore und beide Arenen, ohne dass Bosse als besiegt gelten.
+In der Oberfläche gibt es dafür keinen Schalter mehr, die Tests setzen ihn direkt im localStorage.
 
 
 ## Das Pixelparadies (Erweiterung)
@@ -287,7 +287,9 @@ npm run serve      # http://localhost:8090, mit -- --lan auch im WLAN
 npm test           # spielt die ganze Reise einmal durch, Bildschirmfotos in tools/shots/
 ```
 
-Karten und Bilder kommen aus dem AP1 und AP2 Reinprügler:
+Karten und Bilder kamen ursprünglich aus den eigenen Reinprügler-Programmen. Die Kartentexte in `data/` sind seitdem
+eigenständig überarbeitet: Die Extraktoren deshalb **nicht** mehr über `data/` laufen lassen, sonst sind die Überarbeitungen weg.
+Sie stehen hier nur zur Nachvollziehbarkeit:
 
 ```bash
 python3 -I tools/extract_ap1.py "~/Desktop/Reinprügler_APP/ap1hölle-final.html"
@@ -327,3 +329,17 @@ Die App-Symbole zeichnet `python3 -I tools/icons.py`.
 Veröffentlicht wird über GitHub Actions (`.github/workflows/pages.yml`) bei jedem Push auf `main`.
 
 Schriften: Cinzel, Atkinson Hyperlegible, Cormorant Garamond und im Pixelparadies Pixelify Sans (SIL Open Font License, liegen der App bei).
+
+## Lizenz und Rechtliches
+
+© 2026 David Hartmann
+
+* Karten, Texte und Bilder: [CC BY-SA 4.0](LICENSE)
+* Quellcode: [MIT](LICENSE-CODE)
+
+[Nutzungshinweise und Haftung](NUTZUNGSHINWEISE.md) ·
+[Impressum](https://github.com/ITDavid04/Lern-Wiki/blob/main/IMPRESSUM.md) ·
+[Datenschutz](https://github.com/ITDavid04/Lern-Wiki/blob/main/DATENSCHUTZ.md)
+
+In der App stehen die drei Links unter „Spielstand“. Privates, nicht kommerzielles Projekt, Beta.
+Kein offizielles Angebot einer IHK, Prüfungsstelle oder eines Bildungsträgers. Alle Angaben ohne Gewähr.

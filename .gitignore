@@ -223,3 +223,6 @@ __marimo__/
 node_modules/
 docs/
 tools/shots/
+
+# Liste gesperrter Begriffe für tools/release_check.py (bleibt privat)
+.release-terms

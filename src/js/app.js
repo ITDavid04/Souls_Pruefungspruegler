@@ -57,6 +57,12 @@ const sichern = () => { store.set(SPIEL, S); store.set(PROG, prog); };
 const kz = lf => S.kreise[lf] || (S.kreise[lf] = { feuer: 0, boss: false });
 const az = id => S.arenen[id] || (S.arenen[id] = { boss: false, versuche: 0 });
 const besiegt = ort => typeof ort === 'number' ? kz(ort).boss : az(ort).boss;
+/* Rechtliches: Impressum und Datenschutz liegen im Lern-Wiki und gelten auch für diese App */
+const RECHT = {
+  impressum: 'https://github.com/ITDavid04/Lern-Wiki/blob/main/IMPRESSUM.md',
+  datenschutz: 'https://github.com/ITDavid04/Lern-Wiki/blob/main/DATENSCHUTZ.md',
+  hinweise: 'https://github.com/ITDavid04/Souls_Pruefungspruegler/blob/main/NUTZUNGSHINWEISE.md'
+};
 const aufstiegOffen = () => S.aufstieg || S.probe || S.nurAp2;
 const kreisOffen = lf => kreis(lf).akt !== 2 || aufstiegOffen();
 const ARENA = id => ARENEN[id] || PIXEL_ARENEN[id];
@@ -326,7 +332,7 @@ function titel(){
     '<main class="titel' + (erstes ? ' erstes' : '') + '">' + stilWahl() +
       '<div class="tor-schrift" aria-hidden="true"><p class="inschrift">' + esc(INSCHRIFT) + '</p><p class="kritzel">' + esc(INSCHRIFT_NACHTRAG) + '</p></div>' +
       '<div class="titel-unten">' +
-        '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
+        '<p class="ueber">AP1 und AP2 · Fachinformatik · Beta</p>' +
         '<h1 class="logo">Prüfungs&shy;prügler</h1>' +
         '<blockquote class="zitat">' + esc(satz) + '</blockquote>' +
         (erstes ? '' : '<p class="titel-stand">Stufe <b>' + S.stufe + '</b> · <b>' + zahl(S.seelen) + '</b> Seelen · <b>' + bosse + '</b> von 14 Bossen · <b>' + zahl(S.tode) + '</b> ' + (S.tode === 1 ? 'Tod' : 'Tode') + '</p>') +
@@ -371,7 +377,7 @@ function pixelTitel(){
         '<img class="px-insel buehne-rechts" src="img/insel-venus.webp" alt="" width="112" height="124">' +
       '</div>' +
       '<div class="titel-unten">' +
-        '<p class="ueber">AP1 und AP2 · Fachinformatik</p>' +
+        '<p class="ueber">AP1 und AP2 · Fachinformatik · Beta</p>' +
         '<h1 class="logo px-logo">Prüfungs&shy;prügler</h1>' +
         '<p class="px-unter">' + (himmel ? esc(PIXEL.name) + ' · ' + esc(PIXEL.zusatz) : 'Die ganze Reise in 8 Bit') + '</p>' +
         '<blockquote class="px-dialog">' + esc(satz) + '</blockquote>' +
@@ -571,9 +577,9 @@ function lagerfeuer(){
         '<label class="probe"><input type="checkbox" id="wind"' + (S.wind !== false ? ' checked' : '') + '> Wind <small>Ein ruhiger Wind nach dem ersten Tippen.</small></label>' +
         '<label class="probe"><input type="checkbox" id="kampfklang"' + (S.kampfklang !== false ? ' checked' : '') + '> Kampfklang <small>Kurze Klänge beim Antworten im Kampf.</small></label>' +
         (!S.aufstieg ? '<label class="probe"><input type="checkbox" id="nurAp2"' + (S.nurAp2 ? ' checked' : '') + '> Nur AP2 lernen <small>Öffnet den Läuterungsberg sofort, ohne den Zwischenprüfer.</small></label>' : '') +
-        '<label class="probe"><input type="checkbox" id="probe"' + (S.probe ? ' checked' : '') + '> Prototyp: alle Tore offen <small>Zum Ansehen. Bosse zählen erst, wenn du sie besiegst.</small></label>' +
         '<button type="button" class="knopf leise" id="installieren" hidden>App installieren</button>' +
         '<div class="loeschen" id="loeschen"><button type="button" class="knopf leise gefahr" id="loeschen-frage">Spielstand löschen</button></div>' +
+        '<p class="rechtliches">Beta · <a href="' + RECHT.impressum + '" target="_blank" rel="noopener">Impressum</a> · <a href="' + RECHT.datenschutz + '" target="_blank" rel="noopener">Datenschutz</a> · <a href="' + RECHT.hinweise + '" target="_blank" rel="noopener">Nutzungshinweise</a></p>' +
       '</details>' +
     '</main>';
   $('#aufstieg').addEventListener('click', () => {
@@ -585,7 +591,6 @@ function lagerfeuer(){
   });
   $$('.klasse-karte').forEach(b => b.addEventListener('click', () => { S.klasse = b.dataset.klasse; sichern(); T.schlag({ gut: true, klang: klassenKlang() }); render(); fokus('.klasse-karte.gewaehlt'); }));
   const klasseAb = $('#klasse-ab'); if (klasseAb) klasseAb.addEventListener('click', () => { S.klasse = null; sichern(); render(); fokus('.klasse-karte'); });
-  $('#probe').addEventListener('change', e => { S.probe = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#probe'); });
   $('#stil').addEventListener('change', e => { S.stil = e.target.checked ? 'pixel' : 'souls'; sichern(); render(); $('.spielstand').open = true; fokus('#stil'); });
   $('#startwelt').addEventListener('change', e => { S.startwelt = e.target.checked ? 'himmel' : 'lagerfeuer'; sichern(); });
   const friedenKnopf = $('#frieden'); if (friedenKnopf) friedenKnopf.addEventListener('change', e => { S.frieden = e.target.checked; sichern(); render(); $('.spielstand').open = true; fokus('#frieden'); });

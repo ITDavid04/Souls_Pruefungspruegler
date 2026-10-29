@@ -868,9 +868,12 @@ try {
   await d.$eval('.spielstand', e => { e.open = true; });
   await klick(d, '#nurAp2');
   await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).nurAp2 === false);
-  await klick(d, '#probe');
-  await warte(d, () => JSON.parse(localStorage.getItem('spp.spiel')).probe === true);
-  check('Desktop: Prototyp-Schalter öffnet den Berg', await d.$$eval('.kachel.berg-kachel', k => k.length) === 6);
+  /* Der Schalter "alle Tore offen" ist nicht mehr in der Oberfläche, nur noch im Spielstand für Tests */
+  check('Desktop: kein Prototyp-Schalter mehr unter Spielstand', await d.$('#probe') === null);
+  await setze(d, 'S.probe = true;');
+  await neuLaden(d);
+  await ansicht(d, 'hub');
+  check('Desktop: Tore-offen im Spielstand öffnet den Berg', await d.$$eval('.kachel.berg-kachel', k => k.length) === 6);
   await setze(d, 'S.frieden = true; S.lauf = null; S.zeige = null;');
   await d.goto(BASE + '#/kreis/3', { waitUntil: 'networkidle0' });
   await neuLaden(d);

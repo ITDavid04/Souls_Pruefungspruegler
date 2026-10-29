@@ -2,8 +2,8 @@
   "name": "souls-pruefungspruegler",
   "version": "0.1.0",
   "private": true,
-  "description": "Prüfungsprügler: Lernkarten für die AP1 als Souls-like, installierbare Web-App (PWA) fürs Handy",
-  "license": "MIT",
+  "description": "Prüfungsprügler: Lernkarten für AP1 und AP2 als Souls-like, installierbare Web-App (PWA) fürs Handy",
+  "license": "(MIT AND CC-BY-SA-4.0)",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

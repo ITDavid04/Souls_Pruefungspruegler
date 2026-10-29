@@ -1,7 +1,9 @@
 # Baut die App, spielt sie einmal automatisch durch und veröffentlicht sie auf GitHub Pages.
 # Läuft bei jedem Push auf main und auf Knopfdruck (Actions, "App veröffentlichen", "Run workflow").
 # Schlägt ein Test fehl, bricht der Lauf ab und die bisherige Fassung bleibt online.
-# Einmalig nötig: Settings, Pages, Source auf "GitHub Actions" stellen.
+# Einmalig nötig: Settings, Pages, Source auf "GitHub Actions" stellen,
+# und unter Settings > Secrets and variables > Actions > Variables RELEASE_FORBIDDEN_TERMS anlegen.
+# Vorher prüft der Release-Wächter Lizenzen, Nutzungshinweise und gesperrte Begriffe.
 name: App veröffentlichen
 
 on:
@@ -28,6 +30,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Release-Wächter (Lizenzen, Nutzungshinweise, gesperrte Begriffe)
+        env:
+          RELEASE_FORBIDDEN_TERMS: ${{ vars.RELEASE_FORBIDDEN_TERMS }}
+        run: python3 tools/release_check.py
 
       - run: npm ci
 
