@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {".git", "node_modules", "docs", "shots", "__pycache__"}
 REQUIRED = ["LICENSE", "LICENSE-CODE", "NUTZUNGSHINWEISE.md", "README.md"]
-TEXT_SUFFIXES = {".md", ".json", ".js", ".mjs", ".html", ".css", ".webmanifest", ".py", ".yml"}
+TEXT_SUFFIXES = {".md", ".json", ".js", ".mjs", ".html", ".css", ".webmanifest", ".py", ".yml", ".svg", ".txt"}
 MAX_BYTES = 10 * 1024 * 1024
 
 

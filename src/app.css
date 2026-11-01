@@ -212,7 +212,8 @@ a.kachel:hover { border-color: var(--gold-tief); }
 .spielstand p { margin-bottom: 10px; }
 .loeschen { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
 .rechtliches { margin-top: 14px; font-size: 13px; }
-.rechtliches a { color: inherit; text-underline-offset: 3px; }
+/* Tippfläche mindestens 24 px hoch (WCAG 2.5.8) */
+.rechtliches a { display: inline-block; padding: 5px 0; color: inherit; text-underline-offset: 3px; }
 #installieren { margin-right: 8px; }
 
 /* Lagerfeuer als SVG: die Flammen flackern um ihren Fuß, Funken steigen auf */
