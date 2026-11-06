@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, LAGER_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -511,7 +511,7 @@ function arenaKachel(id){
 /* Lagerfeuer: Startseite mit Stufe, Abstieg, Zwischenprüfer, Aufstieg und Gipfel */
 function lagerfeuer(){
   const berg = aufstiegOffen();
-  hintergrund(berg ? BERG_BILD : null, berg ? 'lager-berg' : 'feuer');
+  hintergrund(berg ? BERG_BILD : LAGER_BILD, berg ? 'lager-berg' : 'feuer');
   if (!rastSatz) rastSatz = K.pick(berg ? RAST.concat(RAST_BERG, RAST_BERG) : RAST);
   const preis = K.stufenPreis(S.stufe), kann = S.seelen >= preis && grundLeben() < 200;
   const blutOrt = S.blut ? ortDaten(S.blut.ort) : null;
@@ -1560,7 +1560,7 @@ function zeige(){
     return;
   }
   if (z.art === 'feuer') {
-    hintergrund(null, 'feuer');
+    hintergrund(LAGER_BILD, 'feuer');
     app.innerHTML =
       '<main class="gross feuer-gross" role="dialog" aria-modal="true" aria-labelledby="feuer-titel">' +
         (pixelStil() ? P.lagerfeuer('gross-feuer') : FLAMME.replace('class="flamme"', 'class="flamme gross-flamme"')) +

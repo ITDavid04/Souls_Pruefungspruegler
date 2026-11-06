@@ -77,7 +77,7 @@ body[data-bg="titel"] .bg-schleier { background: linear-gradient(180deg, rgba(11
 body[data-bg="kreis"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .1) 0%, rgba(11, 9, 8, .55) 35%, rgba(11, 9, 8, .96) 72%); }
 body[data-bg="kampf"] .bg-schleier, body[data-bg="boss"] .bg-schleier { background: radial-gradient(120% 70% at 50% 0%, rgba(11, 9, 8, .72), rgba(11, 9, 8, .94) 70%); }
 body[data-bg="boss"] .bg-schleier { background: radial-gradient(120% 70% at 50% 0%, rgba(40, 8, 6, .7), rgba(11, 9, 8, .94) 70%); }
-body[data-bg="feuer"] .bg-schleier { background: radial-gradient(90% 55% at 50% 12%, rgba(120, 52, 14, .32), rgba(11, 9, 8, 0) 70%), var(--nacht); }
+body[data-bg="feuer"] .bg-schleier { background: radial-gradient(90% 55% at 50% 12%, rgba(120, 52, 14, .3), rgba(11, 9, 8, 0) 70%), linear-gradient(180deg, rgba(11, 9, 8, .35) 0%, rgba(11, 9, 8, .62) 40%, rgba(11, 9, 8, .9) 80%, rgba(11, 9, 8, .96) 100%); }
 body[data-bg="tod"] .bg-schleier { background: #000; }
 body[data-bg="tor"] .bg-schleier, body[data-bg="sieg"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .5), rgba(11, 9, 8, .92) 70%); }
 

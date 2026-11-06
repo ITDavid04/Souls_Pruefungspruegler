@@ -172,12 +172,14 @@ export const ARENEN = {
 };
 
 /* Wo das Handy im Hochformat hinschauen soll, wenn das Wichtige nicht in der Bildmitte steht */
-export const BILD_LAGE = { kokytos: '92% 22%' };
+export const BILD_LAGE = { kokytos: '92% 22%', lager: '64% 40%' };
 export const TITEL_BILD = 'kreis-00';
 /* Wo im Titelbild (1600 × 900) die Toröffnung liegt: Augen nur dort, die Glut in der Mitte.
    Bänder als [x von, x bis, y von, y bis]; oben läuft der Bogen spitz zu, deshalb ist das erste Band schmaler. */
 export const TITEL_TOR = { breite: 1600, hoehe: 900, glut: [803, 248, 125], augen: [[792, 814, 188, 214], [770, 836, 214, 308]] };
 export const BERG_BILD = 'berg';
+/* Das Lagerfeuer vor dem Abstieg: ein Ritter vor dem Baum mit dem leuchtenden Herz, darüber Burgen und Wasserfälle */
+export const LAGER_BILD = 'lager';
 export const ABSPANN_BILD = 'kreis-01';
 export const TITEL_ZITAT = 'Hier unten wimmern jene, die nie wählten, nie tippten, nie aufdeckten. Ewig jagen sie einem leeren Auswahlfeld nach. Du nicht. Du steigst hinab, durch das Eis, und auf der anderen Seite wieder hinauf.';
 /* Über dem Tor auf dem Titel, frei nach Inferno, Gesang III */
@@ -278,7 +280,7 @@ export const PIXEL_BILDER = {
   'kreis-04': 'px-lastenwaelzer', 'kreis-08': 'px-blutfluss', 'kreis-03': 'px-sturm', 'kreis-06': 'px-schlamm', 'kreis-09': 'px-dis', 'kreis-05': 'px-styx',
   'gesims-stolz': 'px-stolz', 'gesims-neid': 'px-neid', 'gesims-zorn': 'px-zorn', 'gesims-traegheit': 'px-traegheit', 'gesims-geiz': 'px-geiz', 'gesims-voellerei': 'px-voellerei',
   'katakomben': 'px-katakomben', 'kreis-02': 'px-akronymant', 'kokytos': 'px-kokytos', 'feuerwand': 'px-feuerwand', 'ausschuss': 'px-ausschuss',
-  'berg': 'px-berg', 'kreis-01': 'himmel-karte', 'kreis-00': 'himmel-karte'
+  'berg': 'px-berg', 'lager': 'px-lager', 'kreis-01': 'himmel-karte', 'kreis-00': 'himmel-karte'
 };
 export const PIXEL_LAGER = 'px-lager';
 /* Der bunte Titel: kommt, wenn die Startwelt das Pixelparadies ist oder alles im Pixelstil läuft */
