@@ -421,7 +421,7 @@ body[data-bg="arena-kokytos"] .bg-schleier { background: linear-gradient(180deg,
 body[data-bg="arena-gipfel"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 6, 4, .25) 0%, rgba(11, 6, 4, .62) 40%, rgba(11, 6, 4, .96) 76%); }
 body[data-bg="lager-berg"] .bg-schleier { background: radial-gradient(90% 55% at 50% 12%, rgba(120, 52, 14, .3), rgba(11, 9, 8, 0) 70%), linear-gradient(180deg, rgba(11, 9, 8, .78), rgba(11, 9, 8, .97) 60%); }
 body[data-bg="durchgang"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .05) 0%, rgba(11, 9, 8, .45) 45%, rgba(11, 9, 8, .95) 80%); }
-body[data-bg="abspann"] .bg-schleier { background: rgba(11, 9, 8, .86); }
+body[data-bg="abspann"] .bg-schleier { background: linear-gradient(180deg, rgba(11, 9, 8, .4) 0%, rgba(11, 9, 8, .78) 40%, rgba(11, 9, 8, .92) 100%); }
 body[data-bg="tod-pruefung"] .bg-schleier { background: #050404; }
 
 /* Schnee im Kokytos, Glut am Gipfel */

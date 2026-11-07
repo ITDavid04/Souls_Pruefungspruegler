@@ -275,6 +275,11 @@ Gemalt werden sie von `tools/berg_bilder.py` (nur Pillow, immer gleiches Ergebni
 Die Katakomben malt `tools/katakomben_bild.py`: ein Gewölbegang mit Schädelnischen und Kerzen, auf den Schlusssteinen eingemeißelte Kürzel,
 und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor wartet ein Bild aus dem Reinprügler mit einer großen schwarzen Tafel.
 
+Rund um den Baum mit dem leuchtenden Herz hängen fünf gemalte Bilder in einer Reihe: das Lagerfeuer (`lager`), die Rast danach mit dem Schwert im Feuer (`rast`),
+der steinerne Wächter vor jedem Nebeltor in Kreisen, Gesimsen und Katakomben (`nebeltor`; Kokytos und Gipfel behalten ihr Bild),
+der Ritter mit erhobenem Schwert bei „Gegner bezwungen“ (`sieg`) und der ganze Weg über die Brücken im Abspann (`abspann`).
+Im Pixelstil bleibt es bei den Pixelszenen. Die Stellen fürs Handy im Hochformat stehen in `BILD_LAGE` in `welt.js`.
+
 ## Technik
 
 Ohne Framework: `src/index.html`, `src/app.css`, `src/js/app.js` (Oberfläche und Ablauf), `src/js/kern.js` (Regeln), `src/js/raetsel.js` (Rätsel: Generatoren, Aufgaben aus der Klappuhr, Prüfen), `src/js/welt.js` (Kreise, Gesimse, Arenen, Inseln, Texte), `src/js/pixel.js` (Pixelfiguren und Knall), `src/js/ton.js` (Musik, Wind und Klänge).
