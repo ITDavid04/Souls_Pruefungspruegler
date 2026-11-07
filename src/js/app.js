@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, LAGER_BILD, RAST_BILD, NEBELTOR_BILD, SIEG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, PIXEL_ENTZUENDET, HOCHFORMAT, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, LAGER_BILD, RAST_BILD, NEBELTOR_BILD, SIEG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, PIXEL_ENTZUENDET, HOCHFORMAT, ENTZUENDET_HOCH, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -110,11 +110,11 @@ let bgAktiv = 'a', bgName = null, bgZuletzt = null;
 /* Hochformat: Handy oder Tablet, das höher als breit ist. Dreht sich das Gerät, kommt das passende Bild. */
 const hochkant = matchMedia('(max-aspect-ratio: 3/4)');
 hochkant.addEventListener('change', () => { if (bgZuletzt) hintergrund(...bgZuletzt); });
-function hintergrund(name, art = '', wetter = ''){
-  bgZuletzt = [name, art, wetter];
+function hintergrund(name, art = '', wetter = '', hoch = ''){
+  bgZuletzt = [name, art, wetter, hoch];
   /* Im Pixelstil tauscht jedes gemalte Bild gegen sein Gegenstück in Pixeln; ohne Bild brennt das Lagerfeuer unter Sternen */
   if (pixelStil()) name = name ? bildVon(name) : art === 'tod' || art === 'tod-pruefung' ? null : PIXEL_LAGER;
-  if (name && hochkant.matches && HOCHFORMAT.includes(name + '-hoch')) name += '-hoch';
+  if (name && hochkant.matches) { const h = hoch || name + '-hoch'; if (HOCHFORMAT.includes(h)) name = h; }
   document.body.dataset.bg = art;
   document.body.dataset.wetter = wetter;
   if (name === bgName) return;
@@ -1565,7 +1565,7 @@ function zeige(){
     return;
   }
   if (z.art === 'feuer') {
-    hintergrund(pixelStil() && z.neu ? PIXEL_ENTZUENDET : RAST_BILD, 'feuer');
+    hintergrund(pixelStil() && z.neu ? PIXEL_ENTZUENDET : RAST_BILD, 'feuer', '', z.neu && !pixelStil() ? ENTZUENDET_HOCH : '');
     app.innerHTML =
       '<main class="gross feuer-gross" role="dialog" aria-modal="true" aria-labelledby="feuer-titel">' +
         (pixelStil() ? P.lagerfeuer('gross-feuer') : FLAMME.replace('class="flamme"', 'class="flamme gross-flamme"')) +
