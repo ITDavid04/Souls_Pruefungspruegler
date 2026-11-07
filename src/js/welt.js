@@ -294,6 +294,8 @@ export const PIXEL_BILDER = {
 export const PIXEL_LAGER = 'px-lager';
 /* Im Pixelstil kniet der Ritter vor dem Schwert, wenn ein Lagerfeuer zum ersten Mal brennt; bei jeder weiteren Rast sitzt er am Feuer */
 export const PIXEL_ENTZUENDET = 'px-entzuendet';
+/* Eigene Fassungen fürs Handy im Hochformat; die App nimmt sie statt der Bildmitte, wenn der Bildschirm höher als breit ist */
+export const HOCHFORMAT = ['px-herzbaum-hoch', 'px-entzuendet-hoch', 'px-rast-hoch', 'px-nebeltor-hoch', 'px-sieg-hoch', 'px-abspann-hoch'];
 /* Der bunte Titel: kommt, wenn die Startwelt das Pixelparadies ist oder alles im Pixelstil läuft */
 export const PIXEL_TITEL = {
   reise: 'Hinab durch die Kreise, durch das Eis, hinauf auf den Berg und darüber in die Wolken. Diesmal in 8 Bit. Die Karten sind dieselben, die Farben nicht.',
