@@ -172,7 +172,8 @@ export const ARENEN = {
 };
 
 /* Wo das Handy im Hochformat hinschauen soll, wenn das Wichtige nicht in der Bildmitte steht */
-export const BILD_LAGE = { kokytos: '92% 22%', lager: '64% 40%', nebeltor: '50% 30%', rast: '30% 50%', sieg: '50% 45%', abspann: '70% 30%' };
+export const BILD_LAGE = { kokytos: '92% 22%', lager: '64% 40%', nebeltor: '50% 30%', rast: '30% 50%', sieg: '50% 45%', abspann: '70% 30%',
+  'px-herzbaum': '64% 50%', 'px-nebeltor': '62% 50%', 'px-rast': '52% 60%', 'px-abspann': '50% 40%', 'px-entzuendet': '52% 50%', 'px-sieg': '50% 50%' };
 export const TITEL_BILD = 'kreis-00';
 /* Wo im Titelbild (1600 × 900) die Toröffnung liegt: Augen nur dort, die Glut in der Mitte.
    Bänder als [x von, x bis, y von, y bis]; oben läuft der Bogen spitz zu, deshalb ist das erste Band schmaler. */
@@ -288,9 +289,11 @@ export const PIXEL_BILDER = {
   'kreis-04': 'px-lastenwaelzer', 'kreis-08': 'px-blutfluss', 'kreis-03': 'px-sturm', 'kreis-06': 'px-schlamm', 'kreis-09': 'px-dis', 'kreis-05': 'px-styx',
   'gesims-stolz': 'px-stolz', 'gesims-neid': 'px-neid', 'gesims-zorn': 'px-zorn', 'gesims-traegheit': 'px-traegheit', 'gesims-geiz': 'px-geiz', 'gesims-voellerei': 'px-voellerei',
   'katakomben': 'px-katakomben', 'kreis-02': 'px-akronymant', 'kokytos': 'px-kokytos', 'feuerwand': 'px-feuerwand', 'ausschuss': 'px-ausschuss',
-  'berg': 'px-berg', 'lager': 'px-lager', 'rast': 'px-lager', 'abspann': 'himmel-karte', 'kreis-01': 'himmel-karte', 'kreis-00': 'himmel-karte'
+  'berg': 'px-berg', 'lager': 'px-herzbaum', 'rast': 'px-rast', 'nebeltor': 'px-nebeltor', 'sieg': 'px-sieg', 'abspann': 'px-abspann', 'kreis-01': 'himmel-karte', 'kreis-00': 'himmel-karte'
 };
 export const PIXEL_LAGER = 'px-lager';
+/* Im Pixelstil kniet der Ritter vor dem Schwert, wenn ein Lagerfeuer zum ersten Mal brennt; bei jeder weiteren Rast sitzt er am Feuer */
+export const PIXEL_ENTZUENDET = 'px-entzuendet';
 /* Der bunte Titel: kommt, wenn die Startwelt das Pixelparadies ist oder alles im Pixelstil läuft */
 export const PIXEL_TITEL = {
   reise: 'Hinab durch die Kreise, durch das Eis, hinauf auf den Berg und darüber in die Wolken. Diesmal in 8 Bit. Die Karten sind dieselben, die Farben nicht.',

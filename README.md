@@ -278,7 +278,10 @@ und ganz hinten im glühenden Raum steht der Akronymant. Hinter seinem Nebeltor 
 Rund um den Baum mit dem leuchtenden Herz hängen fünf gemalte Bilder in einer Reihe: das Lagerfeuer (`lager`), die Rast danach mit dem Schwert im Feuer (`rast`),
 der steinerne Wächter vor jedem Nebeltor in Kreisen, Gesimsen und Katakomben (`nebeltor`; Kokytos und Gipfel behalten ihr Bild),
 der Ritter mit erhobenem Schwert bei „Gegner bezwungen“ (`sieg`) und der ganze Weg über die Brücken im Abspann (`abspann`).
-Im Pixelstil bleibt es bei den Pixelszenen. Die Stellen fürs Handy im Hochformat stehen in `BILD_LAGE` in `welt.js`.
+Im Pixelstil haben alle fünf ein eigenes Gegenstück (`px-herzbaum`, `px-rast`, `px-nebeltor`, `px-sieg`, `px-abspann`), dazu `px-entzuendet`:
+Wenn ein Lagerfeuer zum ersten Mal brennt, kniet der Ritter vor dem Schwert, bei jeder weiteren Rast sitzt er am Feuer.
+Diese sechs sind keine Pillow-Bilder, sondern mit Kling erzeugt, zugeschnitten (ohne Wasserzeichen) und auf 384 × 216 mit 64 Farben gebracht.
+Die Stellen fürs Handy im Hochformat stehen in `BILD_LAGE` in `welt.js`.
 
 ## Technik
 

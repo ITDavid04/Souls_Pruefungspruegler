@@ -7,7 +7,7 @@
    Alles liegt im localStorage: spp.spiel (Spielstand) und spp.prog (Lernkasten je Karte). */
 import * as K from './kern.js';
 import * as R from './raetsel.js';
-import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, LAGER_BILD, RAST_BILD, NEBELTOR_BILD, SIEG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
+import { AKTE, KREISE, KATAKOMBEN, SELTENHEIT, PHANTOM, KUERZEL_SPASS, KATEGORIEN, kreis, kreiseVon, ARENEN, BILD_LAGE, TITEL_BILD, BERG_BILD, LAGER_BILD, RAST_BILD, NEBELTOR_BILD, SIEG_BILD, ABSPANN_BILD, TITEL_TOR, TITEL_ZITAT, INSCHRIFT, INSCHRIFT_NACHTRAG, FLUESTERN_SPASS, WIEDERKEHR, DURCHGANG, RAST, RAST_BERG, TREFFER, DANEBEN, RAETSEL_AUFTRITT, RAETSEL_BOSS, RAETSEL_DANEBEN, MIMIC, WERKSTATT, WERKSTATT_SATZ, KLASSEN, ANLEITUNG, PIXEL, HIMMEL_BILD, PIXEL_TITEL, PIXEL_BILDER, PIXEL_LAGER, PIXEL_ENTZUENDET, INSELN, PIXEL_ARENEN, himmelVon, BOMBE, LANDUNG, ABSTURZ } from './welt.js';
 import * as T from './ton.js';
 import * as P from './pixel.js';
 
@@ -1560,7 +1560,7 @@ function zeige(){
     return;
   }
   if (z.art === 'feuer') {
-    hintergrund(RAST_BILD, 'feuer');
+    hintergrund(pixelStil() && z.neu ? PIXEL_ENTZUENDET : RAST_BILD, 'feuer');
     app.innerHTML =
       '<main class="gross feuer-gross" role="dialog" aria-modal="true" aria-labelledby="feuer-titel">' +
         (pixelStil() ? P.lagerfeuer('gross-feuer') : FLAMME.replace('class="flamme"', 'class="flamme gross-flamme"')) +
@@ -1583,8 +1583,8 @@ function zeige(){
       'Jeder Fehler kostet <b>' + K.schadenFuer(0, true, O.akt, S.ng) + ' Leben</b>. Fragen aus dem ganzen ' + (O.akt === 2 ? 'Prüfungsbereich' : 'Lernfeld') + ', die wackligen öfter.',
       'Karten, die schon sitzen sollten, musst du eintippen.'
     ];
-    /* Arenen behalten ihr Bild, sonst wartet der steinerne Wächter; im Pixelstil die Pixelszene des Ortes */
-    hintergrund(arena || pixelStil() ? O.kampfBild || O.bild : NEBELTOR_BILD, arena ? 'arena-' + z.ort : 'tor', wetterVon(z.ort));
+    /* Arenen behalten ihr Bild, sonst wartet der steinerne Wächter (im Pixelstil sein Gegenstück aus PIXEL_BILDER) */
+    hintergrund(arena ? O.kampfBild || O.bild : NEBELTOR_BILD, arena ? 'arena-' + z.ort : 'tor', wetterVon(z.ort));
     app.innerHTML =
       '<main class="gross nebel' + (arena ? ' tor-' + z.ort : '') + '" role="dialog" aria-modal="true" aria-labelledby="tor-titel">' +
         (arena ? '' : '<div class="nebel-schleier" aria-hidden="true"></div>') +
@@ -1600,7 +1600,7 @@ function zeige(){
     return;
   }
   if (z.art === 'sieg') {
-    hintergrund(pixelStil() ? O.bild : SIEG_BILD, 'sieg');
+    hintergrund(SIEG_BILD, 'sieg');
     const belohnung = z.belohnung === 'splitter' ? ' · Kaffeeflakon-Splitter: jetzt <b>' + S.flakons + '</b> Flakons'
       : z.belohnung === 'roestung' ? ' · Der Kaffee ist stärker geröstet: heilt jetzt <b>' + heilung() + '</b>' : '';
     app.innerHTML =
