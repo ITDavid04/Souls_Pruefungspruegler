@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Prüfungsprügler Werbevideo</title>
+<!-- Werbevideo, 25 Sekunden, 1080 x 1920, 30 Bilder je Sekunde.
+     Jedes Bild entsteht allein aus der Zeit: render(t) setzt alles, nichts läuft von selbst.
+     Ansehen: npm run build, dann node werbung/render.mjs --schau (öffnet nichts, nennt die Adresse).
+     Geschnitten wird auf 96 Schläge je Minute, ein Schlag sind 0,625 Sekunden. -->
+<style>
+@font-face { font-family: 'Cinzel'; src: url(/docs/fonts/cinzel-latin-wght-normal.woff2) format('woff2'); font-weight: 400 900; }
+@font-face { font-family: 'Cormorant Garamond'; src: url(/docs/fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2'); font-weight: 500; font-style: italic; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(/docs/fonts/atkinson-hyperlegible-latin-400-normal.woff2) format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url(/docs/fonts/atkinson-hyperlegible-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+@font-face { font-family: 'Pixelify Sans'; src: url(/docs/fonts/pixelify-sans-latin-700-normal.woff2) format('woff2'); font-weight: 700; }
+:root {
+  --nacht: #0b0908; --stein: #17120f; --linie: #43372d; --text: #ece4d6; --blass: #b0a492;
+  --gold: #e0b866; --gold-tief: #a8823c; --glut: #e8813a; --blut: #b1271d; --blut-hell: #e4594a;
+  --ok: #8fca7a; --falsch: #ef7464;
+  --titel: 'Cinzel', Georgia, serif; --zitat: 'Cormorant Garamond', Georgia, serif; --lauf: 'Atkinson Hyperlegible', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #000; overflow: hidden; }
+#buehne { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000; color: var(--text); font-family: var(--lauf); transform-origin: 0 0; }
+.szene { position: absolute; inset: 0; overflow: hidden; display: none; }
+.bild { position: absolute; left: 50%; top: 50%; width: 1140px; height: 1920px; margin: -960px 0 0 -570px; object-fit: cover; will-change: transform; }
+.schleier { position: absolute; inset: 0; }
+.mitte { position: absolute; left: 60px; right: 60px; text-align: center; }
+.ch { display: inline-block; will-change: transform, opacity; padding: .16em 0 .05em; margin: -.16em 0 -.05em; }   /* Polster, damit der Goldverlauf die Umlautpunkte nicht abschneidet */
+.gold .ch, .gold-text { background: linear-gradient(180deg, #fff3d0 0%, #f0cd82 38%, #c8973f 72%, #8a6426 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.kopf { font-family: var(--titel); font-weight: 600; letter-spacing: .32em; font-size: 30px; color: var(--gold); text-transform: uppercase; text-shadow: 0 2px 14px #000; }
+.gross { font-family: var(--titel); font-weight: 800; line-height: .98; text-shadow: 0 6px 40px rgba(0,0,0,.85); }
+.kursiv { font-family: var(--zitat); font-style: italic; font-weight: 500; color: var(--text); text-shadow: 0 2px 18px #000; }
+
+/* Handy */
+.handy { position: absolute; left: 190px; top: 440px; width: 700px; height: 1487px; border-radius: 78px; background: #0c0a09; padding: 12px;
+  box-shadow: 0 0 0 2px #3a2f26, 0 0 0 5px #0a0807, 0 60px 120px rgba(0,0,0,.8), 0 0 var(--schein-weite, 0px) var(--schein, transparent); will-change: transform; }
+.handy .glas { position: relative; width: 100%; height: 100%; border-radius: 66px; overflow: hidden; background: #000; }
+.handy .glas img { position: absolute; left: 0; top: 0; width: 100%; display: block; }
+.handy .glanz { position: absolute; inset: 0; border-radius: 66px; background: linear-gradient(118deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,0) 30%); pointer-events: none; }
+.tipp { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 5px solid rgba(255,235,190,.95); background: rgba(255,225,160,.22); opacity: 0; }
+.flug { position: absolute; font-family: var(--titel); font-weight: 800; font-size: 54px; white-space: nowrap; opacity: 0; text-shadow: 0 0 26px currentColor, 0 3px 10px #000; }
+
+/* Szene 1 */
+#s1 { background: #000; }
+#s1 .glimmen { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 34% at 50% 48%, rgba(120,16,10,.5), rgba(0,0,0,0) 70%); }
+#s1 .band { position: absolute; left: 0; right: 0; top: 760px; height: 400px; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.92) 22%, rgba(0,0,0,.92) 78%, rgba(0,0,0,0)); }
+#tot { top: 808px; font-size: 128px; font-weight: 600; color: #a3221a; text-shadow: 0 0 60px rgba(190,30,20,.55); line-height: 1.08; }
+#ursache { top: 1140px; font-size: 62px; color: #cbbfae; }
+
+/* Szene 2 */
+#name { top: 760px; font-size: 150px; }
+#name div { white-space: nowrap; }
+#s2 .linie, #s8 .linie { position: absolute; left: 50%; width: 520px; margin-left: -260px; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+/* Szene 3 */
+.spruch { top: 196px; }
+.spruch .a { font-family: var(--titel); font-weight: 800; font-size: 104px; line-height: 1; text-shadow: 0 0 44px currentColor, 0 4px 18px #000; }
+.spruch .b { font-family: var(--titel); font-weight: 600; font-size: 60px; margin-top: 12px; color: var(--text); text-shadow: 0 4px 18px #000; }
+
+/* Szene 5 */
+#bosszahl { top: 290px; font-size: 290px; }
+#bosswort { top: 624px; font-size: 96px; letter-spacing: .22em; padding-left: .22em; }
+.bossname { position: absolute; left: 40px; right: 40px; top: 1270px; text-align: center; font-family: var(--titel); font-weight: 700; font-size: 74px; line-height: 1.05; color: #fff; text-shadow: 0 0 30px rgba(70,220,230,.6), 0 4px 22px #000; opacity: 0; }
+.bossthema { position: absolute; left: 40px; right: 40px; top: 1366px; text-align: center; font-family: var(--zitat); font-style: italic; font-size: 48px; color: #bfeef2; text-shadow: 0 2px 14px #000; opacity: 0; }
+#bezwungen { top: 834px; font-size: 132px; filter: drop-shadow(0 0 34px rgba(255,190,90,.55)); }
+.linie6 { position: absolute; left: 50%; width: 760px; margin-left: -380px; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+/* Szene 7 */
+.zahl { position: absolute; left: 632px; width: 410px; opacity: 0; }
+.zahl b { display: inline-block; font-family: var(--titel); font-weight: 800; font-size: 118px; line-height: 1; }
+.zahl span { display: block; font-size: 34px; white-space: nowrap; color: var(--text); margin-top: 8px; font-weight: 700; }
+.zahl i { display: block; width: 90px; height: 4px; background: var(--gold); margin-bottom: 22px; }
+#stilkopf { top: 210px; }
+#stilkopf .a { font-family: var(--titel); font-weight: 800; font-size: 92px; }
+#stilkopf .px { font-family: 'Pixelify Sans', sans-serif; font-weight: 700; color: #ffd23a; text-shadow: 4px 4px 0 #1c1233, -4px 4px 0 #1c1233, 4px -4px 0 #1c1233, -4px -4px 0 #1c1233, 0 8px 0 #1c1233; }
+#wisch { position: absolute; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: #fff; box-shadow: 0 0 30px 8px rgba(255,255,255,.8); }
+
+/* Szene 8 */
+#endname { top: 1196px; font-size: 100px; white-space: nowrap; }
+#endsatz { top: 1344px; font-size: 58px; }
+#knopf { position: absolute; left: 150px; right: 150px; top: 1452px; height: 124px; border-radius: 14px; border: 3px solid var(--gold);
+  background: linear-gradient(180deg, #4a3620, #22180e); box-shadow: 0 0 0 6px rgba(224,184,102,.16), 0 0 var(--puls, 40px) rgba(232,129,58,.55), inset 0 2px 0 rgba(255,240,200,.25);
+  font-family: var(--titel); font-weight: 700; font-size: 52px; letter-spacing: .1em; color: #fff3d6; display: flex; align-items: center; justify-content: center; }
+#adresse { top: 1604px; font-size: 37px; font-weight: 700; color: #fff; letter-spacing: .01em; text-shadow: 0 2px 12px #000; }
+#flamme { position: absolute; left: 50%; top: 1010px; width: 170px; height: 170px; margin-left: -85px; filter: drop-shadow(0 0 40px rgba(240,140,50,.8)); }
+
+/* Ebenen über allem */
+#funken { position: absolute; inset: 0; pointer-events: none; }
+#rand { position: absolute; inset: 0; background: radial-gradient(ellipse 85% 70% at 50% 50%, rgba(0,0,0,0) 52%, rgba(0,0,0,.62) 100%); pointer-events: none; }
+#blitz { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+#korn { position: absolute; inset: -300px; opacity: .075; mix-blend-mode: overlay; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="buehne">
+
+  <!-- 1 · Der Haken: der Satz, den alle kennen -->
+  <section class="szene" id="s1">
+    <div class="glimmen"></div><div class="band"></div>
+    <div class="mitte gross" id="tot">DU BIST<br>GESTORBEN</div>
+    <div class="mitte kursiv" id="ursache">Todesursache: eine Lernkarte.</div>
+  </section>
+
+  <!-- 2 · Der Name -->
+  <section class="szene" id="s2">
+    <img class="bild" id="b2" src="/src/img/lager-hoch.webp">
+    <div class="schleier" style="background: linear-gradient(180deg, rgba(8,5,8,.55) 0%, rgba(8,5,8,.1) 28%, rgba(8,5,8,.72) 52%, rgba(8,5,8,.9) 78%, rgba(8,5,8,.6) 100%)"></div>
+    <div class="mitte kopf" id="k2" style="top: 690px">AP1 und AP2 · Fachinformatik</div>
+    <div class="mitte gross gold" id="name"><div>PRÜFUNGS-</div><div>PRÜGLER</div></div>
+    <div class="linie" id="l2" style="top: 1090px"></div>
+    <div class="mitte kursiv" id="t2a" style="top: 1124px; font-size: 76px">Lernkarten als Souls-like.</div>
+    <div class="mitte" id="t2b" style="top: 1236px; font-size: 42px; color: var(--blass); font-weight: 700; text-shadow: 0 2px 12px #000">Für deine IHK-Abschlussprüfung.</div>
+  </section>
+
+  <!-- 3 und 4 · Richtig und falsch -->
+  <section class="szene" id="s3">
+    <img class="bild" id="b3" src="/src/img/kreis-04.webp" style="filter: blur(12px) brightness(.8) saturate(.9)">
+    <div class="schleier" style="background: radial-gradient(ellipse 90% 60% at 50% 55%, rgba(0,0,0,.1), rgba(0,0,0,.72))"></div>
+    <div class="schleier" id="rot3" style="background: radial-gradient(ellipse 100% 80% at 50% 55%, rgba(200,30,20,.0), rgba(200,30,20,.75)); opacity: 0"></div>
+    <div class="mitte spruch" id="sp3a"><div class="a" style="color: var(--ok)">RICHTIG</div><div class="b">bringt Seelen.</div></div>
+    <div class="mitte spruch" id="sp3b"><div class="a" style="color: var(--falsch)">FALSCH</div><div class="b">kostet Leben.</div></div>
+    <div class="handy" id="h3"><div class="glas">
+      <img id="h3a" src="screens/frage.webp"><img id="h3b" src="screens/richtig.webp"><img id="h3c" src="screens/knapp.webp"><img id="h3d" src="screens/falsch.webp">
+      <div class="tipp" id="tp3"></div>
+      <div class="glanz"></div>
+    </div>
+      <div class="flug" id="f3a" style="color: #ffd98a">+10 SEELEN</div>
+      <div class="flug" id="f3b" style="color: #ff6a58">−20 LEBEN</div>
+    </div>
+  </section>
+
+  <!-- 5 · Tod und Blutfleck -->
+  <section class="szene" id="s5">
+    <div class="schleier" style="background: radial-gradient(ellipse 90% 60% at 50% 60%, rgba(110,14,10,.55), #050303 78%)"></div>
+    <div class="mitte spruch" id="sp5a" style="top: 206px"><div class="a" style="color: #d5352a; font-size: 84px">STIRBST DU,</div><div class="b" style="font-size: 54px">bleiben deine Seelen liegen.</div></div>
+    <div class="mitte spruch" id="sp5b" style="top: 206px"><div class="a gold-text" style="font-size: 92px; text-shadow: none; filter: drop-shadow(0 0 26px rgba(224,184,102,.6))">HOL SIE DIR</div><div class="b" style="font-size: 62px">zurück.</div></div>
+    <div class="handy" id="h5"><div class="glas">
+      <img id="h5a" src="screens/gestorben.webp"><img id="h5b" src="screens/blutfleck.webp">
+      <div id="mark5" style="position: absolute; left: 3.2%; width: 93.6%; top: 53.2%; height: 8.6%; border-radius: 12px; border: 4px solid #ff5a48; box-shadow: 0 0 40px 6px rgba(255,70,50,.75), inset 0 0 26px rgba(255,70,50,.35); opacity: 0"></div>
+      <div class="glanz"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · Die Bosse -->
+  <section class="szene" id="s6">
+    <img class="bild" id="b6" src="/src/img/nebeltor-hoch.webp">
+    <div class="schleier" style="background: linear-gradient(180deg, rgba(4,6,12,.86) 0%, rgba(4,6,12,.5) 30%, rgba(4,6,12,0) 46%, rgba(4,6,12,.1) 58%, rgba(4,6,12,.9) 76%, rgba(4,6,12,.94) 100%)"></div>
+    <div id="teil6">
+      <div class="mitte kopf" id="k6" style="top: 236px; color: #8fe6ec">Hinter dem Nebeltor</div>
+      <div class="mitte gross gold-text" id="bosszahl">14</div>
+      <div class="mitte gross" id="bosswort" style="color: #fff">BOSSE</div>
+      <div id="bossliste"></div>
+    </div>
+    <div class="schleier" id="gold6" style="opacity: 0; background: rgba(5,3,2,.5)">
+      <div style="position: absolute; left: 0; right: 0; top: 700px; height: 520px; background: linear-gradient(180deg, rgba(0,0,0,0), rgba(4,2,1,.9) 24%, rgba(4,2,1,.9) 76%, rgba(0,0,0,0))"></div>
+      <div style="position: absolute; left: 0; right: 0; top: 660px; height: 600px; background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255,190,90,.34), rgba(255,190,90,0) 70%)"></div>
+      <div class="linie6" style="top: 800px"></div><div class="linie6" style="top: 1118px"></div>
+    </div>
+    <div class="mitte gross gold" id="bezwungen">GEGNER<br>BEZWUNGEN</div>
+  </section>
+
+  <!-- 7 · Was drin ist -->
+  <section class="szene" id="s7">
+    <img class="bild" id="b7" src="/src/img/abspann-hoch.webp" style="filter: blur(10px) brightness(.42)">
+    <div class="schleier" style="background: linear-gradient(180deg, rgba(6,5,10,.7), rgba(6,5,10,.2) 40%, rgba(6,5,10,.75))"></div>
+    <div class="mitte" id="stilkopf"><span class="a gold-text" id="sk1">SOULS</span><span class="a" id="sk2" style="font-size: 54px; color: var(--text); font-weight: 600; margin: 0 26px; position: relative; top: -12px">oder</span><span class="a px" id="sk3">Pixel</span></div>
+    <div class="handy" id="h7" style="left: 50px; top: 430px; width: 540px; height: 1148px; border-radius: 62px; padding: 10px"><div class="glas" style="border-radius: 52px">
+      <img src="screens/frage.webp"><img id="h7b" src="screens/px-frage.webp">
+      <div id="wisch"></div>
+      <div class="glanz" style="border-radius: 52px"></div>
+    </div></div>
+    <div class="zahl" id="z1" style="top: 540px"><i></i><b class="gold-text" id="z1n">1.438</b><span>Karten für AP1 und AP2</span></div>
+    <div class="zahl" id="z2" style="top: 860px"><i></i><b class="gold-text">OFFLINE</b><span>läuft auch ohne Netz</span></div>
+    <div class="zahl" id="z3" style="top: 1190px"><i></i><b class="gold-text">0 €</b><span>kostenlos, ohne Konto</span></div>
+  </section>
+
+  <!-- 8 · Der Aufruf -->
+  <section class="szene" id="s8">
+    <img class="bild" id="b8" src="/src/img/sieg-hoch.webp">
+    <div class="schleier" style="background: linear-gradient(180deg, rgba(6,4,6,.45) 0%, rgba(6,4,6,0) 22%, rgba(6,4,6,0) 44%, rgba(6,4,6,.86) 60%, rgba(6,4,6,.96) 100%)"></div>
+    <svg id="flamme" viewBox="10 6 44 50"><path fill="#c44612" d="M32 11.5 C36 18 46 29 46.2 39 C46.2 46 40 51.2 32 51.2 C24 51.2 17.8 46 17.8 39 C18 29 28 18 32 11.5Z"/><path fill="#ec8232" d="M32 21.8 C35 27 41.8 35 41.9 42.1 C41.9 47.5 37.5 51.2 32 51.2 C26.5 51.2 22.1 47.5 22.1 42.1 C22.2 35 29 27 32 21.8Z"/><path fill="#ffe296" d="M32 33.9 C33.6 37 37.2 42 37.2 45.9 C37.2 49 34.9 51.2 32 51.2 C29.1 51.2 26.8 49 26.8 45.9 C26.8 42 30.4 37 32 33.9Z"/></svg>
+    <div class="mitte gross gold" id="endname" style="left: 20px; right: 20px">PRÜFUNGSPRÜGLER</div>
+    <div class="mitte kursiv" id="endsatz">Wer die Karten lernt, kommt wieder raus.</div>
+    <div id="knopf">JETZT HINABSTEIGEN</div>
+    <div class="mitte" id="adresse">itdavid04.github.io/Souls_Pruefungspruegler</div>
+  </section>
+
+  <canvas id="funken" width="1080" height="1920"></canvas>
+  <div id="rand"></div>
+  <div id="blitz"></div>
+  <div id="korn"></div>
+</div>
+
+<script>
+'use strict';
+const BPS = 0.625;                                   /* ein Schlag bei 96 je Minute */
+const T = { s1: 0, s2: 2.5, s3: 5.625, falsch: 8.125, s5: 10, s6: 13.125, s7: 17.5, s8: 20.625, ende: 25 };
+const DAUER = T.ende, FPS = 30;
+const $ = id => document.getElementById(id);
+const kl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => kl((t - a) / (b - a));         /* 0 bis 1 zwischen a und b */
+const mix = (a, b, x) => a + (b - a) * x;
+const aus = x => 1 - Math.pow(1 - x, 3);
+const aus5 = x => 1 - Math.pow(1 - x, 5);
+const ein = x => x * x * x;
+const beides = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const feder = x => { const c = 1.9; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+function zufall(seed){ let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
+function setz(el, o){
+  if (o.o !== undefined) el.style.opacity = o.o;
+  let tf = '';
+  if (o.x || o.y) tf += `translate(${(o.x || 0).toFixed(2)}px,${(o.y || 0).toFixed(2)}px) `;
+  if (o.r) tf += `rotate(${o.r.toFixed(3)}deg) `;
+  if (o.s !== undefined) tf += `scale(${o.s.toFixed(4)}) `;
+  if (o.sx !== undefined) tf += `scaleX(${o.sx.toFixed(4)}) `;
+  el.style.transform = tf || 'none';
+  if (o.w !== undefined) el.style.filter = o.w > .05 ? `blur(${o.w.toFixed(2)}px)` : 'none';
+}
+function buchstaben(el){
+  const gehe = n => { for (const k of [...n.childNodes]) {
+    if (k.nodeType === 3) { const f = document.createDocumentFragment(); for (const c of k.textContent) { if (c === ' ') f.append(' '); else { const s = document.createElement('span'); s.className = 'ch'; s.textContent = c; f.append(s); } } k.replaceWith(f); }
+    else if (k.nodeType === 1 && k.tagName !== 'BR') gehe(k); } };
+  gehe(el); return [...el.querySelectorAll('.ch')];
+}
+/* Buchstaben steigen nacheinander auf */
+function steige(chs, t, start, schritt = .035, dauer = .5, hub = 70){
+  chs.forEach((c, i) => { const x = p(t, start + i * schritt, start + i * schritt + dauer); const e = feder(x);
+    c.style.opacity = kl(x * 2.2); c.style.transform = `translateY(${((1 - e) * hub).toFixed(2)}px) scale(${mix(1.25, 1, aus(x)).toFixed(3)})`; });
+}
+/* Text so groß wie möglich, aber nie breiter als die Bühne erlaubt */
+function passe(el, breite){ let fs = parseFloat(getComputedStyle(el).fontSize); el.style.whiteSpace = 'nowrap'; const kinder = el.children.length && el.querySelector('div') ? [...el.children] : [el];
+  const w = () => Math.max(...kinder.map(k => { const r = document.createRange(); r.selectNodeContents(k); return r.getBoundingClientRect().width / skala; }));
+  while (w() > breite && fs > 20) { fs -= 2; el.style.fontSize = fs + 'px'; } }
+
+let skala = 1;
+const CH = {};
+const BOSSE = [
+  ['Die Endlosrekursion', 'Algorithmen und OOP'],
+  ['Das Gottobjekt', 'Modellierung und Architektur'],
+  ['Der kartesische JOIN', 'Datenbanken und SQL'],
+  ['Der Single Point of Failure', 'IT-Systeme und Sicherheit'],
+];
+const BOSS_AB = 0.625, BOSS_TAKT = 0.625;               /* erste Einblendung und Abstand, in Sekunden nach Szenenbeginn */
+
+function aufbau(){
+  const alle = [...document.querySelectorAll('.szene')]; alle.forEach(e => e.style.display = 'block');   /* zum Messen müssen alle Szenen sichtbar sein */
+  CH.name = buchstaben($('name')); CH.end = buchstaben($('endname')); CH.bez = buchstaben($('bezwungen')); CH.k2 = buchstaben($('k2'));
+  passe($('name'), 980); passe($('endname'), 1010); passe($('bezwungen'), 980);
+  const liste = $('bossliste');
+  BOSSE.forEach(([n, th], i) => { liste.insertAdjacentHTML('beforeend', `<div class="bossname" id="bn${i}">${n}</div><div class="bossthema" id="bt${i}">${th}</div>`); });
+  BOSSE.forEach((_, i) => passe($('bn' + i), 1000));
+  document.querySelectorAll('.zahl b').forEach(b => passe(b, 410));
+  alle.forEach(e => e.style.display = 'none');
+  /* Filmkorn: eine feste Kachel, die je Bild verschoben wird */
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); const d = x.createImageData(256, 256); const r = zufall(7);
+  for (let i = 0; i < d.data.length; i += 4) { const v = r() * 255 | 0; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  x.putImageData(d, 0, 0); $('korn').style.background = `url(${c.toDataURL()})`;
+}
+
+/* Funken: steigen auf, Lage allein aus der Zeit */
+const FUNKEN = (() => { const r = zufall(42); return Array.from({ length: 90 }, () => ({ x: r() * 1080, y: r() * 1920, v: 60 + r() * 190, a: 12 + r() * 46, f: .4 + r() * 1.4, ph: r() * 6.28, g: 1.6 + r() * 4.2, fl: 1 + r() * 5, tief: r() })); })();
+function funken(t, staerke, farbe){
+  const c = $('funken'), x = c.getContext('2d'); x.clearRect(0, 0, 1080, 1920); if (staerke <= 0) return;
+  x.globalCompositeOperation = 'lighter';
+  for (const f of FUNKEN) {
+    const y = ((f.y - f.v * t) % 2000 + 2000) % 2000 - 40;
+    const xx = f.x + Math.sin(t * f.f + f.ph) * f.a + Math.sin(t * f.f * .37 + f.ph * 2) * f.a * .6;
+    const al = staerke * (.35 + .65 * Math.abs(Math.sin(t * f.fl + f.ph))) * kl(y / 500 + .25) * (.4 + .6 * f.tief);
+    const g = x.createRadialGradient(xx, y, 0, xx, y, f.g * 4.5);
+    g.addColorStop(0, `rgba(${farbe[0]},${al})`); g.addColorStop(.25, `rgba(${farbe[1]},${al * .55})`); g.addColorStop(1, `rgba(${farbe[1]},0)`);
+    x.fillStyle = g; x.beginPath(); x.arc(xx, y, f.g * 4.5, 0, 6.2832); x.fill();
+  }
+}
+const GLUT = ['255,236,190', '255,140,50'], ROT = ['255,180,170', '220,40,30'], EIS = ['220,255,255', '70,210,225'], ROSA = ['255,240,235', '255,150,170'];
+
+/* ---------- Szenen ---------- */
+const SZENEN = [
+  { id: 's1', a: T.s1, b: T.s2, mal(l){
+    const raus = ein(p(l, 2.2, 2.5));
+    $('tot').style.letterSpacing = mix(.03, .1, aus(p(l, 0, 2.5))).toFixed(4) + 'em';
+    setz($('tot'), { o: aus(p(l, 0, .5)) * (1 - raus), s: 1 + .06 * p(l, 0, 2.5) + raus * .5, w: (1 - p(l, 0, .45)) * 8 + raus * 14 });
+    setz($('ursache'), { o: p(l, 1.3, 1.7) * (1 - p(l, 2.1, 2.35)), y: (1 - aus(p(l, 1.3, 1.8))) * 26 });
+    $('s1').querySelector('.glimmen').style.opacity = .5 + .5 * p(l, 0, 1.2);
+    funken(l, .5 * p(l, .4, 1.6), ROT);
+  } },
+  { id: 's2', a: T.s2, b: T.s3, mal(l){
+    setz($('b2'), { s: 1.2 - .1 * aus(p(l, 0, 3.2)), y: -40 * p(l, 0, 3.2) });
+    $('k2').style.letterSpacing = mix(.6, .32, aus(p(l, .1, .9))).toFixed(3) + 'em';
+    setz($('k2'), { o: p(l, .1, .55) });
+    steige(CH.name, l, .22, .034, .5);
+    setz($('l2'), { sx: aus5(p(l, .85, 1.4)), o: p(l, .85, 1.0) });
+    setz($('t2a'), { o: p(l, 1.1, 1.5), y: (1 - aus(p(l, 1.1, 1.6))) * 30 });
+    setz($('t2b'), { o: p(l, 1.55, 1.95), y: (1 - aus(p(l, 1.55, 2.0))) * 24 });
+    funken(l + 3, .95, GLUT);
+  } },
+  { id: 's3', a: T.s3, b: T.s5, mal(l){
+    const F = T.falsch - T.s3;                         /* 2,5: Wechsel zu „falsch“ */
+    const TA = 1.25, TB = F + 1.25;                    /* Treffer und Fehler, je auf dem Schlag */
+    setz($('b3'), { s: 1.9 + .06 * p(l, 0, 4.4) });
+    /* Handy fährt hoch, wackelt beim Fehler */
+    const rein = aus5(p(l, 0, .7));
+    const wack = l >= TB ? Math.sin((l - TB) * 62) * 22 * Math.pow(1 - p(l, TB, TB + .55), 2) : 0;
+    const stoss = l >= TA && l < F ? Math.sin(p(l, TA, TA + .35) * Math.PI) * .018 : 0;
+    setz($('h3'), { y: (1 - rein) * 1300, x: wack, r: (1 - rein) * 5 + wack * .03, s: 1 + stoss });
+    $('h3a').style.opacity = l < TA + .1 ? 1 : 0;
+    $('h3b').style.opacity = l < F ? p(l, TA, TA + .1) : 0;
+    $('h3c').style.opacity = l >= F ? 1 : 0;
+    $('h3d').style.opacity = p(l, TB, TB + .08);
+    /* Schein ums Handy */
+    const gruen = l < F ? 1 - p(l, TA, TA + 1.1) : 0, rot = 1 - p(l, TB, TB + .7);
+    const h = $('h3');
+    if (l >= TB) { h.style.setProperty('--schein', `rgba(239,90,70,${.85 * rot})`); h.style.setProperty('--schein-weite', (60 + 140 * rot) + 'px'); }
+    else if (l >= TA && l < F) { h.style.setProperty('--schein', `rgba(143,202,122,${.8 * gruen})`); h.style.setProperty('--schein-weite', (50 + 130 * gruen) + 'px'); }
+    else h.style.setProperty('--schein-weite', '0px');
+    /* Fingertipp: Lage in Anteilen des Bildschirms */
+    const tp = $('tp3'); const tippe = (zeit, x, y) => { const q = p(l, zeit - .12, zeit + .28); if (q > 0 && q < 1) { tp.style.left = x + '%'; tp.style.top = y + '%'; setz(tp, { o: Math.sin(q * Math.PI), s: .35 + q * .9 }); return true; } return false; };
+    if (!tippe(TA, 46, 61.5) && !tippe(TB, 46, 30.5)) tp.style.opacity = 0;
+    /* fliegende Zahlen */
+    const qa = p(l, TA + .02, TA + .95);
+    setz($('f3a'), { o: l < F ? kl(qa * 6) * (1 - p(qa, .78, 1)) : 0, x: mix(150, 440, aus(qa)), y: mix(880, 30, beides(qa)), s: mix(.7, 1.15, feder(p(qa, 0, .4))) });
+    const qb = p(l, TB + .02, TB + .6);
+    setz($('f3b'), { o: kl(qb * 6) * (1 - p(qb, .7, 1)), x: 190, y: mix(470, 330, aus(qb)), s: mix(.7, 1.2, feder(p(qb, 0, .5))) });
+    /* Sprüche */
+    const sa = aus5(p(l, .15, .7));
+    setz($('sp3a'), { o: l < F ? kl(p(l, .15, .5)) : 0, y: (1 - sa) * -40, s: 1 + (l >= TA ? Math.sin(p(l, TA, TA + .3) * Math.PI) * .06 : 0) });
+    const sb = aus5(p(l, F, F + .45));
+    setz($('sp3b'), { o: l >= F ? 1 : 0, y: (1 - sb) * -40, x: wack * .5, s: mix(1.25, 1, sb) + (l >= TB ? Math.sin(p(l, TB, TB + .3) * Math.PI) * .07 : 0) });
+    $('rot3').style.opacity = l >= TB ? .9 * (1 - p(l, TB, TB + .6)) : 0;
+    funken(l, .35, l >= TB ? ROT : GLUT);
+  } },
+  { id: 's5', a: T.s5, b: T.s6, mal(l){
+    const W = 1.5625;                                  /* nach zweieinhalb Schlägen: der Blutfleck am Lagerfeuer */
+    setz($('h5'), { s: mix(1.06, 1, aus(p(l, 0, .8))), y: 10 * Math.sin(l * 1.3) });
+    $('h5b').style.opacity = beides(p(l, W, W + .35));
+    const puls = .55 + .45 * Math.sin((l - W) * 9);
+    $('mark5').style.opacity = p(l, W + .3, W + .55) * puls;
+    $('h5').style.setProperty('--schein', `rgba(210,40,30,${.5 + .2 * Math.sin(l * 4)})`); $('h5').style.setProperty('--schein-weite', '120px');
+    const a = aus5(p(l, .2, .7));
+    setz($('sp5a'), { o: p(l, .2, .5) * (1 - p(l, W - .15, W)), y: (1 - a) * -36 });
+    const b = aus5(p(l, W, W + .5));
+    setz($('sp5b'), { o: p(l, W, W + .2), s: mix(1.3, 1, b) });
+    funken(l, .55, l < W ? ROT : GLUT);
+  } },
+  { id: 's6', a: T.s6, b: T.s7, mal(l){
+    const SIEG = 3.125;                                /* fünf Schläge: Gegner bezwungen */
+    setz($('b6'), { s: 1.04 + .16 * p(l, 0, 4.4) + (l >= SIEG ? .05 * aus(p(l, SIEG, SIEG + .3)) : 0), y: 20 - 70 * p(l, 0, 4.4) });
+    const weg = p(l, SIEG - .1, SIEG);
+    $('teil6').style.opacity = 1 - weg;
+    setz($('k6'), { o: p(l, .05, .4) });
+    const z = aus5(p(l, .05, .6));
+    $('bosszahl').textContent = Math.round(mix(1, 14, aus(p(l, .05, .55))));
+    setz($('bosszahl'), { o: kl(p(l, .05, .25)), s: mix(1.7, 1, z) });
+    setz($('bosswort'), { o: p(l, .3, .6), y: (1 - aus(p(l, .3, .7))) * 30 });
+    BOSSE.forEach((_, i) => {
+      const a = BOSS_AB + i * BOSS_TAKT, q = p(l, a, a + BOSS_TAKT), da = l >= a && l < a + BOSS_TAKT;
+      const e = aus5(p(q, 0, .45));
+      setz($('bn' + i), { o: da ? kl(q * 8) * (1 - p(q, .86, 1)) : 0, s: mix(1.6, 1, e), w: (1 - e) * 10 });
+      setz($('bt' + i), { o: da ? p(q, .18, .4) * (1 - p(q, .86, 1)) : 0, y: (1 - aus(p(q, .18, .5))) * 16 });
+    });
+    $('gold6').style.opacity = l >= SIEG ? aus(p(l, SIEG, SIEG + .25)) : 0;
+    if (l >= SIEG) steige(CH.bez, l, SIEG, .012, .3, 50); else CH.bez.forEach(c => c.style.opacity = 0);
+    setz($('bezwungen'), { s: 1 + .05 * p(l, SIEG, 4.4) });
+    funken(l, l >= SIEG ? 1 : .7, l >= SIEG ? GLUT : EIS);
+  } },
+  { id: 's7', a: T.s7, b: T.s8, mal(l){
+    setz($('b7'), { s: 1.25 + .05 * p(l, 0, 3.2) });
+    const rein = aus5(p(l, 0, .6));
+    setz($('h7'), { x: (1 - rein) * -620, r: mix(-9, -3, rein) });
+    /* Wischer: Souls nach Pixel und zurück */
+    const hin = beides(p(l, .5, 1.25)), her = beides(p(l, 2.0, 2.7)); const w = kl(hin - her) * 100;
+    $('h7b').style.clipPath = `inset(0 ${(100 - w).toFixed(2)}% 0 0)`;
+    $('wisch').style.left = w + '%'; $('wisch').style.opacity = (w > .5 && w < 99.5) ? 1 : 0;
+    setz($('sk1'), { o: p(l, .05, .35), s: 1 + .08 * (1 - kl(w / 100)) * 0 });
+    $('sk1').style.display = $('sk3').style.display = 'inline-block';
+    setz($('sk2'), { o: p(l, .25, .5) }); $('sk2').style.display = 'inline-block';
+    setz($('sk3'), { o: p(l, .5, .7), s: mix(1.5, 1, feder(p(l, .5, .95))) });
+    [['z1', .625], ['z2', 1.25], ['z3', 1.875]].forEach(([id, a]) => { const e = aus5(p(l, a, a + .5)); setz($(id), { o: kl(p(l, a, a + .2)), x: (1 - e) * 140 }); });
+    $('z1n').textContent = Math.round(mix(0, 1438, aus5(p(l, .625, 1.4)))).toLocaleString('de-DE');
+    funken(l, .4, ROSA);
+  } },
+  { id: 's8', a: T.s8, b: T.ende + 1, mal(l){
+    setz($('b8'), { s: 1.34 - .1 * aus(p(l, 0, 4.4)), y: -150 + 30 * p(l, 0, 4.4) });
+    const fl = feder(p(l, .1, .7));
+    setz($('flamme'), { o: kl(p(l, .1, .3)), s: fl * (1 + .035 * Math.sin(l * 7)), y: 4 * Math.sin(l * 3.1) });
+    steige(CH.end, l, .3, .03, .5, 60);
+    setz($('endsatz'), { o: p(l, 1.0, 1.4), y: (1 - aus(p(l, 1.0, 1.5))) * 24 });
+    const k = feder(p(l, 1.5, 2.05));
+    setz($('knopf'), { o: kl(p(l, 1.5, 1.7)), s: mix(.7, 1, k) * (1 + .022 * Math.sin((l - 1.5) * Math.PI * 2 / BPS) * p(l, 2.1, 2.4)) });
+    $('knopf').style.setProperty('--puls', (46 + 30 * Math.sin((l - 1.5) * Math.PI * 2 / BPS)) + 'px');
+    setz($('adresse'), { o: p(l, 2.0, 2.4), y: (1 - aus(p(l, 2.0, 2.5))) * 18 });
+    funken(l + 9, 1, GLUT);
+  } },
+];
+/* Blitze auf den Schnitten: Zeit, Farbe, Stärke */
+const BLITZE = [[T.s2, '255,236,200', .85], [T.s3, '255,236,200', .5], [T.falsch, '255,120,100', .4], [T.s5, '0,0,0', 1], [T.s6, '190,250,255', .7], [T.s6 + 3.125, '255,236,190', .9], [T.s7, '255,236,200', .55], [T.s8, '255,236,200', .95]];
+
+function render(t){
+  t = kl(t, 0, DAUER);
+  for (const s of SZENEN) { const an = t >= s.a && t < s.b; const el = $(s.id); el.style.display = an ? 'block' : 'none'; if (an) s.mal(t - s.a, t); }
+  let b = 0, farbe = '255,255,255';
+  for (const [z, f, st] of BLITZE) { const v = t >= z ? st * Math.pow(1 - p(t, z, z + .32), 2.2) : 0; if (v > b) { b = v; farbe = f; } }
+  const bl = $('blitz'); bl.style.background = `rgb(${farbe})`; bl.style.opacity = b;
+  /* sanft ins Schwarz am Ende */
+  const aus_ = p(t, DAUER - .45, DAUER); if (aus_ > 0) { bl.style.background = '#000'; bl.style.opacity = Math.max(b, beides(aus_)); }
+  const bild = Math.round(t * FPS); const r = zufall(bild + 1); $('korn').style.transform = `translate(${(r() * 256 | 0)}px,${(r() * 256 | 0)}px)`;
+}
+window.render = render; window.DAUER = DAUER; window.FPS = FPS;
+
+window.bereit = (async () => {
+  await document.fonts.ready;
+  await Promise.all(['600 30px Cinzel', '800 100px Cinzel', 'italic 500 40px "Cormorant Garamond"', '700 40px "Atkinson Hyperlegible"', '700 40px "Pixelify Sans"'].map(f => document.fonts.load(f)));
+  await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
+  aufbau(); render(0); return true;
+})();
+
+/* Ohne ?bild läuft das Video zum Anschauen im Fenster, eingepasst und in Schleife */
+if (!location.search.includes('bild')) {
+  const passeAn = () => { skala = Math.min(innerWidth / 1080, innerHeight / 1920); $('buehne').style.transform = `scale(${skala})`; $('buehne').style.left = (innerWidth - 1080 * skala) / 2 + 'px'; };
+  window.bereit.then(() => { passeAn(); addEventListener('resize', passeAn); const t0 = performance.now(); const lauf = () => { render(((performance.now() - t0) / 1000) % DAUER); requestAnimationFrame(lauf); }; lauf(); });
+}
+</script>
+</body>
+</html>

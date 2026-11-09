@@ -226,3 +226,7 @@ tools/shots/
 
 # Liste gesperrter Begriffe für tools/release_check.py (bleibt privat)
 .release-terms
+
+# Werbevideo: Zwischenstände
+werbung/probe/
+werbung/ton.wav
